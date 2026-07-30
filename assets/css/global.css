@@ -16,3 +16,12 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #555;
 }
+
+.active {
+    background-color: #0d9488;
+}
+
+.active a,
+.active i {
+    color: white;
+}
