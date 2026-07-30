@@ -13,7 +13,67 @@
 <body class="w-full min-h-screen overflow-y-auto">
     <main>
         <section class="flex h-screen">
-            <div class="bg-blue-950 w-2/5">1</div>
+            <div class="bg-blue-950 w-2/5 h-full flex justify-center items-center flex-col">
+                <div class="flex flex-row justify-center items-center gap-6">
+                    <img src="assets/img/logo.jpg" alt="Logo" class="w-32 h-32 mb-4 rounded-full object-cover">
+                    <div>
+                        <h1 class="text-white text-3xl font-bold">Orthopaedic Clinic</h1>
+                        <p class="text-gray-300 mt-2">Your health, our priority</p>
+                    </div>
+                </div>
+                <div class="mt-6 text-start px-20 text-white">
+                    <p class="text-md italic">
+                        Integrated clinic management for patient registration, appointments, consultations, billing, and
+                        medical records.
+                    </p>
+                </div>
+                <div class="mt-10 space-y-5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-user-plus text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-semibold">Patient Registration</h3>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-calendar-check text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-semibold">Appointment Scheduling</h3>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-stethoscope text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-semibold">Consultation Records</h3>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-credit-card text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-semibold">Billing & Payments</h3>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file-medical text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-semibold">Reports & Analytics</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="bg-gray-200 w-3/5 flex justify-center items-center flex-col">
                 <div class="w-full max-w-sm">
                     <div class="mb-6">
@@ -42,7 +102,8 @@
                                 </i>
                             </div>
                             <button class="bg-blue-800 text-white py-2 px-4 rounded-lg hover:bg-blue-900 w-full mt-3"
-                                type="submit">Sign in</button>
+                                type="button" onclick="window.location.href='admin/admin-dashboard.php';">Sign
+                                in</button>
                         </form>
                     </div>
                 </div>
