@@ -10,8 +10,196 @@
     <title>Document</title>
 </head>
 
-<body class="h-screen flex bg-gray-200">
+<body class="h-screen flex bg-slate-200">
     <?php include_once '../includes/sidebar.php'; ?>
+    <section class="flex-1 p-6 overflow-auto">
+        <div class="mb-6 space-y-1">
+            <h1 class="text-2xl font-bold">Patient Registration</h1>
+            <h3 class="text-md font-medium text-gray-500">Register new patients or update existing records</h3>
+        </div>
+
+        <div class="space-y-6">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div class="rounded-full bg-white px-4 py-3 shadow-sm text-sm text-slate-600 w-full">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span id="progressStart" class="rounded-full bg-teal-600 px-4 py-2 text-white">Start</span>
+                        <span class="text-slate-400">→</span>
+                        <span id="progressPatientType" class="rounded-full bg-blue-600 px-4 py-2 text-white">Patient Type</span>
+                        <span class="text-slate-400">→</span>
+                        <span id="progressEnterInfo" class="rounded-full bg-slate-200 px-4 py-2 text-slate-500">Enter Info / Validate ID</span>
+                        <span class="text-slate-400">→</span>
+                        <span id="progressSaveInfo" class="rounded-full bg-slate-200 px-4 py-2 text-slate-500">Save Info</span>
+                        <span class="text-slate-400">→</span>
+                        <span id="progressLoadProfile" class="rounded-full bg-slate-200 px-4 py-2 text-slate-500">Load Profile</span>
+                        <span class="text-slate-400">→</span>
+                        <span id="progressCreateRecord" class="rounded-full bg-slate-200 px-4 py-2 text-slate-500">Create Record</span>
+                        <span class="text-slate-400">→</span>
+                        <span id="progressEnd" class="rounded-full bg-slate-200 px-4 py-2 text-slate-500">End</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid gap-6 xl:grid-cols-[1.05fr_1.35fr_0.85fr]">
+                <div class="rounded-3xl bg-white p-6 shadow-sm">
+                    <div class="mb-6">
+                        <h2 class="text-xl font-semibold">Step 1 — Patient Type</h2>
+                        <p class="text-sm text-slate-500 mt-2">Is this a new or existing patient?</p>
+                    </div>
+                    <div class="space-y-4">
+                        <button id="newPatientBtn"
+                            class="patient-toggle flex w-full items-center justify-center gap-3 rounded-3xl border border-slate-200 bg-slate-50 px-5 py-5 text-slate-700 text-lg font-semibold transition hover:border-slate-300"
+                            data-type="new">
+                            <i class="fa-solid fa-user text-violet-600"></i>
+                            New Patient
+                        </button>
+                        <button id="existingPatientBtn"
+                            class="patient-toggle flex w-full items-center justify-center gap-3 rounded-3xl border border-slate-200 bg-slate-50 px-5 py-5 text-slate-700 text-lg font-semibold transition hover:border-slate-300"
+                            data-type="existing">
+                            <i class="fa-solid fa-magnifying-glass text-sky-600"></i>
+                            Existing Patient
+                        </button>
+                    </div>
+                </div>
+                <div class="rounded-3xl bg-white p-6 shadow-sm">
+                    <div class="mb-6">
+                        <h2 id="step2Title" class="text-xl font-semibold">Step 2 — Patient Information</h2>
+                        <p id="step2Description" class="text-sm text-slate-500 mt-2">Select patient type first</p>
+                    </div>
+                    <div id="step2Content" class="space-y-4">
+                        <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                            <label class="text-sm text-slate-600">Full Name</label>
+                            <input type="text"
+                                class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-700 focus:border-teal-500 focus:outline-none"
+                                placeholder="Enter full name" disabled>
+                        </div>
+                        <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                            <label class="text-sm text-slate-600">Patient ID</label>
+                            <input type="text"
+                                class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-700 focus:border-teal-500 focus:outline-none"
+                                placeholder="Enter patient ID" disabled>
+                        </div>
+                    </div>
+                </div>
+                <div class="rounded-3xl bg-white p-6 shadow-sm">
+                    <div class="mb-6">
+                        <h2 class="text-xl font-semibold">Step 3 — Save & Confirm</h2>
+                        <p class="text-sm text-slate-500 mt-2">Review and finalize the registration record</p>
+                    </div>
+                    <div class="space-y-4 text-sm text-slate-600">
+                        <div
+                            class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <span>Patient Type</span>
+                            <span class="text-slate-500">—</span>
+                        </div>
+                        <div
+                            class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <span>Name</span>
+                            <span class="text-slate-500">—</span>
+                        </div>
+                        <div
+                            class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                            <span>Status</span>
+                            <span
+                                class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">Pending</span>
+                        </div>
+                    </div>
+                    <button
+                        class="mt-6 w-full rounded-3xl bg-teal-400 px-6 py-4 text-lg font-semibold text-white transition hover:bg-teal-500"
+                        id="saveRecordBtn" disabled>
+                        Save & Create Record
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        const newPatientBtn = document.getElementById('newPatientBtn');
+        const existingPatientBtn = document.getElementById('existingPatientBtn');
+        const step2Title = document.getElementById('step2Title');
+        const step2Description = document.getElementById('step2Description');
+        const step2Content = document.getElementById('step2Content');
+        const saveRecordBtn = document.getElementById('saveRecordBtn');
+        const progressEnterInfo = document.getElementById('progressEnterInfo');
+        const progressSaveInfo = document.getElementById('progressSaveInfo');
+        const progressLoadProfile = document.getElementById('progressLoadProfile');
+        const progressCreateRecord = document.getElementById('progressCreateRecord');
+        const progressEnd = document.getElementById('progressEnd');
+
+        function setProgressActive(element) {
+            element.classList.remove('bg-slate-200', 'text-slate-500');
+            element.classList.add('bg-blue-600', 'text-white');
+        }
+
+        function activateEnterInfoStep() {
+            setProgressActive(progressEnterInfo);
+        }
+
+        function activateCompletionSteps() {
+            [progressSaveInfo, progressLoadProfile, progressCreateRecord, progressEnd].forEach(setProgressActive);
+        }
+
+        function setActivePatientType(type) {
+            newPatientBtn.classList.remove('border-slate-200', 'bg-slate-50', 'text-slate-700');
+            newPatientBtn.classList.add('border-slate-200', 'bg-slate-50', 'text-slate-700');
+            existingPatientBtn.classList.remove('border-slate-200', 'bg-slate-50', 'text-slate-700');
+            existingPatientBtn.classList.add('border-slate-200', 'bg-slate-50', 'text-slate-700');
+
+            if (type === 'new') {
+                newPatientBtn.classList.add('border-blue-500', 'bg-blue-50', 'text-blue-700');
+                existingPatientBtn.classList.remove('border-blue-500', 'bg-blue-50', 'text-blue-700');
+                step2Title.textContent = 'Step 2 — Patient Information';
+                step2Description.textContent = 'Enter basic patient information';
+                step2Content.innerHTML = `
+                    <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                        <label class="text-sm text-slate-600">First Name</label>
+                        <input type="text" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter first name">
+                    </div>
+                    <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                        <label class="text-sm text-slate-600">Last Name</label>
+                        <input type="text" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter last name">
+                    </div>
+                    <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                        <label class="text-sm text-slate-600">Date of Birth</label>
+                        <input type="date" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-700 focus:border-teal-500 focus:outline-none">
+                    </div>
+                    <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                        <label class="text-sm text-slate-600">Phone</label>
+                        <input type="tel" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter phone number">
+                    </div>
+                    <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                        <label class="text-sm text-slate-600">Gender</label>
+                        <select class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-700 focus:border-teal-500 focus:outline-none">
+                            <option value="">Select...</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                `;
+                saveRecordBtn.disabled = false;
+            } else {
+                existingPatientBtn.classList.add('border-blue-500', 'bg-blue-50', 'text-blue-700');
+                newPatientBtn.classList.remove('border-blue-500', 'bg-blue-50', 'text-blue-700');
+                step2Title.textContent = 'Step 2 — Validate Identity';
+                step2Description.textContent = 'Enter Patient ID to look up record';
+                step2Content.innerHTML = `
+                    <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                        <label class="text-sm text-slate-600">Patient ID</label>
+                        <input type="text" class="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="PT-YYYY-XXXX">
+                    </div>
+                    <button class="mt-3 w-full rounded-3xl bg-sky-400 px-4 py-3 text-white font-semibold hover:bg-sky-500">Validate & Load Profile</button>
+                `;
+                saveRecordBtn.disabled = false;
+            }
+
+            activateEnterInfoStep();
+        }
+
+        newPatientBtn.addEventListener('click', () => setActivePatientType('new'));
+        existingPatientBtn.addEventListener('click', () => setActivePatientType('existing'));
+        saveRecordBtn.addEventListener('click', activateCompletionSteps);
+    </script>
 </body>
 
 </html>
