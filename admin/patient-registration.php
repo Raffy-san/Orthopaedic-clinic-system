@@ -89,12 +89,12 @@
                         <div
                             class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
                             <span>Patient Type</span>
-                            <span class="text-slate-500">—</span>
+                            <span id="confirmPatientType" class="text-slate-500">—</span>
                         </div>
                         <div
                             class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
                             <span>Name</span>
-                            <span class="text-slate-500">—</span>
+                            <span id="confirmName" class="text-slate-500">—</span>
                         </div>
                         <div
                             class="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
@@ -120,11 +120,16 @@
         const step2Description = document.getElementById('step2Description');
         const step2Content = document.getElementById('step2Content');
         const saveRecordBtn = document.getElementById('saveRecordBtn');
+        const confirmPatientType = document.getElementById('confirmPatientType');
+        const confirmName = document.getElementById('confirmName');
         const progressEnterInfo = document.getElementById('progressEnterInfo');
         const progressSaveInfo = document.getElementById('progressSaveInfo');
         const progressLoadProfile = document.getElementById('progressLoadProfile');
         const progressCreateRecord = document.getElementById('progressCreateRecord');
         const progressEnd = document.getElementById('progressEnd');
+
+        let currentPatientType = '';
+        let currentPatientName = '';
 
         function setProgressActive(element) {
             element.classList.remove('bg-slate-200', 'text-slate-500');
@@ -139,7 +144,41 @@
             [progressSaveInfo, progressLoadProfile, progressCreateRecord, progressEnd].forEach(setProgressActive);
         }
 
+        function updateConfirmationStep() {
+            confirmPatientType.textContent = currentPatientType || '—';
+            confirmName.textContent = currentPatientName || '—';
+        }
+
+        function bindNameInputs() {
+            const firstNameInput = document.getElementById('firstNameInput');
+            const lastNameInput = document.getElementById('lastNameInput');
+            const existingNameInput = document.getElementById('existingNameInput');
+
+            if (firstNameInput || lastNameInput) {
+                const updateName = () => {
+                    const firstName = firstNameInput?.value.trim() || '';
+                    const lastName = lastNameInput?.value.trim() || '';
+                    currentPatientName = [firstName, lastName].filter(Boolean).join(' ');
+                    updateConfirmationStep();
+                };
+
+                firstNameInput?.addEventListener('input', updateName);
+                lastNameInput?.addEventListener('input', updateName);
+            }
+
+            if (existingNameInput) {
+                existingNameInput.addEventListener('input', () => {
+                    currentPatientName = existingNameInput.value.trim();
+                    updateConfirmationStep();
+                });
+            }
+        }
+
         function setActivePatientType(type) {
+            currentPatientType = type === 'new' ? 'New Patient' : 'Existing Patient';
+            currentPatientName = '';
+            updateConfirmationStep();
+
             newPatientBtn.classList.remove('border-slate-200', 'bg-slate-50', 'text-slate-700');
             newPatientBtn.classList.add('border-slate-200', 'bg-slate-50', 'text-slate-700');
             existingPatientBtn.classList.remove('border-slate-200', 'bg-slate-50', 'text-slate-700');
@@ -153,11 +192,11 @@
                 step2Content.innerHTML = `
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
                         <label class="text-[11px] text-slate-600">First Name</label>
-                        <input type="text" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter first name">
+                        <input id="firstNameInput" type="text" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter first name">
                     </div>
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
                         <label class="text-[11px] text-slate-600">Last Name</label>
-                        <input type="text" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter last name">
+                        <input id="lastNameInput" type="text" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter last name">
                     </div>
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
                         <label class="text-[11px] text-slate-600">Date of Birth</label>
@@ -186,13 +225,18 @@
                 step2Content.innerHTML = `
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
                         <label class="text-[11px] text-slate-600">Patient ID</label>
-                        <input type="text" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="PT-YYYY-XXXX">
+                        <input id="existingPatientIdInput" type="text" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="PT-YYYY-XXXX">
                     </div>
-                    <button class="mt-2 w-full rounded-2xl bg-sky-400 px-3 py-2 text-xs text-white font-semibold hover:bg-sky-500">Validate & Load Profile</button>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+                        <label class="text-[11px] text-slate-600">Patient Name</label>
+                        <input id="existingNameInput" type="text" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Type existing patient name">
+                    </div>
+                    <button class="mt-2 w-full rounded-2xl bg-sky-400 px-3 py-2 text-xs text-white font-semibold hover:bg-sky-500" type="button">Validate & Load Profile</button>
                 `;
                 saveRecordBtn.disabled = false;
             }
 
+            bindNameInputs();
             activateEnterInfoStep();
         }
 
