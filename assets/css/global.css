@@ -25,3 +25,55 @@
 .active i {
     color: white;
 }
+
+/* Consultation page custom styles */
+.card-rounded {
+    border-radius: 0.75rem;
+}
+.queue-item {
+    background: #f8fafc;
+    border: 1px solid #eef2f6;
+    border-left: 4px solid transparent;
+    padding: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.queue-item.active {
+    border-left-color: #0ea5a4;
+    background: #eef9f8;
+}
+.patient-header {
+    border: 1px solid #eef2f6;
+    background: #ffffff;
+    border-radius: 0.75rem;
+}
+.consultation-panel {
+    border: 1px solid #eef2f6;
+    background: #ffffff;
+    border-radius: 0.75rem;
+}
+.input-style {
+    border: 1px solid #e6e9ee;
+    border-radius: 0.5rem;
+    padding: 0.6rem;
+}
+.textarea-style { 
+    border: 1px solid #e6e9ee;
+    border-radius: 0.5rem;
+    padding: 0.6rem;
+}
+.btn-primary {
+    background: #1e90ff;
+    color: #fff;
+    padding: 0.6rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+}
+.btn-outline {
+    background: #fff;
+    color: #374151;
+    padding: 0.5rem 0.9rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e6e9ee;
+}
