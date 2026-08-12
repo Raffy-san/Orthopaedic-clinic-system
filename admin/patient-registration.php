@@ -12,9 +12,9 @@
 
 <body class="h-screen flex bg-slate-200">
     <?php include_once '../includes/sidebar.php'; ?>
-    <section class="flex-1 p-4 overflow-auto">
+    <section class="flex-1 p-6 overflow-auto">
         <div class="mb-4 space-y-1">
-            <h1 class="text-xl font-bold">Patient Registration</h1>
+            <h1 class="text-2xl font-bold">Patient Registration</h1>
             <h3 class="text-sm font-medium text-gray-500">Register new patients or update existing records</h3>
         </div>
 
