@@ -7,10 +7,10 @@
     <link rel="stylesheet" href="../assets/css/output.css">
     <link rel="stylesheet" href="../assets/css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <title>Document</title>
+    <title>Billing and Payment</title>
 </head>
 
-<body class="h-screen flex bg-gray-200">
+<body class="h-screen flex bg-slate-200">
     <?php include_once '../includes/sidebar.php'; ?>
 
     <section class="flex-1 p-6 overflow-auto">

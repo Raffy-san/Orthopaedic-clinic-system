@@ -10,7 +10,7 @@
     <title>Consultation</title>
 </head>
 
-<body class="h-screen flex bg-gray-200">
+<body class="h-screen flex bg-slate-200">
     <?php include_once '../includes/sidebar.php'; ?>
 
     <section class="flex-1 p-6 overflow-auto">
@@ -88,30 +88,35 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="text-sm text-gray-600">Diagnosis</label>
-                            <input type="text" class="w-full mt-2 input-style" placeholder="e.g., Osteoarthritis, right knee">
+                            <input type="text" class="w-full mt-2 input-style"
+                                placeholder="e.g., Osteoarthritis, right knee">
                         </div>
 
                         <div>
                             <label class="text-sm text-gray-600">Treatment Plan</label>
-                            <input type="text" class="w-full mt-2 input-style" placeholder="e.g., PT, anti-inflammatory meds">
+                            <input type="text" class="w-full mt-2 input-style"
+                                placeholder="e.g., PT, anti-inflammatory meds">
                         </div>
                     </div>
 
                     <div class="mt-4">
                         <label class="text-sm text-gray-600">Notes</label>
-                        <textarea class="w-full mt-2 textarea-style h-28" placeholder="Additional observations..."></textarea>
+                        <textarea class="w-full mt-2 textarea-style h-28"
+                            placeholder="Additional observations..."></textarea>
                     </div>
 
                     <div class="mt-4 flex flex-col gap-4">
                         <div class="text-sm text-gray-700">Medication / Prescription Required?</div>
                         <div class="flex gap-2">
-                            <button id="addPrescriptionBtn" type="button" class="btn-outline">Yes — Add Prescription</button>
+                            <button id="addPrescriptionBtn" type="button" class="btn-outline">Yes — Add
+                                Prescription</button>
                             <button id="skipPrescriptionBtn" type="button" class="btn-outline">No — Skip</button>
                         </div>
 
                         <div id="prescriptionDetails" class="hidden mt-4">
                             <label class="text-sm text-gray-600">Prescription Details</label>
-                            <input id="prescriptionInput" type="text" class="w-full mt-2 input-style" placeholder="Drug name, dosage, frequency, duration...">
+                            <input id="prescriptionInput" type="text" class="w-full mt-2 input-style"
+                                placeholder="Drug name, dosage, frequency, duration...">
                         </div>
 
                         <div class="">
@@ -119,9 +124,9 @@
                         </div>
                     </div>
                 </div>
-        </div>
-    </section>
             </div>
+    </section>
+    </div>
 
     <script>
         const addPrescriptionBtn = document.getElementById('addPrescriptionBtn');

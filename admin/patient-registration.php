@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="../assets/css/output.css">
     <link rel="stylesheet" href="../assets/css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <title>Document</title>
+    <title>Patient Registration</title>
 </head>
 
 <body class="h-screen flex bg-slate-200">
