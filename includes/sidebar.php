@@ -1,6 +1,6 @@
 <div class="w-64 shrink-0 bg-blue-950 flex flex-col h-full">
     <div class="w-full border-b p-6 border-gray-600 flex items-center gap-4">
-        <i class="fa-solid fa-house text-white p-4 bg-teal-600 rounded-2xl"></i>
+        <img src="../assets/img/icon-logo.ico" alt="SLOC Logo" class="w-12 h-12 object-contain rounded-full">
         <div>
             <h1 class="text-white text-md font-medium">SLOC System</h1>
             <h3 class="text-gray-300 text-sm">Orthopaedic Clinic</h3>
