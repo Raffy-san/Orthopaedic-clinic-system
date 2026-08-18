@@ -61,13 +61,13 @@
                     <!-- Role Selection -->
                     <div class="space-y-4">
                         <div class="text-center mb-8">
-                            <h1 class="text-3xl font-bold text-gray-800">How would you like to login?</h1>
+                            <h1 class="text-2xl font-bold text-gray-800">How would you like to login?</h1>
                             <p class="text-gray-500 text-sm mt-2">Select your role to continue</p>
                         </div>
 
                         <!-- Admin Button -->
                         <button onclick="selectRole('admin')"
-                            class="w-full p-6 border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition group">
+                            class="w-full p-4 border-2 border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition group">
                             <div class="flex items-center gap-4">
                                 <div
                                     class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition">
@@ -80,11 +80,11 @@
                                 <i
                                     class="fa-solid fa-arrow-right text-blue-600 ml-auto opacity-0 group-hover:opacity-100 transition"></i>
                             </div>
-                        </button>
+                        </button> 
 
                         <!-- Staff Button -->
                         <button onclick="selectRole('staff')"
-                            class="w-full p-6 border-2 border-gray-300 rounded-lg hover:border-violet-500 hover:bg-violet-50 transition group">
+                            class="w-full p-4 border-2 border-gray-300 rounded-lg hover:border-violet-500 hover:bg-violet-50 transition group">
                             <div class="flex items-center gap-4">
                                 <div
                                     class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-violet-200 transition">
@@ -102,7 +102,7 @@
 
                         <!-- Patient Button -->
                         <button onclick="selectRole('patient')"
-                            class="w-full p-6 border-2 border-gray-300 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition group">
+                            class="w-full p-4 border-2 border-gray-300 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition group">
                             <div class="flex items-center gap-4">
                                 <div
                                     class="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center group-hover:bg-teal-200 transition">
@@ -269,7 +269,7 @@
                             <div class="relative">
                                 <i class="fa-solid fa-user absolute left-3 top-3.5 text-gray-400 text-sm"></i>
                                 <input
-                                    class="bg-white rounded-lg pl-10 pr-4 py-2.5 w-full border border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    class="bg-white rounded-lg pl-10 pr-4 py-2.5 w-full border border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition"
                                     type="text" name="username" id="username" placeholder="Enter your username"
                                     required>
                             </div>
@@ -281,7 +281,7 @@
                             <div class="relative">
                                 <i class="fa-solid fa-lock absolute left-3 top-3.5 text-gray-400 text-sm"></i>
                                 <input
-                                    class="bg-white rounded-lg pl-10 pr-10 py-2.5 w-full border border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                    class="bg-white rounded-lg pl-10 pr-10 py-2.5 w-full border border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition"
                                     type="password" name="staffPassword" id="staffPassword"
                                     placeholder="Enter your password" required>
                                 <i id="toggleStaffPassword"

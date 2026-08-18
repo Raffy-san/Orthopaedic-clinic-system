@@ -38,6 +38,23 @@
             padding: 2px 8px;
             border-radius: 9999px;
         }
+
+        .age-filter-btn {
+            background-color: #f1f5f9;
+            /* slate-100 */
+            color: #475569;
+            /* slate-600 */
+        }
+
+        .age-filter-btn:hover {
+            background-color: #e2e8f0;
+        }
+
+        .age-filter-btn.active-filter {
+            background-color: #2563eb;
+            /* blue-600 */
+            color: #ffffff;
+        }
     </style>
 </head>
 
@@ -100,12 +117,33 @@
             </div>
 
             <!-- Patient Locations Map -->
+            <!-- Patient Locations Map -->
             <div class="rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
                     <div>
                         <h2 class="text-lg font-semibold text-slate-900">Patient Locations</h2>
                         <p class="mt-1 text-sm text-slate-500">Click a pin to view that patient's appointment details
                         </p>
+                    </div>
+
+                    <!-- Age Group Filter -->
+                    <div class="flex items-center gap-2" id="ageFilterGroup">
+                        <button data-age="all"
+                            class="age-filter-btn active-filter rounded-full px-4 py-2 text-xs font-semibold transition">
+                            All Ages
+                        </button>
+                        <button data-age="under30"
+                            class="age-filter-btn rounded-full px-4 py-2 text-xs font-semibold transition">
+                            Below 30
+                        </button>
+                        <button data-age="30to59"
+                            class="age-filter-btn rounded-full px-4 py-2 text-xs font-semibold transition">
+                            30 - 59
+                        </button>
+                        <button data-age="60plus"
+                            class="age-filter-btn rounded-full px-4 py-2 text-xs font-semibold transition">
+                            60 Above
+                        </button>
                     </div>
                 </div>
                 <div id="patientMap" class="w-full rounded-3xl overflow-hidden border border-slate-200"
@@ -200,20 +238,20 @@
     <!-- Leaflet map library -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        /*
-         * MOCK DATA — replace this array with a PHP loop or a fetch() call to your
-         * backend once patient addresses/coordinates exist in the database, e.g.:
-         *
-         * const patients = <?php echo json_encode($patientsWithCoordinates); ?>;
-         *
-         * Each patient record needs: name, doctor, reason, time, status, city, lat, lng.
-         */
+    /*
+     * MOCK DATA — replace this array with a PHP loop or a fetch() call to your
+     * backend once patient addresses/coordinates/ages exist in the database, e.g.:
+     *
+     * const patients = <?php echo json_encode($patientsWithCoordinates); ?>;
+     *
+     * Each patient record needs: name, doctor, reason, time, status, city, lat, lng, age.
+     */
         const patients = [
-            { name: "Carmen Reyes", doctor: "Dr. Reyes", reason: "Follow-up", time: "11:30 AM", status: "Confirmed", city: "Imus, Cavite", lat: 14.4297, lng: 120.9367 },
-            { name: "Diego Morales", doctor: "Dr. Villanueva", reason: "X-Ray Review", time: "02:00 PM", status: "Confirmed", city: "Quezon City", lat: 14.6760, lng: 121.0437 },
-            { name: "Elena Castro", doctor: "Dr. Fuentes", reason: "New Patient", time: "03:30 PM", status: "Pending", city: "Makati City", lat: 14.5547, lng: 121.0244 },
-            { name: "Ricardo Bautista", doctor: "Dr. Reyes", reason: "Consultation", time: "04:00 PM", status: "Pending", city: "Dasmariñas, Cavite", lat: 14.3294, lng: 120.9367 },
-            { name: "Marisol Ramos", doctor: "Dr. Fuentes", reason: "Follow-up", time: "04:30 PM", status: "Cancelled", city: "Manila", lat: 14.5995, lng: 120.9842 }
+            { name: "Carmen Reyes", doctor: "Dr. Reyes", reason: "Follow-up", time: "11:30 AM", status: "Confirmed", city: "Imus, Cavite", lat: 14.4297, lng: 120.9367, age: 65 },
+            { name: "Diego Morales", doctor: "Dr. Villanueva", reason: "X-Ray Review", time: "02:00 PM", status: "Confirmed", city: "Quezon City", lat: 14.6760, lng: 121.0437, age: 42 },
+            { name: "Elena Castro", doctor: "Dr. Fuentes", reason: "New Patient", time: "03:30 PM", status: "Pending", city: "Makati City", lat: 14.5547, lng: 121.0244, age: 27 },
+            { name: "Ricardo Bautista", doctor: "Dr. Reyes", reason: "Consultation", time: "04:00 PM", status: "Pending", city: "Dasmariñas, Cavite", lat: 14.3294, lng: 120.9367, age: 58 },
+            { name: "Marisol Ramos", doctor: "Dr. Fuentes", reason: "Follow-up", time: "04:30 PM", status: "Cancelled", city: "Manila", lat: 14.5995, lng: 120.9842, age: 71 }
         ];
 
         const statusColors = {
@@ -221,6 +259,13 @@
             Pending: "#f59e0b",   // amber
             Cancelled: "#f43f5e"  // rose
         };
+
+        // Buckets which each age falls into, so a single patient can match "all" + their own bucket
+        function getAgeGroup(age) {
+            if (age < 30) return "under30";
+            if (age <= 59) return "30to59";
+            return "60plus";
+        }
 
         // Center the map roughly over Metro Manila / Cavite
         const map = L.map('patientMap').setView([14.55, 121.0], 10);
@@ -230,26 +275,54 @@
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        patients.forEach(p => {
+        // Keep a reference to each marker alongside its patient data so we can filter later
+        const markers = patients.map(p => {
             const marker = L.circleMarker([p.lat, p.lng], {
                 radius: 9,
                 fillColor: statusColors[p.status] || "#64748b",
                 color: "#ffffff",
                 weight: 2,
                 fillOpacity: 0.9
-            }).addTo(map);
+            });
 
             const popupHtml = `
-                <div class="patient-popup">
-                    <h3>${p.name}</h3>
-                    <p>${p.doctor} · ${p.reason}</p>
-                    <p>${p.time} — ${p.city}</p>
-                    <span class="status" style="background:${statusColors[p.status]}22; color:${statusColors[p.status]};">${p.status}</span>
-                </div>
-            `;
+            <div class="patient-popup">
+                <h3>${p.name}</h3>
+                <p>${p.doctor} · ${p.reason}</p>
+                <p>${p.time} — ${p.city}</p>
+                <p>Age: ${p.age}</p>
+                <span class="status" style="background:${statusColors[p.status]}22; color:${statusColors[p.status]};">${p.status}</span>
+            </div>
+        `;
             marker.bindPopup(popupHtml);
+
+            return { marker, ageGroup: getAgeGroup(p.age) };
         });
-    </script>
+
+        // All markers visible by default
+        markers.forEach(m => m.marker.addTo(map));
+
+        // Filter button behavior
+        const filterButtons = document.querySelectorAll('.age-filter-btn');
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const selected = btn.dataset.age;
+
+                // toggle active styling
+                filterButtons.forEach(b => b.classList.remove('active-filter'));
+                btn.classList.add('active-filter');
+
+                markers.forEach(({ marker, ageGroup }) => {
+                    const shouldShow = selected === "all" || ageGroup === selected;
+                    if (shouldShow) {
+                        if (!map.hasLayer(marker)) marker.addTo(map);
+                    } else {
+                        if (map.hasLayer(marker)) map.removeLayer(marker);
+                    }
+                });
+            });
+        });
+    </script>   
 </body>
 
 </html>
