@@ -73,61 +73,75 @@
         </div>
 
         <div class="space-y-6">
-            <div class="rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
-                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-                    <div>
-                        <p class="text-sm font-semibold text-slate-900">Available Slots <span
-                                class="font-normal text-slate-500">— July 25, 2026</span></p>
+            <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                <div class="rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
+                    <div class="mb-6 flex flex-col gap-4 border-b border-slate-100 pb-5">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <h2 class="text-lg font-semibold text-slate-900">Choose a time</h2>
+                                <p class="mt-1 text-sm text-slate-500">Available appointments for Saturday, July 25, 2026</p>
+                            </div>
+                            <span class="shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">9 available</span>
+                        </div>
+                        <p class="text-xs text-slate-500">Select an available slot to continue booking. Red slots are already taken.</p>
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500">
+                            <span class="flex items-center gap-2"><span
+                                    class="h-3 w-3 rounded-full bg-red-100 border border-red-200"></span>Taken</span>
+                            <span class="flex items-center gap-2"><span
+                                    class="h-3 w-3 rounded-full bg-slate-100 border border-slate-200"></span>Available</span>
+                            <span class="flex items-center gap-2"><span
+                                    class="h-3 w-3 rounded-full bg-sky-600"></span>Selected</span>
+                        </div>
                     </div>
-                    <div class="flex flex-wrap items-center gap-4 text-sm text-slate-500">
-                        <span class="flex items-center gap-2"><span
-                                class="h-3 w-3 rounded-full bg-red-100 border border-red-200"></span>Taken</span>
-                        <span class="flex items-center gap-2"><span
-                                class="h-3 w-3 rounded-full bg-slate-100 border border-slate-200"></span>Available</span>
-                        <span class="flex items-center gap-2"><span
-                                class="h-3 w-3 rounded-full bg-sky-600"></span>Selected</span>
+
+                    <div class="mb-3 flex items-center justify-between">
+                        <h3 class="text-xs font-bold uppercase tracking-wide text-slate-500">Morning</h3>
+                        <span class="text-xs text-slate-400">8:00 AM - 12:00 PM</span>
+                    </div>
+                    <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    <button
+                        class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">08:00 AM</button>
+                    <button class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">08:30 AM</button>
+                    <button
+                        class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">09:00 AM</button>
+                    <button class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">09:30 AM</button>
+                    <button
+                        class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">10:00 AM</button>
+                    <button class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">10:30 AM</button>
+                    <button
+                        class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">11:00 AM</button>
+                    <button class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">11:30 AM</button>
+                    </div>
+
+                    <div class="mb-3 flex items-center justify-between">
+                        <h3 class="text-xs font-bold uppercase tracking-wide text-slate-500">Afternoon</h3>
+                        <span class="text-xs text-slate-400">2:00 PM - 5:00 PM</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    <button class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">02:00 PM</button>
+                    <button
+                        class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">02:30 PM</button>
+                    <button
+                        class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">03:00 PM</button>
+                    <button
+                        class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">03:30 PM</button>
+                    <button
+                        class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">04:00 PM</button>
+                    <button
+                        class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">04:30 PM</button>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-6 gap-3">
-                    <button
-                        class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">08:00</button>
-                    <button class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">08:30</button>
-                    <button
-                        class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">09:00</button>
-                    <button class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">09:30</button>
-                    <button
-                        class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">10:00</button>
-                    <button class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">10:30</button>
-                    <button
-                        class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">11:00</button>
-                    <button class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">11:30</button>
-                    <button class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">14:00</button>
-                    <button
-                        class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">14:30</button>
-                    <button
-                        class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">15:00</button>
-                    <button
-                        class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">15:30</button>
-                    <button
-                        class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">16:00</button>
-                    <button
-                        class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">16:30</button>
-                </div>
-            </div>
+                <!-- Patient Locations Map -->
+                <div class="rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
+                    <div class="mb-6 flex flex-col gap-4 border-b border-slate-100 pb-5">
+                        <div>
+                            <h2 class="text-lg font-semibold text-slate-900">Patient locations</h2>
+                            <p class="mt-1 text-sm text-slate-500">Use the age filters, then select a pin to view appointment details.</p>
+                        </div>
 
-            <!-- Patient Locations Map -->
-            <!-- Patient Locations Map -->
-            <div class="rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
-                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-                    <div>
-                        <h2 class="text-lg font-semibold text-slate-900">Patient Locations</h2>
-                        <p class="mt-1 text-sm text-slate-500">Click a pin to view that patient's appointment details
-                        </p>
-                    </div>
-
-                    <!-- Age Group Filter -->
-                    <div class="flex items-center gap-2" id="ageFilterGroup">
+                        <div class="flex flex-wrap items-center gap-2" id="ageFilterGroup" aria-label="Filter patients by age">
+                            <span class="mr-1 text-xs font-semibold text-slate-500">Show:</span>
                         <button data-age="all"
                             class="age-filter-btn active-filter rounded-full px-4 py-2 text-xs font-semibold transition">
                             All Ages
@@ -144,10 +158,21 @@
                             class="age-filter-btn rounded-full px-4 py-2 text-xs font-semibold transition">
                             60 Above
                         </button>
+                        </div>
                     </div>
-                </div>
                 <div id="patientMap" class="w-full rounded-3xl overflow-hidden border border-slate-200"
                     style="height: 420px;"></div>
+                <div class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500" aria-label="Map status legend">
+                    <span class="font-semibold text-slate-700">Appointment status:</span>
+                    <span class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-emerald-500"></span>Confirmed</span>
+                    <span class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-amber-500"></span>Pending</span>
+                    <span class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-rose-500"></span>Cancelled</span>
+                </div>
+                <p class="mt-3 text-[11px] leading-relaxed text-slate-400">
+                    Pins are anonymized for privacy — only age bracket, gender, and status are shown here.
+                    Full patient records are available in the patient's file, not on this map.
+                </p>
+                </div>
             </div>
 
             <div class="rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
@@ -244,14 +269,18 @@
      *
      * const patients = <?php echo json_encode($patientsWithCoordinates); ?>;
      *
-     * Each patient record needs: name, doctor, reason, time, status, city, lat, lng, age.
+     * Each record needs: lat, lng, age, gender, status (and city, only for internal
+     * grouping — it is not shown to the viewer). Do NOT include name, doctor, or
+     * reason here — those stay in the patient's actual record/file and are pulled
+     * up separately (e.g. only after the analyst clicks through with proper access),
+     * not exposed on this map view.
      */
         const patients = [
-            { name: "Carmen Reyes", doctor: "Dr. Reyes", reason: "Follow-up", time: "11:30 AM", status: "Confirmed", city: "Imus, Cavite", lat: 14.4297, lng: 120.9367, age: 65 },
-            { name: "Diego Morales", doctor: "Dr. Villanueva", reason: "X-Ray Review", time: "02:00 PM", status: "Confirmed", city: "Quezon City", lat: 14.6760, lng: 121.0437, age: 42 },
-            { name: "Elena Castro", doctor: "Dr. Fuentes", reason: "New Patient", time: "03:30 PM", status: "Pending", city: "Makati City", lat: 14.5547, lng: 121.0244, age: 27 },
-            { name: "Ricardo Bautista", doctor: "Dr. Reyes", reason: "Consultation", time: "04:00 PM", status: "Pending", city: "Dasmariñas, Cavite", lat: 14.3294, lng: 120.9367, age: 58 },
-            { name: "Marisol Ramos", doctor: "Dr. Fuentes", reason: "Follow-up", time: "04:30 PM", status: "Cancelled", city: "Manila", lat: 14.5995, lng: 120.9842, age: 71 }
+            { city: "Imus, Cavite", lat: 14.4297, lng: 120.9367, age: 65, gender: "Female", status: "Confirmed" },
+            { city: "Quezon City", lat: 14.6760, lng: 121.0437, age: 42, gender: "Male", status: "Confirmed" },
+            { city: "Makati City", lat: 14.5547, lng: 121.0244, age: 27, gender: "Female", status: "Pending" },
+            { city: "Dasmariñas, Cavite", lat: 14.3294, lng: 120.9367, age: 58, gender: "Male", status: "Pending" },
+            { city: "Manila", lat: 14.5995, lng: 120.9842, age: 71, gender: "Female", status: "Cancelled" }
         ];
 
         const statusColors = {
@@ -267,6 +296,13 @@
             return "60plus";
         }
 
+        // Human-readable bracket label for the popup — never the exact age, just the range
+        function getAgeLabel(age) {
+            if (age < 30) return "Below 30";
+            if (age <= 59) return "30 - 59";
+            return "60 Above";
+        }
+
         // Center the map roughly over Metro Manila / Cavite
         const map = L.map('patientMap').setView([14.55, 121.0], 10);
 
@@ -276,7 +312,7 @@
         }).addTo(map);
 
         // Keep a reference to each marker alongside its patient data so we can filter later
-        const markers = patients.map(p => {
+        const markers = patients.map((p, index) => {
             const marker = L.circleMarker([p.lat, p.lng], {
                 radius: 9,
                 fillColor: statusColors[p.status] || "#64748b",
@@ -285,12 +321,14 @@
                 fillOpacity: 0.9
             });
 
+            // Anonymized popup: generic "Patient N" label, age bracket + gender in
+            // parentheses, city for general area only, and status. No name, no
+            // doctor, no visit reason — that stays in the actual patient file.
             const popupHtml = `
             <div class="patient-popup">
-                <h3>${p.name}</h3>
-                <p>${p.doctor} · ${p.reason}</p>
-                <p>${p.time} — ${p.city}</p>
-                <p>Age: ${p.age}</p>
+                <h3>Patient ${index + 1}</h3>
+                <p>(${getAgeLabel(p.age)}, ${p.gender})</p>
+                <p>${p.city}</p>
                 <span class="status" style="background:${statusColors[p.status]}22; color:${statusColors[p.status]};">${p.status}</span>
             </div>
         `;
