@@ -7,12 +7,10 @@
     <link rel="stylesheet" href="../assets/css/output.css">
     <link rel="stylesheet" href="../assets/css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Leaflet map library (free, no API key required) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="icon" href="../assets/img/rounded-logo.ico" type="image/x-icon">
     <title>Appointments</title>
     <style>
-        /* Keep popup styling consistent with the rest of the UI */
         .leaflet-popup-content-wrapper {
             border-radius: 1rem;
         }
@@ -263,17 +261,9 @@
     <!-- Leaflet map library -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-    /*
-     * MOCK DATA — replace this array with a PHP loop or a fetch() call to your
-     * backend once patient addresses/coordinates/ages exist in the database, e.g.:
-     *
+   /*
      * const patients = <?php echo json_encode($patientsWithCoordinates); ?>;
      *
-     * Each record needs: lat, lng, age, gender, status (and city, only for internal
-     * grouping — it is not shown to the viewer). Do NOT include name, doctor, or
-     * reason here — those stay in the patient's actual record/file and are pulled
-     * up separately (e.g. only after the analyst clicks through with proper access),
-     * not exposed on this map view.
      */
         const patients = [
             { city: "Imus, Cavite", lat: 14.4297, lng: 120.9367, age: 65, gender: "Female", status: "Confirmed" },
@@ -321,9 +311,6 @@
                 fillOpacity: 0.9
             });
 
-            // Anonymized popup: generic "Patient N" label, age bracket + gender in
-            // parentheses, city for general area only, and status. No name, no
-            // doctor, no visit reason — that stays in the actual patient file.
             const popupHtml = `
             <div class="patient-popup">
                 <h3>Patient ${index + 1}</h3>
