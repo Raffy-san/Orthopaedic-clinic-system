@@ -42,7 +42,7 @@
             </div>
         </div>
         <div class="w-full p-4">
-            <a href="../index.php" class="text-gray-500 hover:text-red-700 font-medium text-sm"><i
+            <a href="../logout.php" class="text-gray-500 hover:text-red-700 font-medium text-sm"><i
                     class="fa-solid fa-arrow-left"></i> Logout</a>
         </div>
     </div>

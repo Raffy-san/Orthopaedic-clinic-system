@@ -46,6 +46,11 @@
             <i class="text-sm fa-solid fa-file-lines text-white"></i>
             <a href="../admin/reports.php" class="text-sm text-gray-300 hover:text-white font-medium">Reports</a>
         </div>
+        <div
+            class="flex items-center p-3 rounded-lg gap-4 <?= basename($_SERVER['PHP_SELF']) == 'staff-management.php' ? 'active' : '' ?>">
+            <i class="text-sm fa-solid fa-users-gear text-white"></i>
+            <a href="../admin/staff-management.php" class="text-sm text-gray-300 hover:text-white font-medium">Staff Accounts</a>
+        </div>
     </div>
     <div class="mt-auto">
         <div class="w-full border-t pt-4 pl-6 border-gray-600 flex items-center gap-4">
@@ -56,7 +61,7 @@
             </div>
         </div>
         <div class="w-full p-4">
-            <a href="../index.php" class="text-gray-500 hover:text-red-700 font-medium text-sm"><i
+            <a href="../logout.php" class="text-gray-500 hover:text-red-700 font-medium text-sm"><i
                     class="fa-solid fa-arrow-left"></i> Logout</a>
         </div>
     </div>

@@ -1,3 +1,51 @@
+<?php
+require_once __DIR__ . '/config/config.php';
+require_once __DIR__ . '/includes/auth.php';
+
+if (SessionManager::isLoggedIn()) {
+    $role = $_SESSION['access_type'] ?? $_SESSION['user']['Role'] ?? null;
+
+    if (in_array($role, ['Admin', 'Doctor'], true)) {
+        header('Location: admin/admin-dashboard.php');
+        exit;
+    } elseif (in_array($role, ['Staff', 'Receptionist'], true)) {
+        header('Location: admin/admin-dashboard.php');
+        exit;
+    } else {
+        header('Location: users/user-dashboard.php');
+        exit;
+    }
+}
+
+$loginError = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $loginType = $_POST['loginType'] ?? 'staff';
+
+    $statement = $pdo->prepare(
+        "SELECT UserID, Username, PasswordHash, FirstName, LastName, Role, IsDoctor
+         FROM users WHERE Username = ? AND Status = 'Active' LIMIT 1"
+    );
+    $statement->execute([$username]);
+    $user = $statement->fetch(PDO::FETCH_ASSOC);
+    $validRole = $loginType === 'admin'
+        ? ($user && $user['Role'] === 'Admin')
+        : ($user && in_array($user['Role'], ['Doctor', 'Receptionist', 'Staff'], true));
+
+    if ($user && $validRole && password_verify($password, $user['PasswordHash'])) {
+        unset($user['PasswordHash']);
+        session_regenerate_id(true);
+        $_SESSION['user'] = $user;
+        $_SESSION['user_id'] = $user['UserID'];
+        $_SESSION['access_type'] = $user['Role'];
+        header('Location: admin/admin-dashboard.php');
+        exit;
+    }
+
+    $loginError = 'Invalid username or password.';
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -173,8 +221,10 @@
                         <p class="text-gray-500 text-sm mt-2">Sign in to your administrator account</p>
                     </div>
 
+                    <?php if ($loginError && ($_POST['loginType'] ?? '') === 'admin'): ?><p class="mb-4 p-3 rounded bg-red-100 text-red-700"><?= htmlspecialchars($loginError) ?></p><?php endif; ?>
                     <!-- Admin Login Form -->
-                    <form class="space-y-5" onsubmit="event.preventDefault();">
+                    <form class="space-y-5" method="post">
+                        <input type="hidden" name="loginType" value="admin">
                         <div>
                             <label class="block text-gray-700 text-sm font-semibold mb-2"
                                 for="username">Username</label>
@@ -182,7 +232,7 @@
                                 <i class="fa-solid fa-user absolute left-3 top-3.5 text-gray-400 text-sm"></i>
                                 <input
                                     class="bg-white rounded-lg pl-10 pr-4 py-2.5 w-full border border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                                    type="text" name="username" id="username" placeholder="Enter your username"
+                                    type="text" name="username" id="adminUsername" placeholder="Enter your username"
                                     required>
                             </div>
                         </div>
@@ -194,7 +244,7 @@
                                 <i class="fa-solid fa-lock absolute left-3 top-3.5 text-gray-400 text-sm"></i>
                                 <input
                                     class="bg-white rounded-lg pl-10 pr-10 py-2.5 w-full border border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                                    type="password" name="adminPassword" id="adminPassword"
+                                    type="password" name="password" id="adminPassword"
                                     placeholder="Enter your password" required>
                                 <i id="toggleAdminPassword"
                                     class="fa-solid fa-eye cursor-pointer absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 text-sm transition">
@@ -204,7 +254,7 @@
 
                         <button
                             class="bg-blue-600 text-white py-2.5 px-4 rounded-lg hover:bg-blue-700 active:bg-blue-800 w-full mt-8 font-semibold transition shadow-md hover:shadow-lg"
-                            type="button" onclick="window.location.href='admin/admin-dashboard.php';">Sign in</button>
+                            type="submit">Sign in</button>
                     </form>
                 </div>
             </div>
@@ -261,8 +311,10 @@
                         <p class="text-gray-500 text-sm mt-2">Sign in to your staff account</p>
                     </div>
 
+                    <?php if ($loginError && ($_POST['loginType'] ?? '') === 'staff'): ?><p class="mb-4 p-3 rounded bg-red-100 text-red-700"><?= htmlspecialchars($loginError) ?></p><?php endif; ?>
                     <!-- Staff Login Form -->
-                    <form class="space-y-5" onsubmit="event.preventDefault();">
+                    <form class="space-y-5" method="post">
+                        <input type="hidden" name="loginType" value="staff">
                         <div>
                             <label class="block text-gray-700 text-sm font-semibold mb-2"
                                 for="username">Username</label>
@@ -270,7 +322,7 @@
                                 <i class="fa-solid fa-user absolute left-3 top-3.5 text-gray-400 text-sm"></i>
                                 <input
                                     class="bg-white rounded-lg pl-10 pr-4 py-2.5 w-full border border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition"
-                                    type="text" name="username" id="username" placeholder="Enter your username"
+                                    type="text" name="username" id="staffUsername" placeholder="Enter your username"
                                     required>
                             </div>
                         </div>
@@ -282,7 +334,7 @@
                                 <i class="fa-solid fa-lock absolute left-3 top-3.5 text-gray-400 text-sm"></i>
                                 <input
                                     class="bg-white rounded-lg pl-10 pr-10 py-2.5 w-full border border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition"
-                                    type="password" name="staffPassword" id="staffPassword"
+                                    type="password" name="password" id="staffPassword"
                                     placeholder="Enter your password" required>
                                 <i id="toggleStaffPassword"
                                     class="fa-solid fa-eye cursor-pointer absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 text-sm transition">
@@ -292,7 +344,7 @@
 
                         <button
                             class="bg-violet-600 text-white py-2.5 px-4 rounded-lg hover:bg-violet-700 active:bg-violet-800 w-full mt-8 font-semibold transition shadow-md hover:shadow-lg"
-                            type="button" onclick="window.location.href='staff/staff-dashboard.php';">Sign in</button>
+                            type="submit">Sign in</button>
                     </form>
                 </div>
             </div>
