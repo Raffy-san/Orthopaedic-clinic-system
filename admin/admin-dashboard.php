@@ -1,6 +1,8 @@
 <?php 
 include_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/fetch.php';
+
 SessionManager::requireLogin();
 SessionManager::requireAnyRole(['admin', 'doctor']);
 
@@ -9,6 +11,12 @@ $admin = SessionManager::getUser($pdo);
 if (!$admin) {
     SessionManager::logout('../index.php');
 }
+
+$today = date('l, F j, Y');
+$displayName = trim(($admin['first_name'] ?? '') . ' ' . ($admin['last_name'] ?? ''));
+$displayName = $displayName !== '' ? $displayName : ($admin['username'] ?? 'User');
+
+$patients = fetchAllData($pdo, "SELECT * FROM patients ORDER BY userID DESC LIMIT 5");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -28,7 +36,9 @@ if (!$admin) {
     <section class="flex-1 p-6 overflow-auto">
         <div>
             <h1 class="text-2xl font-bold">Dashboard</h1>
-            <h3 class="text-md font-medium text-gray-500">Wednesday, July 29, 2026 - Welcome, Admin</h3>
+            <h3 class="text-md font-medium text-gray-500">
+                <?= htmlspecialchars($today) ?> - Welcome, <?= htmlspecialchars($displayName) ?>
+            </h3>
         </div>
         <div class="flex w-full gap-4 mt-6">
             <div class="bg-white p-6 rounded-lg shadow-md flex-1">
@@ -38,7 +48,7 @@ if (!$admin) {
                         <i class="fas fa-user-injured text-purple-600"></i>
                     </div>
                 </div>
-                <p class="text-gray-800 text-3xl font-extrabold">58</p>
+                <p class="text-gray-800 text-3xl font-extrabold"><?php echo count($patients); ?></p>
                 <p class="text-gray-500 text-sm font-medium">+3 from yesterday</p>
             </div>
             <div class="bg-white p-6 rounded-lg shadow-md flex-1">

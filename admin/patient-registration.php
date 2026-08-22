@@ -1,3 +1,9 @@
+<?php
+require_once '../config/config.php';
+require_once '../includes/auth.php';
+SessionManager::requireAdmin();
+$csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -191,31 +197,46 @@
                 step2Title.textContent = 'Step 2 — Patient Information';
                 step2Description.textContent = 'Enter basic patient information';
                 step2Content.innerHTML = `
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
-                        <label class="text-[11px] text-slate-600">First Name</label>
-                        <input id="firstNameInput" type="text" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter first name">
-                    </div>
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
-                        <label class="text-[11px] text-slate-600">Last Name</label>
-                        <input id="lastNameInput" type="text" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter last name">
-                    </div>
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
-                        <label class="text-[11px] text-slate-600">Date of Birth</label>
-                        <input type="date" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
-                    </div>
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
-                        <label class="text-[11px] text-slate-600">Phone</label>
-                        <input type="tel" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter phone number">
-                    </div>
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
-                        <label class="text-[11px] text-slate-600">Gender</label>
-                        <select class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
-                            <option value="">Select...</option>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
+                    <form id="addPatientForm" class="space-y-3">
+                        <input type="hidden" name="csrf_token" value="${csrfToken}">
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+                            <label class="text-[11px] text-slate-600">First Name</label>
+                            <input id="firstNameInput" name="firstName" type="text" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter first name">
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+                            <label class="text-[11px] text-slate-600">Last Name</label>
+                            <input id="lastNameInput" name="lastName" type="text" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter last name">
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+                            <label class="text-[11px] text-slate-600">Date of Birth</label>
+                            <input name="birthDate" type="date" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+                            <label class="text-[11px] text-slate-600">Phone</label>
+                            <input name="phone" type="tel" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter phone number">
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+                            <label class="text-[11px] text-slate-600">Initial Password</label>
+                            <input name="password" type="password" minlength="8" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="At least 8 characters">
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+                            <label class="text-[11px] text-slate-600">Gender</label>
+                            <select name="gender" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
+                                <option value="">Select...</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+                            <label class="text-[11px] text-slate-600">Patient Type</label>
+                            <select name="patientType" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
+                                <option value="Regular">Regular</option>
+                                <option value="Senior Citizen">Senior Citizen</option>
+                                <option value="PWD">PWD</option>
+                            </select>
+                        </div>
+                    </form>
                 `;
                 saveRecordBtn.disabled = false;
             } else {
@@ -234,7 +255,7 @@
                     </div>
                     <button class="mt-2 w-full rounded-2xl bg-sky-400 px-3 py-2 text-xs text-white font-semibold hover:bg-sky-500" type="button">Validate & Load Profile</button>
                 `;
-                saveRecordBtn.disabled = false;
+                saveRecordBtn.disabled = true;
             }
 
             bindNameInputs();
@@ -243,7 +264,50 @@
 
         newPatientBtn.addEventListener('click', () => setActivePatientType('new'));
         existingPatientBtn.addEventListener('click', () => setActivePatientType('existing'));
-        saveRecordBtn.addEventListener('click', activateCompletionSteps);
+        let csrfToken = <?= json_encode($csrfToken) ?>;
+
+        saveRecordBtn.addEventListener('click', () => {
+            const form = document.getElementById('addPatientForm');
+            if (form) {
+                form.requestSubmit();
+            }
+        });
+
+        step2Content.addEventListener('submit', (event) => {
+            if (event.target.id !== 'addPatientForm') {
+                return;
+            }
+
+            event.preventDefault();
+            saveRecordBtn.disabled = true;
+            saveRecordBtn.textContent = 'Saving...';
+
+            const formData = new FormData(event.target);
+            formData.set('csrf_token', csrfToken);
+
+            fetch('../php/add/add-patient.php', {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.csrf_token) {
+                        csrfToken = data.csrf_token;
+                    }
+                    if (data.status !== 'success') {
+                        throw new Error(data.message || 'Registration failed.');
+                    }
+                    alert(`${data.message} Patient ID: ${data.patient_code}`);
+                    activateCompletionSteps();
+                    event.target.reset();
+                })
+                .catch(error => alert(error.message || 'Registration failed.'))
+                .finally(() => {
+                    saveRecordBtn.disabled = false;
+                    saveRecordBtn.textContent = 'Save & Create Record';
+                });
+        });
     </script>
 </body>
 

@@ -25,7 +25,7 @@ CREATE TABLE `users` (
   `PasswordHash` VARCHAR(255) NOT NULL,
   `FirstName` VARCHAR(100) NOT NULL,
   `LastName` VARCHAR(100) NOT NULL,
-  `Role` ENUM('Admin','Doctor','Receptionist','Staff') NOT NULL DEFAULT 'Receptionist',
+  `Role` ENUM('Admin','Doctor','Receptionist','Staff','Patient') NOT NULL DEFAULT 'Receptionist',
   `IsDoctor` TINYINT(1) NOT NULL DEFAULT 0,
   `Email` VARCHAR(150) DEFAULT NULL,
   `Phone` VARCHAR(30) DEFAULT NULL,
