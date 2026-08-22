@@ -31,7 +31,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = $statement->fetch(PDO::FETCH_ASSOC);
     $validRole = $loginType === 'admin'
         ? ($user && $user['Role'] === 'Admin')
-        : ($user && in_array($user['Role'], ['Doctor', 'Receptionist', 'Staff'], true));
+        : ($loginType === 'patient'
+            ? ($user && $user['Role'] === 'Patient')
+            : ($user && in_array($user['Role'], ['Doctor', 'Receptionist', 'Staff'], true)));
 
     if ($user && $validRole && password_verify($password, $user['PasswordHash'])) {
         unset($user['PasswordHash']);
@@ -402,7 +404,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <!-- Patient Login Form -->
-                    <form class="space-y-5" onsubmit="event.preventDefault();">
+                    <form class="space-y-5" method="post">
+                        <input type="hidden" name="loginType" value="patient">
                         <div>
                             <label class="block text-gray-700 text-sm font-semibold mb-2" for="patientId">Patient
                                 ID</label>
@@ -410,7 +413,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <i class="fa-solid fa-id-card absolute left-3 top-3.5 text-gray-400 text-sm"></i>
                                 <input
                                     class="bg-white rounded-lg pl-10 pr-4 py-2.5 w-full border border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
-                                    type="text" name="patientId" id="patientId" placeholder="PT-YYYY-XXXX" required>
+                                    type="text" name="username" id="patientId" placeholder="PT-YYYY-XXXX" required>
                             </div>
                         </div>
 
@@ -421,7 +424,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <i class="fa-solid fa-lock absolute left-3 top-3.5 text-gray-400 text-sm"></i>
                                 <input
                                     class="bg-white rounded-lg pl-10 pr-10 py-2.5 w-full border border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
-                                    type="password" name="patientPassword" id="patientPassword"
+                                    type="password" name="password" id="patientPassword"
                                     placeholder="Enter your password" required>
                                 <i id="togglePatientPassword"
                                     class="fa-solid fa-eye cursor-pointer absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 text-sm transition">
@@ -431,7 +434,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <button
                             class="bg-teal-600 text-white py-2.5 px-4 rounded-lg hover:bg-teal-700 active:bg-teal-800 w-full mt-8 font-semibold transition shadow-md hover:shadow-lg"
-                            type="submit" onclick="window.location.href='users/user-dashboard.php';">Sign In as
+                            type="submit">Sign In as
                             Patient</button>
                     </form>
 
