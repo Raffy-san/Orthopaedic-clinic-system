@@ -1,4 +1,4 @@
-<?php 
+<?php
 include_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/fetch.php';
@@ -103,95 +103,35 @@ $patients = fetchAllData($pdo, "SELECT * FROM patients ORDER BY userID DESC LIMI
                                 <th class="px-6 py-4 font-medium">Patient ID</th>
                                 <th class="px-6 py-4 font-medium">Name</th>
                                 <th class="px-6 py-4 font-medium">Date</th>
-                                <th class="px-6 py-4 font-medium">Status</th>
                             </tr>
                         </thead>
 
                         <tbody class="text-sm">
+                            <?php
+                            $patients = fetchAllData($pdo, "SELECT 
+                                p.PatientID AS PatientID, 
+                                p.PatientCode,
+                                p.FirstName, 
+                                p.MiddleName,
+                                p.LastName,
+                                p.CreatedAt
+                            FROM patients p
+                            GROUP BY p.PatientID ORDER BY p.CreatedAt DESC
+                            ");
 
-                            <tr class="border-b border-gray-100 hover:bg-gray-50">
-                                <td class="px-6 py-4 text-gray-500">
-                                    PT-2026-0001
-                                </td>
-
-                                <td class="px-6 py-4 font-medium">
-                                    Maria Santos
-                                </td>
-
-                                <td class="px-6 py-4 text-gray-500">
-                                    Jul 30, 2026
-                                </td>
-
-                                <td class="px-6 py-4">
-                                    <span class="bg-blue-100 text-blue-600 text-xs font-medium px-3 py-1 rounded-full">
-                                        Registered
-                                    </span>
-                                </td>
-                            </tr>
-
-                            <tr class="border-b border-gray-100 hover:bg-gray-50">
-                                <td class="px-6 py-4 text-gray-500">
-                                    PT-2026-0002
-                                </td>
-
-                                <td class="px-6 py-4 font-medium">
-                                    Juan Dela Cruz
-                                </td>
-
-                                <td class="px-6 py-4 text-gray-500">
-                                    Jul 30, 2026
-                                </td>
-
-                                <td class="px-6 py-4">
-                                    <span
-                                        class="bg-yellow-100 text-yellow-700 text-xs font-medium px-3 py-1 rounded-full">
-                                        Waiting
-                                    </span>
-                                </td>
-                            </tr>
-
-                            <tr class="border-b border-gray-100 hover:bg-gray-50">
-                                <td class="px-6 py-4 text-gray-500">
-                                    PT-2026-0003
-                                </td>
-
-                                <td class="px-6 py-4 font-medium">
-                                    Roberto Lim
-                                </td>
-
-                                <td class="px-6 py-4 text-gray-500">
-                                    Jul 29, 2026
-                                </td>
-
-                                <td class="px-6 py-4">
-                                    <span
-                                        class="bg-green-100 text-green-600 text-xs font-medium px-3 py-1 rounded-full">
-                                        Completed
-                                    </span>
-                                </td>
-                            </tr>
-
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 text-gray-500">
-                                    PT-2026-0004
-                                </td>
-
-                                <td class="px-6 py-4 font-medium">
-                                    Ana Macaraeg
-                                </td>
-
-                                <td class="px-6 py-4 text-gray-500">
-                                    Jul 29, 2026
-                                </td>
-
-                                <td class="px-6 py-4">
-                                    <span
-                                        class="bg-purple-100 text-purple-600 text-xs font-medium px-3 py-1 rounded-full">
-                                        Billed
-                                    </span>
-                                </td>
-                            </tr>
-
+                            foreach ($patients as $patient) {
+                                echo ' <tr class="border-b border-gray-100 hover:bg-gray-50">';
+                                echo '<td class="px-6 py-4 text-gray-500">'
+                                    . htmlspecialchars($patient['PatientCode']) .
+                                    '</td>';
+                                echo '<td class="px-6 py-4 font-medium">'
+                                    . htmlspecialchars($patient['FirstName'] . ' ' . $patient['MiddleName'] . ' ' . $patient['LastName']) .
+                                    '</td>';
+                                echo '<td class="px-6 py-4 text-gray-500">'
+                                    . htmlspecialchars(date('M d, Y', strtotime($patient['CreatedAt']))) .
+                                    '</td>';
+                            }
+                            ?>
                         </tbody>
                     </table>
                 </div>

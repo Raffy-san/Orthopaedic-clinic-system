@@ -11,34 +11,40 @@
         <div
             class="flex items-center p-3 rounded-lg gap-4 <?= basename($_SERVER['PHP_SELF']) == 'admin-dashboard.php' ? 'active' : '' ?>">
             <i class="text-sm fa-solid fa-gauge text-white"></i>
-            <a href="../admin/admin-dashboard.php" class="text-sm text-gray-300 hover:text-white font-medium">Dashboard</a>
+            <a href="../admin/admin-dashboard.php"
+                class="text-sm text-gray-300 hover:text-white font-medium">Dashboard</a>
         </div>
         <div
             class="flex items-center p-3 rounded-lg gap-4 <?= basename($_SERVER['PHP_SELF']) == 'patient-registration.php' ? 'active' : '' ?>">
             <i class="text-sm fa-solid fa-user-plus text-white"></i>
-            <a href="../admin/patient-registration.php" class="text-sm text-gray-300 hover:text-white font-medium">Patient
+            <a href="../admin/patient-registration.php"
+                class="text-sm text-gray-300 hover:text-white font-medium">Patient
                 Registration</a>
         </div>
         <div
             class="flex items-center p-3 rounded-lg gap-4 <?= basename($_SERVER['PHP_SELF']) == 'appointments.php' ? 'active' : '' ?>">
             <i class="text-sm fa-solid fa-calendar text-white"></i>
-            <a href="../admin/appointments.php" class="text-sm text-gray-300 hover:text-white font-medium">Appointments</a>
+            <a href="../admin/appointments.php"
+                class="text-sm text-gray-300 hover:text-white font-medium">Appointments</a>
         </div>
         <div
             class="flex items-center p-3 rounded-lg gap-4 <?= basename($_SERVER['PHP_SELF']) == 'consultations.php' ? 'active' : '' ?>">
             <i class="text-sm fa-solid fa-stethoscope text-white"></i>
-            <a href="../admin/consultations.php" class="text-sm text-gray-300 hover:text-white font-medium">Consultations</a>
+            <a href="../admin/consultations.php"
+                class="text-sm text-gray-300 hover:text-white font-medium">Consultations</a>
         </div>
         <div
             class="flex items-center p-3 rounded-lg gap-4 <?= basename($_SERVER['PHP_SELF']) == 'billing-payment.php' ? 'active' : '' ?>">
             <i class="text-sm fa-solid fa-credit-card text-white"></i>
-            <a href="../admin/billing-payment.php" class="text-sm text-gray-300 hover:text-white font-medium">Billing and
+            <a href="../admin/billing-payment.php" class="text-sm text-gray-300 hover:text-white font-medium">Billing
+                and
                 Payment</a>
         </div>
         <div
             class="flex items-center p-3 rounded-lg gap-4 <?= basename($_SERVER['PHP_SELF']) == 'follow-up-checkups.php' ? 'active' : '' ?>">
             <i class="text-sm fa-solid fa-heart-pulse text-white"></i>
-            <a href="../admin/follow-up-checkups.php" class="text-sm text-gray-300 hover:text-white font-medium">Follow-up
+            <a href="../admin/follow-up-checkups.php"
+                class="text-sm text-gray-300 hover:text-white font-medium">Follow-up
                 Check-ups</a>
         </div>
         <div
@@ -49,15 +55,19 @@
         <div
             class="flex items-center p-3 rounded-lg gap-4 <?= basename($_SERVER['PHP_SELF']) == 'staff-management.php' ? 'active' : '' ?>">
             <i class="text-sm fa-solid fa-users-gear text-white"></i>
-            <a href="../admin/staff-management.php" class="text-sm text-gray-300 hover:text-white font-medium">Staff Accounts</a>
+            <a href="../admin/staff-management.php" class="text-sm text-gray-300 hover:text-white font-medium">Staff
+                Accounts</a>
         </div>
     </div>
     <div class="mt-auto">
         <div class="w-full border-t pt-4 pl-6 border-gray-600 flex items-center gap-4">
             <i class="text-sm fa-solid fa-user text-white p-4 bg-teal-600 rounded-full"></i>
             <div>
-                <h1 class="text-white text-md font-medium">Admin</h1>
-                <h3 class="text-gray-300 text-sm">Administrator</h3>
+                <?php if ($admin): ?>
+                    <h1 class="text-white text-md font-medium"><?= htmlspecialchars($admin['first_name']) ?>
+                        <?= htmlspecialchars($admin['last_name']) ?></h1>
+                    <h3 class="text-gray-300 text-sm"><?= htmlspecialchars($admin['role']) ?></h3>
+                <?php endif; ?>
             </div>
         </div>
         <div class="w-full p-4">

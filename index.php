@@ -24,18 +24,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $loginType = $_POST['loginType'] ?? 'staff';
 
     $statement = $pdo->prepare(
-        "SELECT UserID, Username, PasswordHash, FirstName, LastName, Role, IsDoctor
-         FROM users WHERE Username = ? AND Status = 'Active' LIMIT 1"
+        "SELECT UserID, Username, PasswordHash, FirstName, LastName, Role, IsDoctor, Status
+         FROM users WHERE Username = ? LIMIT 1"
     );
     $statement->execute([$username]);
     $user = $statement->fetch(PDO::FETCH_ASSOC);
+    $userRole = $user ? strtolower(trim((string) $user['Role'])) : '';
+    $isDoctor = $user && (int) $user['IsDoctor'] === 1;
+    $isActive = $user && ($user['Status'] ?? '') === 'Active';
     $validRole = $loginType === 'admin'
-        ? ($user && $user['Role'] === 'Admin')
+        ? $userRole === 'admin' || $userRole === 'doctor' || $isDoctor
         : ($loginType === 'patient'
-            ? ($user && $user['Role'] === 'Patient')
-            : ($user && in_array($user['Role'], ['Doctor', 'Receptionist', 'Staff'], true)));
+            ? $userRole === 'patient'
+            : in_array($userRole, ['doctor', 'receptionist', 'staff'], true) || $isDoctor);
 
-    if ($user && $validRole && password_verify($password, $user['PasswordHash'])) {
+    if (!$user) {
+        $loginError = 'Username not found. Check the username and try again.';
+    } elseif (!$isActive) {
+        $loginError = 'This account is inactive. Contact an administrator.';
+    } elseif (!$validRole) {
+        $loginError = $loginType === 'admin'
+            ? 'This account is not an administrator or doctor account.'
+            : ($loginType === 'patient'
+                ? 'This is not a patient account. Choose the correct login type.'
+                : 'This account is not registered as staff or doctor.');
+    } elseif (!password_verify($password, $user['PasswordHash'])) {
+        $loginError = 'Incorrect password. Check your password and try again.';
+    } else {
         unset($user['PasswordHash']);
         session_regenerate_id(true);
         $_SESSION['user'] = $user;
@@ -44,8 +59,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: admin/admin-dashboard.php');
         exit;
     }
-
-    $loginError = 'Invalid username or password.';
 }
 ?>
 <!DOCTYPE html>

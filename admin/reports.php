@@ -1,3 +1,19 @@
+<?php
+require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/fetch.php';
+SessionManager::requireAdmin();
+SessionManager::requireLogin();
+SessionManager::requireAnyRole(['admin', 'doctor']);
+
+$admin = SessionManager::getUser($pdo);
+
+if (!$admin) {
+    SessionManager::logout('../index.php');
+}
+
+$csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -93,7 +109,8 @@
             </div>
 
             <!-- Right Column: Preview Area -->
-            <div class="bg-white rounded-lg p-6 shadow-sm flex flex-col items-center justify-center min-h-96 col-span-2">
+            <div
+                class="bg-white rounded-lg p-6 shadow-sm flex flex-col items-center justify-center min-h-96 col-span-2">
                 <div class="text-center">
                     <div class="mb-4">
                         <i class="fa-solid fa-chart-bar text-gray-300 text-6xl"></i>
