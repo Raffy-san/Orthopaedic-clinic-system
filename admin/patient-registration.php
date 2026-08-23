@@ -1,8 +1,17 @@
 <?php
-require_once '../config/config.php';
-require_once '../includes/auth.php';
+require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/fetch.php';
 SessionManager::requireAdmin();
+SessionManager::requireLogin();
+SessionManager::requireAnyRole(['admin', 'doctor']);
 $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
+
+$admin = SessionManager::getUser($pdo);
+
+if (!$admin) {
+    SessionManager::logout('../index.php');
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -31,15 +40,20 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                     <div class="flex flex-wrap items-center gap-2">
                         <span id="progressStart" class="rounded-full bg-teal-600 px-3 py-1.5 text-white">Start</span>
                         <span class="text-slate-400">→</span>
-                        <span id="progressPatientType" class="rounded-full bg-blue-600 px-3 py-1.5 text-white">Patient Type</span>
+                        <span id="progressPatientType" class="rounded-full bg-blue-600 px-3 py-1.5 text-white">Patient
+                            Type</span>
                         <span class="text-slate-400">→</span>
-                        <span id="progressEnterInfo" class="rounded-full bg-slate-200 px-3 py-1.5 text-slate-500">Enter Info / Validate ID</span>
+                        <span id="progressEnterInfo" class="rounded-full bg-slate-200 px-3 py-1.5 text-slate-500">Enter
+                            Info / Validate ID</span>
                         <span class="text-slate-400">→</span>
-                        <span id="progressSaveInfo" class="rounded-full bg-slate-200 px-3 py-1.5 text-slate-500">Save Info</span>
+                        <span id="progressSaveInfo" class="rounded-full bg-slate-200 px-3 py-1.5 text-slate-500">Save
+                            Info</span>
                         <span class="text-slate-400">→</span>
-                        <span id="progressLoadProfile" class="rounded-full bg-slate-200 px-3 py-1.5 text-slate-500">Load Profile</span>
+                        <span id="progressLoadProfile" class="rounded-full bg-slate-200 px-3 py-1.5 text-slate-500">Load
+                            Profile</span>
                         <span class="text-slate-400">→</span>
-                        <span id="progressCreateRecord" class="rounded-full bg-slate-200 px-3 py-1.5 text-slate-500">Create Record</span>
+                        <span id="progressCreateRecord"
+                            class="rounded-full bg-slate-200 px-3 py-1.5 text-slate-500">Create Record</span>
                         <span class="text-slate-400">→</span>
                         <span id="progressEnd" class="rounded-full bg-slate-200 px-3 py-1.5 text-slate-500">End</span>
                     </div>

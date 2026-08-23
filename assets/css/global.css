@@ -30,6 +30,7 @@
 .card-rounded {
     border-radius: 0.75rem;
 }
+
 .queue-item {
     background: #f8fafc;
     border: 1px solid #eef2f6;
@@ -39,30 +40,36 @@
     align-items: center;
     justify-content: space-between;
 }
+
 .queue-item.active {
     border-left-color: #0ea5a4;
     background: #eef9f8;
 }
+
 .patient-header {
     border: 1px solid #eef2f6;
     background: #ffffff;
     border-radius: 0.75rem;
 }
+
 .consultation-panel {
     border: 1px solid #eef2f6;
     background: #ffffff;
     border-radius: 0.75rem;
 }
+
 .input-style {
     border: 1px solid #e6e9ee;
     border-radius: 0.5rem;
     padding: 0.6rem;
 }
-.textarea-style { 
+
+.textarea-style {
     border: 1px solid #e6e9ee;
     border-radius: 0.5rem;
     padding: 0.6rem;
 }
+
 .btn-primary {
     background: #1e90ff;
     color: #fff;
@@ -70,10 +77,55 @@
     border-radius: 0.5rem;
     border: none;
 }
+
 .btn-outline {
     background: #fff;
     color: #374151;
     padding: 0.5rem 0.9rem;
     border-radius: 0.5rem;
     border: 1px solid #e6e9ee;
+}
+
+
+.leaflet-popup-content-wrapper {
+    border-radius: 1rem;
+}
+
+.patient-popup h3 {
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 2px;
+}
+
+.patient-popup p {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin: 0;
+}
+
+.patient-popup .status {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 9999px;
+}
+
+.age-filter-btn {
+    background-color: #f1f5f9;
+    /* slate-100 */
+    color: #475569;
+    /* slate-600 */
+}
+
+.age-filter-btn:hover {
+    background-color: #e2e8f0;
+}
+
+.age-filter-btn.active-filter {
+    background-color: #2563eb;
+    /* blue-600 */
+    color: #ffffff;
 }

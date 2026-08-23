@@ -116,7 +116,7 @@ class SessionManager
     public static function requireAdmin(): void
     {
         self::requireLogin();
-        self::requireRole('admin', '../unauthorized.php');
+        self::requireAnyRole(['admin', 'doctor'], '../unauthorized.php');
     }
 
     private static function roleMatchesAccessType(?string $role, string $accessType): bool
