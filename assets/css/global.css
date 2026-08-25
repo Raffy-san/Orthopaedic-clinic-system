@@ -26,6 +26,10 @@
     color: white;
 }
 
+.modal {
+    z-index: 1000;
+}
+
 /* Consultation page custom styles */
 .card-rounded {
     border-radius: 0.75rem;
