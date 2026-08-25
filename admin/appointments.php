@@ -35,8 +35,8 @@ if (!$admin) {
                 <h1 class="text-2xl font-bold text-slate-900">Appointment Scheduling</h1>
                 <p class="mt-1 text-sm text-slate-500">Manage and book patient appointments</p>
             </div>
-            <button data-modal="bookAppointment"
-                class="inline-flex items-center justify-center rounded-3xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
+            <button data-modal="bookAppointmentModal"
+                class="open-modal inline-flex items-center justify-center rounded-3xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
                 + Book Appointment
             </button>
         </div>
@@ -72,21 +72,21 @@ if (!$admin) {
                         <span class="text-xs text-slate-400">8:00 AM - 12:00 PM</span>
                     </div>
                     <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                        <button class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">08:00
+                        <button type="button" data-time="08:00 AM" class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">08:00
                             AM</button>
-                        <button class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">08:30
+                        <button type="button" disabled class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">08:30
                             AM</button>
-                        <button class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">09:00
+                        <button type="button" data-time="09:00 AM" class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">09:00
                             AM</button>
-                        <button class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">09:30
+                        <button type="button" disabled class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">09:30
                             AM</button>
-                        <button class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">10:00
+                        <button type="button" data-time="10:00 AM" class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">10:00
                             AM</button>
-                        <button class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">10:30
+                        <button type="button" disabled class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">10:30
                             AM</button>
-                        <button class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">11:00
+                        <button type="button" data-time="11:00 AM" class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">11:00
                             AM</button>
-                        <button class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">11:30
+                        <button type="button" disabled class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">11:30
                             AM</button>
                     </div>
 
@@ -95,17 +95,17 @@ if (!$admin) {
                         <span class="text-xs text-slate-400">2:00 PM - 5:00 PM</span>
                     </div>
                     <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                        <button class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">02:00
+                        <button type="button" disabled class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">02:00
                             PM</button>
-                        <button class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">02:30
+                        <button type="button" data-time="02:30 PM" class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">02:30
                             PM</button>
-                        <button class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">03:00
+                        <button type="button" data-time="03:00 PM" class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">03:00
                             PM</button>
-                        <button class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">03:30
+                        <button type="button" data-time="03:30 PM" class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">03:30
                             PM</button>
-                        <button class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">04:00
+                        <button type="button" data-time="04:00 PM" class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">04:00
                             PM</button>
-                        <button class="rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700">04:30
+                        <button type="button" data-time="04:30 PM" class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">04:30
                             PM</button>
                     </div>
                 </div>
@@ -242,11 +242,119 @@ if (!$admin) {
                 </div>
             </div>
         </div>
+
+        <div id="bookAppointmentModal"
+            class="modal fixed inset-0 bg-black bg-opacity-40 items-center justify-center z-50 hidden"
+            style="background-color: rgba(0,0,0,0.4);">
+            <div class="bg-white rounded-xl shadow-lg w-full max-w-sm p-6 relative">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-lg font-semibold">Book Appointment for Patient</h3>
+                    </div>
+                    <button type="button" class="close text-xl cursor-pointer" aria-label="Close">&times;</button>
+                </div>
+                <form id="addAppointmentForm" class="flex flex-col" method="POST" action="appointments.php">
+                    <input type="hidden" name="csrf_token"
+                        value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                    <div class="mb-4 w-auto">
+                        <label class="block text-gray-700 mb-1 text-sm">Patient ID</label>
+                        <input type="text" name="patient_id" required
+                            class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="PT-YYYY-XXXX">
+                    </div>
+                    <div class="mb-4 w-auto">
+                        <label class="block text-gray-700 mb-1 text-sm">Date</label>
+                        <input type="date" name="date" required
+                            class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="mb-4 w-auto">
+                        <label class="block text-gray-700 mb-1 text-sm">Selected Slot</label>
+                        <input type="text" name="appointment_time" id="selectedAppointmentTime" required readonly
+                            class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Pick a slot from the grid above">
+                    </div>
+                    <div class="flex justify-between w-full">
+                        <button type="button"
+                            class="close cursor-pointer mr-2 px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 text-sm">Cancel</button>
+                        <button type="submit" name="submit" id="confirmBooking"
+                            class="cursor-pointer px-4 py-2 bg-blue-700 text-white rounded hover:bg-blue-900 text-sm">Confirm
+                            Booking
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
     </section>
 
     <!-- Leaflet map library -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="../assets/javascript/mapping.js"></script>
+    <script>
+        const updateBodyScroll = () => {
+            const hasOpenModal = document.querySelector('.modal.flex');
+            document.body.classList.toggle('overflow-hidden', Boolean(hasOpenModal));
+        };
+
+        const openModal = (modal) => {
+            if (!modal) {
+                return;
+            }
+
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+            updateBodyScroll();
+        };
+
+        const closeModal = (modal) => {
+            if (!modal) {
+                return;
+            }
+
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+            updateBodyScroll();
+        };
+
+        document.querySelectorAll('.open-modal').forEach((trigger) => {
+            trigger.addEventListener('click', () => {
+                openModal(document.getElementById(trigger.dataset.modal));
+            });
+        });
+
+        const selectedAppointmentTime = document.getElementById('selectedAppointmentTime');
+
+        document.querySelectorAll('.time-slot').forEach((slot) => {
+            slot.addEventListener('click', () => {
+                document.querySelectorAll('.time-slot').forEach((availableSlot) => {
+                    availableSlot.classList.remove('bg-sky-600', 'text-white');
+                    availableSlot.classList.add('bg-slate-100', 'text-slate-700');
+                });
+
+                slot.classList.remove('bg-slate-100', 'text-slate-700');
+                slot.classList.add('bg-sky-600', 'text-white');
+                selectedAppointmentTime.value = slot.dataset.time;
+            });
+        });
+
+        document.querySelectorAll('.modal').forEach((modal) => {
+            modal.querySelectorAll('.close').forEach((closeButton) => {
+                closeButton.addEventListener('click', () => closeModal(modal));
+            });
+
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    closeModal(modal);
+                }
+            });
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                document.querySelectorAll('.modal.flex').forEach(closeModal);
+            }
+        });
+    </script>
 </body>
 
 </html>
