@@ -131,6 +131,8 @@ CREATE TABLE `patients` (
   `EmergencyContact` varchar(150) DEFAULT NULL,
   `EmergencyPhone` varchar(30) DEFAULT NULL,
   `PatientType` enum('Regular','Senior Citizen','PWD') NOT NULL DEFAULT 'Regular',
+  `Latitude` decimal(10,7) DEFAULT NULL,
+  `Longitude` decimal(10,7) DEFAULT NULL,
   `CreatedAt` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

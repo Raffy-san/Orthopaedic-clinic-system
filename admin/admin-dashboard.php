@@ -17,6 +17,8 @@ $displayName = trim(($admin['first_name'] ?? '') . ' ' . ($admin['last_name'] ??
 $displayName = $displayName !== '' ? $displayName : ($admin['username'] ?? 'User');
 
 $patients = fetchAllData($pdo, "SELECT * FROM patients ORDER BY userID DESC LIMIT 5");
+$appointments = fetchAllData($pdo, "SELECT * FROM appointments");
+$pendingAppointments = fetchAllData($pdo, "SELECT * FROM appointments WHERE status = 'Pending'");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -58,8 +60,8 @@ $patients = fetchAllData($pdo, "SELECT * FROM patients ORDER BY userID DESC LIMI
                         <i class="fas fa-calendar text-cyan-600"></i>
                     </div>
                 </div>
-                <p class="text-gray-800 text-3xl font-extrabold">18</p>
-                <p class="text-gray-500 text-sm font-medium">6 pending · 12 completed</p>
+                <p class="text-gray-800 text-3xl font-extrabold"><?php echo count($appointments); ?></p>
+                <p class="text-gray-500 text-sm font-medium"><?php echo count($pendingAppointments); ?> pending · <?php echo count($appointments) - count($pendingAppointments); ?> completed</p>
             </div>
             <div class="bg-white p-6 rounded-lg shadow-md flex-1">
                 <div class="flex justify-between items-center mb-4">

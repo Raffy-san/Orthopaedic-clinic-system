@@ -25,10 +25,13 @@ function addPatient(PDO $pdo, array $data): array
         ]);
         $userId = $pdo->lastInsertId();
 
+        // Geocode the address if one was provided — fails gracefully to null/null
+        $coords = geocodeAddress($data['address'] ?? '');
+
         $stmt = $pdo->prepare(
             'INSERT INTO patients
-             (PatientCode, UserID, FirstName, LastName, BirthDate, Gender, Phone, PatientType)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+             (PatientCode, UserID, FirstName, LastName, BirthDate, Gender, Phone, PatientType, Address, Latitude, Longitude)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $patientCode,
@@ -38,7 +41,10 @@ function addPatient(PDO $pdo, array $data): array
             $data['birthDate'],
             $data['gender'],
             $data['phone'] ?: null,
-            $data['patientType'] ?: 'Regular'
+            $data['patientType'] ?: 'Regular',
+            $data['address'] ?: null,
+            $coords['lat'] ?? null,
+            $coords['lng'] ?? null
         ]);
 
         $pdo->commit();
@@ -56,6 +62,42 @@ function addPatient(PDO $pdo, array $data): array
         error_log('AddPatient failed: ' . $e->getMessage());
         return ['status' => 'error', 'message' => 'Unable to register the patient. Please try again.'];
     }
+}
+
+function geocodeAddress(string $address): ?array
+{
+    if (empty($address)) {
+        return null;
+    }
+
+    $url = 'https://nominatim.openstreetmap.org/search?' . http_build_query([
+        'q' => $address,
+        'format' => 'json',
+        'limit' => 1
+    ]);
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => ['User-Agent: OrthopeadicClinic/1.0 (rafaelsanoria506@gmail.com)'], // required by Nominatim
+        CURLOPT_TIMEOUT => 5
+    ]);
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    if (!$response) {
+        return null;
+    }
+
+    $results = json_decode($response, true);
+    if (empty($results[0]['lat']) || empty($results[0]['lon'])) {
+        return null; // address not found — fail gracefully, don't block registration
+    }
+
+    return [
+        'lat' => (float) $results[0]['lat'],
+        'lng' => (float) $results[0]['lon']
+    ];
 }
 
 function addStaff(PDO $pdo, array $data): array
@@ -91,6 +133,29 @@ function addStaff(PDO $pdo, array $data): array
                 ? 'That username or email is already in use.'
                 : 'Unable to create the staff account. Please try again.'
         ];
+    }
+}
+
+function bookAppointment(PDO $pdo, array $data): array
+{
+    try {
+        $stmt = $pdo->prepare(
+            'INSERT INTO appointments (PatientID, DoctorID, AppointmentDate, AppointmentTime, Purpose, Status)
+             VALUES (?, ?, ?, ?, ?, ?)'
+        );
+        $stmt->execute([
+            $data['patientId'],
+            $data['doctorId'],
+            $data['appointmentDate'],
+            $data['appointmentTime'],
+            $data['purpose'],
+            'Pending'
+        ]);
+
+        return ['status' => 'success', 'message' => 'Appointment booked successfully.'];
+    } catch (PDOException $e) {
+        error_log('BookAppointment failed: ' . $e->getMessage());
+        return ['status' => 'error', 'message' => 'Unable to book the appointment. Please try again.'];
     }
 }
 ?>

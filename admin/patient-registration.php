@@ -230,6 +230,10 @@ if (!$admin) {
                             <input name="phone" type="tel" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter phone number">
                         </div>
                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+                            <label class="text-[11px] text-slate-600">Address</label>
+                            <input name="address" type="text" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter address">
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
                             <label class="text-[11px] text-slate-600">Initial Password</label>
                             <input name="password" type="password" minlength="8" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="At least 8 characters">
                         </div>
