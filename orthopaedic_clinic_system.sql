@@ -54,6 +54,8 @@ CREATE TABLE `patients` (
   `EmergencyContact` VARCHAR(150) DEFAULT NULL,
   `EmergencyPhone` VARCHAR(30) DEFAULT NULL,
   `PatientType` ENUM('Regular','Senior Citizen','PWD') NOT NULL DEFAULT 'Regular',
+  `Latitude` DECIMAL(10,7) DEFAULT NULL,
+  `Longitude` DECIMAL(10,7) DEFAULT NULL,
   `CreatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`PatientID`),
   UNIQUE KEY `uq_patients_code` (`PatientCode`),

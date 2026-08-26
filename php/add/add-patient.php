@@ -33,6 +33,7 @@ $data = [
 	'birthDate' => trim($_POST['birthDate'] ?? ''),
 	'gender' => ucfirst(strtolower(trim($_POST['gender'] ?? ''))),
 	'phone' => trim($_POST['phone'] ?? ''),
+	'address' => trim($_POST['address'] ?? ''),
 	'password' => $_POST['password'] ?? '',
 	'patientType' => $patientType
 ];

@@ -1,14 +1,4 @@
-/*
-     * const patients = <?php echo json_encode($patientsWithCoordinates); ?>;
-     *
-     */
-const patients = [
-    { city: "Imus, Cavite", lat: 14.4297, lng: 120.9367, age: 65, gender: "Female", status: "Confirmed" },
-    { city: "Quezon City", lat: 14.6760, lng: 121.0437, age: 42, gender: "Male", status: "Confirmed" },
-    { city: "Makati City", lat: 14.5547, lng: 121.0244, age: 27, gender: "Female", status: "Pending" },
-    { city: "Dasmariñas, Cavite", lat: 14.3294, lng: 120.9367, age: 58, gender: "Male", status: "Pending" },
-    { city: "Manila", lat: 14.5995, lng: 120.9842, age: 71, gender: "Female", status: "Cancelled" }
-];
+const patients = window.patientMapData || [];
 
 const statusColors = {
     Confirmed: "#10b981", // emerald
@@ -30,8 +20,7 @@ function getAgeLabel(age) {
     return "60 Above";
 }
 
-// Center the map roughly over Metro Manila / Cavite
-const map = L.map('patientMap').setView([14.55, 121.0], 10);
+const map = L.map('patientMap').setView([10.13, 124.85], 10);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
