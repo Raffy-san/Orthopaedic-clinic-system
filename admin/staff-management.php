@@ -18,6 +18,8 @@ $staff = $pdo->query(
     'SELECT UserID, Username, FirstName, LastName, Role, IsDoctor, Email, Phone, Status, CreatedAt
      FROM users ORDER BY CreatedAt DESC'
 )->fetchAll(PDO::FETCH_ASSOC);
+$activeAccounts = count(array_filter($staff, static fn(array $account): bool => $account['Status'] === 'Active'));
+$doctorAccounts = count(array_filter($staff, static fn(array $account): bool => $account['Role'] === 'Doctor' || (int) $account['IsDoctor'] === 1));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -32,64 +34,109 @@ $staff = $pdo->query(
     <title>Staff Accounts</title>
 </head>
 
-<body class="h-screen flex bg-slate-200">
+<body class="h-screen flex bg-slate-100">
     <?php include_once '../includes/sidebar.php'; ?>
     <main class="flex-1 p-6 overflow-auto">
-        <h1 class="text-2xl font-bold text-gray-800">Staff Accounts</h1>
-        <p class="text-gray-500 mt-1">Create accounts for administrators, doctors, and reception staff.</p>
+        <div class="max-w-7xl mx-auto">
+            <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div>
+                    <p class="text-sm font-semibold uppercase tracking-wide text-blue-800">Team directory</p>
+                    <h1 class="text-3xl font-bold text-slate-800 mt-1">Staff Management</h1>
+                    <p class="text-slate-500 mt-2">Create and review accounts for the clinic team.</p>
+                </div>
+                <div class="flex items-center gap-2 text-sm text-slate-500">
+                    <i class="fa-solid fa-shield-halved text-blue-600"></i>
+                    <span>Admin access</span>
+                </div>
+            </div>
 
-        <div id="staffMessage" class="mt-4 hidden rounded p-3"></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 lg:grid-cols-3">
+                <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <p class="text-sm font-medium text-slate-500">Total accounts</p>
+                        <i class="fa-solid fa-users text-blue-600"></i>
+                    </div>
+                    <p class="text-3xl font-bold text-slate-800 mt-3"><?= count($staff) ?></p>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <p class="text-sm font-medium text-slate-500">Active accounts</p>
+                        <i class="fa-solid fa-circle-check text-green-600"></i>
+                    </div>
+                    <p class="text-3xl font-bold text-slate-800 mt-3"><?= $activeAccounts ?></p>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <p class="text-sm font-medium text-slate-500">Doctor access</p>
+                        <i class="fa-solid fa-user-doctor text-blue-600"></i>
+                    </div>
+                    <p class="text-3xl font-bold text-slate-800 mt-3"><?= $doctorAccounts ?></p>
+                </div>
+            </div>
 
-        <section class="bg-white rounded-lg shadow-sm p-6 mt-6 max-w-4xl">
-            <h2 class="text-lg font-semibold mb-4">Add staff account</h2>
-            <form id="addStaffForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div id="staffMessage" class="mt-6 hidden rounded-lg p-3"></div>
+
+            <section class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mt-6">
+                <div class="flex items-start gap-3 mb-5">
+                    <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-user-plus text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold text-slate-800">Add staff account</h2>
+                        <p class="text-sm text-slate-500 mt-1">Set up login details and access level for a team member.</p>
+                    </div>
+                </div>
+                <form id="addStaffForm" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                <input name="username" placeholder="Username" required class="border border-slate-200 rounded p-2">
-                <input name="password" type="password" placeholder="Password (8+ characters)" required
-                    class="border border-slate-200 rounded p-2">
-                <input name="firstName" placeholder="First name" required class="border border-slate-200 rounded p-2">
-                <input name="lastName" placeholder="Last name" required class="border border-slate-200 rounded p-2">
-                <select name="role" class="border border-slate-200 rounded p-2">
-                    <option value="Receptionist">Receptionist</option>
+                <label class="text-sm font-medium text-slate-700">Username<input name="username" placeholder="e.g. maria.staff" required class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-blue-500 focus:outline-none"></label>
+                <label class="text-sm font-medium text-slate-700">Password<input name="password" type="password" placeholder="8+ characters" required class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-blue-500 focus:outline-none"></label>
+                <label class="text-sm font-medium text-slate-700">First name<input name="firstName" placeholder="First name" required class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-blue-500 focus:outline-none"></label>
+                <label class="text-sm font-medium text-slate-700">Last name<input name="lastName" placeholder="Last name" required class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-blue-500 focus:outline-none"></label>
+                <label class="text-sm font-medium text-slate-700">Role<select name="role" class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 bg-white focus:border-blue-500 focus:outline-none">
+                    <option value="Staff">Staff</option>
                     <option value="Doctor">Doctor</option>
                     <option value="Admin">Admin</option>
-                </select>
-                <input name="email" type="email" placeholder="Email (optional)"
-                    class="border border-slate-200 rounded p-2">
-                <input name="phone" placeholder="Phone (optional)" class="border border-slate-200 rounded p-2">
-                <label class="flex items-center gap-2 p-2"><input name="isDoctor" type="checkbox" value="1"> Also a
-                    doctor</label>
-                <button class="md:col-span-2 bg-blue-600 text-white rounded p-2 hover:bg-blue-700" type="submit">Create
-                    account</button>
-            </form>
-        </section>
+                </select></label>
+                <label class="text-sm font-medium text-slate-700">Email<input name="email" type="email" placeholder="Optional email" class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-blue-500 focus:outline-none"></label>
+                <label class="text-sm font-medium text-slate-700">Phone<input name="phone" placeholder="Optional phone" class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-blue-500 focus:outline-none"></label>
+                <label class="flex items-center gap-3 self-end min-h-11 px-3 rounded-lg bg-slate-50 border border-slate-200 text-sm text-slate-700"><input name="isDoctor" type="checkbox" value="1" class="h-4 w-4 accent-blue-600"> Also a doctor</label>
+                <button class="md:col-span-2 xl:col-span-4 bg-blue-800 text-white rounded-lg p-2.5 font-semibold hover:bg-blue-900 transition" type="submit"><i class="fa-solid fa-plus mr-2"></i>Create account</button>
+                </form>
+            </section>
 
-        <section class="bg-white rounded-lg shadow-sm mt-6 overflow-x-auto">
-            <table class="w-full text-left">
-                <thead class="border-b border-slate-200 text-sm text-gray-500">
+            <section class="bg-white rounded-xl border border-slate-200 shadow-sm mt-6 overflow-hidden">
+                <div class="px-6 py-5 border-b border-slate-200">
+                    <h2 class="text-lg font-semibold text-slate-800">Account directory</h2>
+                    <p class="text-sm text-slate-500 mt-1">Review roles, contact details, and account status.</p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                <thead class="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                     <tr>
-                        <th class="p-4">Name</th>
-                        <th class="p-4">Username</th>
-                        <th class="p-4">Role</th>
-                        <th class="p-4">Contact</th>
-                        <th class="p-4">Status</th>
+                        <th class="px-6 py-3">Name</th>
+                        <th class="px-6 py-3">Username</th>
+                        <th class="px-6 py-3">Role</th>
+                        <th class="px-6 py-3">Contact</th>
+                        <th class="px-6 py-3">Status</th>
                     </tr>
                 </thead>
                 <tbody><?php foreach ($staff as $account): ?>
-                        <tr class="border-b last:border-0 border-slate-200">
-                            <td class="p-4 font-medium">
+                        <tr class="border-b last:border-0 border-slate-100 hover:bg-slate-50 transition">
+                            <td class="px-6 py-4 font-medium text-slate-800">
                                 <?= htmlspecialchars($account['FirstName'] . ' ' . $account['LastName']) ?>
                             </td>
-                            <td class="p-4"><?= htmlspecialchars($account['Username']) ?></td>
-                            <td class="p-4">
+                            <td class="px-6 py-4 text-sm text-slate-600"><?= htmlspecialchars($account['Username']) ?></td>
+                            <td class="px-6 py-4 text-sm text-slate-600">
                                 <?= htmlspecialchars($account['Role'] . ($account['IsDoctor'] ? ' / Doctor' : '')) ?>
                             </td>
-                            <td class="p-4"><?= htmlspecialchars($account['Email'] ?: $account['Phone'] ?: '-') ?></td>
-                            <td class="p-4"><?= htmlspecialchars($account['Status']) ?></td>
+                            <td class="px-6 py-4 text-sm text-slate-600"><?= htmlspecialchars($account['Email'] ?: $account['Phone'] ?: '-') ?></td>
+                            <td class="px-6 py-4"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold <?= $account['Status'] === 'Active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600' ?>"><?= htmlspecialchars($account['Status']) ?></span></td>
                         </tr><?php endforeach; ?>
                 </tbody>
             </table>
-        </section>
+                </div>
+            </section>
+        </div>
     </main>
     <script>
         let csrfToken = <?= json_encode($csrfToken) ?>;

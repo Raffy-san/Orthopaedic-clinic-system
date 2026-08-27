@@ -8,8 +8,8 @@ if (SessionManager::isLoggedIn()) {
     if (in_array($role, ['Admin', 'Doctor'], true)) {
         header('Location: admin/admin-dashboard.php');
         exit;
-    } elseif (in_array($role, ['Staff', 'Receptionist'], true)) {
-        header('Location: admin/admin-dashboard.php');
+    } elseif (in_array(strtolower((string) $role), ['staff', 'receptionist'], true)) {
+        header('Location: staff/staff-dashboard.php');
         exit;
     } else {
         header('Location: users/user-dashboard.php');
@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ? $userRole === 'admin' || $userRole === 'doctor' || $isDoctor
         : ($loginType === 'patient'
             ? $userRole === 'patient'
-            : in_array($userRole, ['doctor', 'receptionist', 'staff'], true) || $isDoctor);
+            : in_array($userRole, ['doctor', 'staff', 'receptionist'], true) || $isDoctor);
 
     if (!$user) {
         $loginError = 'Username not found. Check the username and try again.';
@@ -56,7 +56,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['user'] = $user;
         $_SESSION['user_id'] = $user['UserID'];
         $_SESSION['access_type'] = $user['Role'];
-        header('Location: admin/admin-dashboard.php');
+        $redirect = $userRole === 'patient'
+            ? 'users/user-dashboard.php'
+            : (in_array($userRole, ['staff', 'receptionist'], true)
+                ? 'staff/staff-dashboard.php'
+                : 'admin/admin-dashboard.php');
+        header('Location: ' . $redirect);
         exit;
     }
 }
@@ -143,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <i
                                     class="fa-solid fa-arrow-right text-blue-600 ml-auto opacity-0 group-hover:opacity-100 transition"></i>
                             </div>
-                        </button> 
+                        </button>
 
                         <!-- Staff Button -->
                         <button onclick="selectRole('staff')"
@@ -236,7 +241,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <p class="text-gray-500 text-sm mt-2">Sign in to your administrator account</p>
                     </div>
 
-                    <?php if ($loginError && ($_POST['loginType'] ?? '') === 'admin'): ?><p class="mb-4 p-3 rounded bg-red-100 text-red-700"><?= htmlspecialchars($loginError) ?></p><?php endif; ?>
+                    <?php if ($loginError && ($_POST['loginType'] ?? '') === 'admin'): ?>
+                        <p class="mb-4 p-3 rounded bg-red-100 text-red-700"><?= htmlspecialchars($loginError) ?></p>
+                    <?php endif; ?>
                     <!-- Admin Login Form -->
                     <form class="space-y-5" method="post">
                         <input type="hidden" name="loginType" value="admin">
@@ -259,8 +266,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <i class="fa-solid fa-lock absolute left-3 top-3.5 text-gray-400 text-sm"></i>
                                 <input
                                     class="bg-white rounded-lg pl-10 pr-10 py-2.5 w-full border border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                                    type="password" name="password" id="adminPassword"
-                                    placeholder="Enter your password" required>
+                                    type="password" name="password" id="adminPassword" placeholder="Enter your password"
+                                    required>
                                 <i id="toggleAdminPassword"
                                     class="fa-solid fa-eye cursor-pointer absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 text-sm transition">
                                 </i>
@@ -326,7 +333,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <p class="text-gray-500 text-sm mt-2">Sign in to your staff account</p>
                     </div>
 
-                    <?php if ($loginError && ($_POST['loginType'] ?? '') === 'staff'): ?><p class="mb-4 p-3 rounded bg-red-100 text-red-700"><?= htmlspecialchars($loginError) ?></p><?php endif; ?>
+                    <?php if ($loginError && ($_POST['loginType'] ?? '') === 'staff'): ?>
+                        <p class="mb-4 p-3 rounded bg-red-100 text-red-700"><?= htmlspecialchars($loginError) ?></p>
+                    <?php endif; ?>
                     <!-- Staff Login Form -->
                     <form class="space-y-5" method="post">
                         <input type="hidden" name="loginType" value="staff">
@@ -349,8 +358,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <i class="fa-solid fa-lock absolute left-3 top-3.5 text-gray-400 text-sm"></i>
                                 <input
                                     class="bg-white rounded-lg pl-10 pr-10 py-2.5 w-full border border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition"
-                                    type="password" name="password" id="staffPassword"
-                                    placeholder="Enter your password" required>
+                                    type="password" name="password" id="staffPassword" placeholder="Enter your password"
+                                    required>
                                 <i id="toggleStaffPassword"
                                     class="fa-solid fa-eye cursor-pointer absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 text-sm transition">
                                 </i>
@@ -415,6 +424,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <h1 class="text-2xl font-bold text-gray-800">Patient Login</h1>
                         <p class="text-gray-500 text-sm mt-2">Sign in to book and manage your appointments</p>
                     </div>
+
+                    <?php if ($loginError && ($_POST['loginType'] ?? '') === 'patient'): ?>
+                        <p class="mb-4 p-3 rounded bg-red-100 text-red-700"><?= htmlspecialchars($loginError) ?></p>
+                    <?php endif; ?>
 
                     <!-- Patient Login Form -->
                     <form class="space-y-5" method="post">

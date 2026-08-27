@@ -45,7 +45,7 @@ if (strlen($data['password']) < 8) {
 	exit;
 }
 
-if (!in_array($data['role'], ['Admin', 'Doctor', 'Receptionist'], true)) {
+if (!in_array($data['role'], ['Admin', 'Doctor', 'Staff'], true)) {
 	echo json_encode(['status' => 'error', 'message' => 'Please select a valid role.']);
 	exit;
 }
