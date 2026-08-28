@@ -79,7 +79,7 @@ function geocodeAddress(string $address): ?array
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => ['User-Agent: OrthopeadicClinic/1.0 (rafaelsanoria506@gmail.com)'], // required by Nominatim
+        CURLOPT_HTTPHEADER => ['User-Agent: OrthopeadicClinic/1.0 (rafaelsanoria506@gmail.com)'], 
         CURLOPT_TIMEOUT => 5
     ]);
     $response = curl_exec($ch);
@@ -139,15 +139,26 @@ function addStaff(PDO $pdo, array $data): array
 function bookAppointment(PDO $pdo, array $data): array
 {
     try {
+        $existingAppointment = $pdo->prepare(
+            "SELECT AppointmentID FROM appointments
+             WHERE AppointmentDate = ? AND AppointmentTime = ? AND Status <> 'Cancelled'
+             LIMIT 1"
+        );
+        $existingAppointment->execute([$data['appointmentDate'], $data['appointmentTime']]);
+        if ($existingAppointment->fetchColumn()) {
+            return ['status' => 'error', 'message' => 'That appointment time is already taken for the selected date.'];
+        }
+
         $stmt = $pdo->prepare(
-            'INSERT INTO appointments (PatientID, DoctorID, AppointmentDate, AppointmentTime, Purpose, Status)
-             VALUES (?, ?, ?, ?, ?, ?)'
+            'INSERT INTO appointments (PatientID, DoctorID, AppointmentDate, AppointmentTime, meridiem, Purpose, Status)
+             VALUES (?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $data['patientId'],
             $data['doctorId'],
             $data['appointmentDate'],
             $data['appointmentTime'],
+            $data['meridiem'],
             $data['purpose'],
             'Pending'
         ]);
