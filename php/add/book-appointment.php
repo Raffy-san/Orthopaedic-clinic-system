@@ -6,6 +6,26 @@ require_once '../../includes/crud.php';
 SessionManager::requireAdmin();
 header('Content-Type: application/json');
 
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $date = $_GET['date'] ?? '';
+    $parsedDate = DateTime::createFromFormat('!Y-m-d', $date);
+    $dateErrors = DateTime::getLastErrors();
+    if (!$parsedDate || ($dateErrors !== false && ($dateErrors['warning_count'] > 0 || $dateErrors['error_count'] > 0)) || $parsedDate->format('Y-m-d') !== $date) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Please choose a valid appointment date.']);
+        exit;
+    }
+
+    $statement = $pdo->prepare("SELECT TIME_FORMAT(AppointmentTime, '%h:%i %p') AS appointment_time
+        FROM appointments WHERE AppointmentDate = ? AND Status <> 'Cancelled'");
+    $statement->execute([$date]);
+    echo json_encode([
+        'status' => 'success',
+        'taken_times' => array_column($statement->fetchAll(PDO::FETCH_ASSOC), 'appointment_time')
+    ]);
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['status' => 'error', 'message' => 'Invalid request method.']);
@@ -48,6 +68,7 @@ if (!$patientId) {
 
 $data['patientId'] = $patientId;
 $data['doctorId'] = $userId;
+$data['meridiem'] = $appointmentTime->format('A');
 $data['appointmentTime'] = $appointmentTime->format('H:i:s');
 
 $result = bookAppointment($pdo, $data);

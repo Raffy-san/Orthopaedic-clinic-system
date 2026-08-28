@@ -55,25 +55,32 @@ if (!$admin) {
                 <h1 class="text-2xl font-bold text-slate-900">Appointment Scheduling</h1>
                 <p class="mt-1 text-sm text-slate-500">Manage and book patient appointments</p>
             </div>
-            <button data-modal="bookAppointmentModal"
-                class="open-modal inline-flex items-center justify-center rounded-3xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
+            <button id="startBookingButton"
+                class="inline-flex items-center justify-center rounded-3xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
                 + Book Appointment
             </button>
         </div>
 
         <div class="space-y-6">
             <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
-                <div class="rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
+                <div class="space-y-6">
+                    <div class="rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
+                        <h2 class="text-lg font-semibold text-slate-900">Choose an appointment date</h2>
+                        <p class="mt-1 text-sm text-slate-500">Select a date to see which appointment times are available.</p>
+                        <label for="appointmentDate" class="mt-5 block text-sm font-semibold text-slate-700">Appointment date</label>
+                        <input type="date" id="appointmentDate" name="appointment_date"
+                            class="mt-2 w-full border border-gray-300 bg-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <div id="appointmentTimeCalendar" class="hidden rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
                     <div class="mb-6 flex flex-col gap-4 border-b border-slate-100 pb-5">
                         <div class="flex items-start justify-between gap-3">
                             <div>
                                 <h2 class="text-lg font-semibold text-slate-900">Choose a time</h2>
-                                <p class="mt-1 text-sm text-slate-500">Available appointments for Saturday, July 25,
-                                    2026</p>
+                                <p id="appointmentDateMessage" class="mt-1 text-sm text-slate-500">Choose an appointment date first.</p>
                             </div>
-                            <span
-                                class="shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">9
-                                available</span>
+                            <span id="availableSlotCount"
+                                class="shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700"></span>
                         </div>
                         <p class="text-xs text-slate-500">Select an available slot to continue booking. Red slots are
                             already taken.</p>
@@ -95,26 +102,26 @@ if (!$admin) {
                         <button type="button" data-time="08:00 AM"
                             class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">08:00
                             AM</button>
-                        <button type="button" disabled
-                            class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">08:30
+                        <button type="button" data-time="08:30 AM"
+                            class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">08:30
                             AM</button>
                         <button type="button" data-time="09:00 AM"
                             class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">09:00
                             AM</button>
-                        <button type="button" disabled
-                            class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">09:30
+                        <button type="button" data-time="09:30 AM"
+                            class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">09:30
                             AM</button>
                         <button type="button" data-time="10:00 AM"
                             class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">10:00
                             AM</button>
-                        <button type="button" disabled
-                            class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">10:30
+                        <button type="button" data-time="10:30 AM"
+                            class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">10:30
                             AM</button>
                         <button type="button" data-time="11:00 AM"
                             class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">11:00
                             AM</button>
-                        <button type="button" disabled
-                            class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">11:30
+                        <button type="button" data-time="11:30 AM"
+                            class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">11:30
                             AM</button>
                     </div>
 
@@ -123,8 +130,8 @@ if (!$admin) {
                         <span class="text-xs text-slate-400">2:00 PM - 5:00 PM</span>
                     </div>
                     <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                        <button type="button" disabled
-                            class="rounded-3xl bg-red-100 px-4 py-4 text-sm font-semibold text-red-700">02:00
+                        <button type="button" data-time="02:00 PM"
+                            class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">02:00
                             PM</button>
                         <button type="button" data-time="02:30 PM"
                             class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">02:30
@@ -141,6 +148,7 @@ if (!$admin) {
                         <button type="button" data-time="04:30 PM"
                             class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">04:30
                             PM</button>
+                    </div>
                     </div>
                 </div>
 
@@ -211,6 +219,7 @@ if (!$admin) {
                         foreach ($appointments as $appointment) {
                             $appointmentDate = new DateTime($appointment['AppointmentDate']);
                             $formattedDate = $appointmentDate->format('M d, Y');
+                            $formattedTime = (new DateTime($appointment['AppointmentTime']))->format('h:i A');
                             $statusClass = $status[$appointment['Status']] ?? 'bg-slate-100 text-slate-700';
 
                             ?>
@@ -220,7 +229,7 @@ if (!$admin) {
                                 <div class="flex items-start gap-4">
                                     <div
                                         class="min-w-[90px] rounded-3xl bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm">
-                                        <?= htmlspecialchars($appointment['AppointmentTime'], ENT_QUOTES, 'UTF-8') ?>
+                                        <?= htmlspecialchars($formattedTime, ENT_QUOTES, 'UTF-8') ?>
                                     </div>
                                     <div>
                                         <p class="font-semibold text-slate-900">
@@ -228,7 +237,7 @@ if (!$admin) {
                                             <?= htmlspecialchars($appointment['patient_last_name'], ENT_QUOTES, 'UTF-8') ?>
                                         </p>
                                         <p class="text-sm text-slate-500">
-                                            <?= htmlspecialchars($appointment['Purpose'], ENT_QUOTES, 'UTF-8') ?>
+                                            <?= $formattedDate ?> - <?= htmlspecialchars($appointment['Purpose'], ENT_QUOTES, 'UTF-8') ?>
                                         </p>
                                     </div>
                                 </div>
@@ -263,11 +272,7 @@ if (!$admin) {
                             class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="PT-YYYY-XXXX">
                     </div>
-                    <div class="mb-4 w-auto">
-                        <label class="block text-gray-700 mb-1 text-sm">Date</label>
-                        <input type="date" name="appointment_date" required
-                            class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
+                    <input type="hidden" name="appointment_date" id="selectedAppointmentDate" required>
                     <div class="mb-4 w-auto">
                         <label class="block text-gray-700 mb-1 text-sm">Selected Slot</label>
                         <input type="text" name="appointment_time" id="selectedAppointmentTime" required readonly
@@ -285,111 +290,16 @@ if (!$admin) {
                 </form>
             </div>
         </div>
-
     </section>
 
     <!-- Leaflet map library -->
     <script>
+        window.csrfToken = <?= json_encode($csrfToken, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
         window.patientMapData = <?= json_encode($patientsWithCoordinates, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
     </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="../assets/javascript/mapping.js"></script>
-    <script>
-        let csrfToken = <?= json_encode($csrfToken) ?>;
-
-        const updateBodyScroll = () => {
-            const hasOpenModal = document.querySelector('.modal.flex');
-            document.body.classList.toggle('overflow-hidden', Boolean(hasOpenModal));
-        };
-
-        const openModal = (modal) => {
-            if (!modal) {
-                return;
-            }
-
-            modal.classList.remove("hidden");
-            modal.classList.add("flex");
-            updateBodyScroll();
-        };
-
-        const closeModal = (modal) => {
-            if (!modal) {
-                return;
-            }
-
-            modal.classList.add("hidden");
-            modal.classList.remove("flex");
-            updateBodyScroll();
-        };
-
-        document.querySelectorAll('.open-modal').forEach((trigger) => {
-            trigger.addEventListener('click', () => {
-                openModal(document.getElementById(trigger.dataset.modal));
-            });
-        });
-
-        const selectedAppointmentTime = document.getElementById('selectedAppointmentTime');
-
-        document.querySelectorAll('.time-slot').forEach((slot) => {
-            slot.addEventListener('click', () => {
-                document.querySelectorAll('.time-slot').forEach((availableSlot) => {
-                    availableSlot.classList.remove('bg-sky-600', 'text-white');
-                    availableSlot.classList.add('bg-slate-100', 'text-slate-700');
-                });
-
-                slot.classList.remove('bg-slate-100', 'text-slate-700');
-                slot.classList.add('bg-sky-600', 'text-white');
-                selectedAppointmentTime.value = slot.dataset.time;
-            });
-        });
-
-        document.querySelectorAll('.modal').forEach((modal) => {
-            modal.querySelectorAll('.close').forEach((closeButton) => {
-                closeButton.addEventListener('click', () => closeModal(modal));
-            });
-
-            modal.addEventListener('click', (event) => {
-                if (event.target === modal) {
-                    closeModal(modal);
-                }
-            });
-        });
-
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') {
-                document.querySelectorAll('.modal.flex').forEach(closeModal);
-            }
-        });
-
-        document.getElementById("addAppointmentForm").addEventListener("submit", (event) => {
-            event.preventDefault();
-
-            const form = event.currentTarget;
-            const formData = new FormData(form);
-            formData.set("csrf_token", csrfToken);
-
-            fetch("../php/add/book-appointment.php", {
-                method: "POST",
-                body: formData
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.csrf_token) {
-                        csrfToken = data.csrf_token;
-                        form.querySelector('[name="csrf_token"]').value = csrfToken;
-                    }
-                    if (data.status === "success") {
-                        alert(data.message);
-                        location.reload();
-                    } else {
-                        alert(data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error("Error:", error);
-                    alert("An error occurred while booking the appointment. Please try again.");
-                });
-        });
+    <script src="../assets/javascript/appointment.js">
     </script>
 </body>
 
