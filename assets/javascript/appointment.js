@@ -44,6 +44,7 @@ document.getElementById('startBookingButton').addEventListener('click', () => {
     appointmentDate.scrollIntoView({ behavior: 'smooth', block: 'center' });
 });
 
+
 const resetTimeSlots = () => {
     document.querySelectorAll('.time-slot').forEach((slot) => {
         slot.disabled = false;
@@ -102,7 +103,17 @@ document.querySelectorAll('.time-slot').forEach((slot) => {
 
         slot.classList.remove('bg-slate-100', 'text-slate-700');
         slot.classList.add('bg-sky-600', 'text-white');
-        selectedAppointmentTime.value = slot.dataset.time;
+        
+        // Convert 24-hour format to 12-hour format
+        const { time12, meridiem } = convertTo12HourFormat(slot.dataset.time);
+        selectedAppointmentTime.value = time12;
+        
+        // Set meridiem field if it exists
+        const meridiem_field = document.getElementById('meridiem') || document.querySelector('[name="meridiem"]');
+        if (meridiem_field) {
+            meridiem_field.value = meridiem;
+        }
+        
         openModal(bookingModal);
     });
 });

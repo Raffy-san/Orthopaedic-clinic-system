@@ -20,6 +20,32 @@ function getAgeLabel(age) {
     return "60 Above";
 }
 
+// Format date to "Aug, 30 2026" format
+function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    const monthAbbr = date.toLocaleDateString('en-US', { month: 'short' });
+    const day = date.getDate();
+    const year = date.getFullYear();
+    return `${monthAbbr}, ${day} ${year}`;
+}
+
+// Format time to "8:00" format (hours:minutes only)
+// Convert 24-hour format to 12-hour format
+const convertTo12HourFormat = (time24) => {
+    const [hours, minutes] = time24.split(':');
+    let hour = parseInt(hours);
+    const meridiem = hour >= 12 ? 'PM' : 'AM';
+    if (hour > 12) {
+        hour -= 12;
+    } else if (hour === 0) {
+        hour = 12;
+    }
+    return {
+        time12: `${hour}:${minutes}`,
+        meridiem: meridiem
+    };
+};
+
 const map = L.map('patientMap').setView([10.13, 124.85], 10);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -42,6 +68,7 @@ const markers = patients.map((p, index) => {
                 <h3>Patient ${index + 1}</h3>
                 <p>(${getAgeLabel(p.age)}, ${p.gender})</p>
                 <p>${p.city}</p>
+                <p>${formatDate(p.date)} - ${convertTo12HourFormat(p.time).time12} ${convertTo12HourFormat(p.time).meridiem}</p>
                 <span class="status" style="background:${statusColors[p.status]}22; color:${statusColors[p.status]};">${p.status}</span>
             </div>
         `;

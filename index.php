@@ -5,11 +5,8 @@ require_once __DIR__ . '/includes/auth.php';
 if (SessionManager::isLoggedIn()) {
     $role = $_SESSION['access_type'] ?? $_SESSION['user']['Role'] ?? null;
 
-    if (in_array($role, ['Admin', 'Doctor'], true)) {
+    if (in_array($role, ['Admin', 'Doctor', 'Staff'], true)) {
         header('Location: admin/admin-dashboard.php');
-        exit;
-    } elseif (in_array(strtolower((string) $role), ['staff', 'receptionist'], true)) {
-        header('Location: staff/staff-dashboard.php');
         exit;
     } else {
         header('Location: users/user-dashboard.php');
@@ -36,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ? $userRole === 'admin' || $userRole === 'doctor' || $isDoctor
         : ($loginType === 'patient'
             ? $userRole === 'patient'
-            : in_array($userRole, ['doctor', 'staff', 'receptionist'], true) || $isDoctor);
+            : in_array($userRole, ['doctor', 'staff'], true) || $isDoctor);
 
     if (!$user) {
         $loginError = 'Username not found. Check the username and try again.';
@@ -58,9 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['access_type'] = $user['Role'];
         $redirect = $userRole === 'patient'
             ? 'users/user-dashboard.php'
-            : (in_array($userRole, ['staff', 'receptionist'], true)
-                ? 'staff/staff-dashboard.php'
-                : 'admin/admin-dashboard.php');
+            : 'admin/admin-dashboard.php';
         header('Location: ' . $redirect);
         exit;
     }

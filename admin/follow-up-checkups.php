@@ -2,9 +2,8 @@
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/fetch.php';
-SessionManager::requireAdmin();
 SessionManager::requireLogin();
-SessionManager::requireAnyRole(['admin', 'doctor']);
+SessionManager::requireAnyRole(['admin', 'doctor', 'staff']);
 
 $admin = SessionManager::getUser($pdo);
 

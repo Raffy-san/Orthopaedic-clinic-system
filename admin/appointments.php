@@ -2,15 +2,18 @@
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/fetch.php';
-SessionManager::requireAdmin();
+
 SessionManager::requireLogin();
-SessionManager::requireAnyRole(['admin', 'doctor']);
+SessionManager::requireAnyRole(['admin', 'doctor', 'staff']);
 $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
+$currentRole = strtolower((string) (SessionManager::getCurrentRole() ?? ''));
+$canApprove = in_array($currentRole, ['admin', 'doctor'], true);
 
 $admin = SessionManager::getUser($pdo);
 $patientsWithCoordinates = fetchAllData($pdo, "
     SELECT p.Address AS city, p.Latitude AS lat, p.Longitude AS lng,
-           TIMESTAMPDIFF(YEAR, p.BirthDate, CURDATE()) AS age,
+           TIMESTAMPDIFF(YEAR, p.BirthDate, CURDATE()) AS age, a.AppointmentDate as date, 
+           a.AppointmentTime as time, a.meridiem as meridiem,
            p.Gender AS gender, COALESCE(a.Status, 'Pending') AS status
     FROM patients p
     INNER JOIN appointments a ON a.AppointmentID = (
@@ -66,89 +69,94 @@ if (!$admin) {
                 <div class="space-y-6">
                     <div class="rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
                         <h2 class="text-lg font-semibold text-slate-900">Choose an appointment date</h2>
-                        <p class="mt-1 text-sm text-slate-500">Select a date to see which appointment times are available.</p>
-                        <label for="appointmentDate" class="mt-5 block text-sm font-semibold text-slate-700">Appointment date</label>
+                        <p class="mt-1 text-sm text-slate-500">Select a date to see which appointment times are
+                            available.</p>
+                        <label for="appointmentDate" class="mt-5 block text-sm font-semibold text-slate-700">Appointment
+                            date</label>
                         <input type="date" id="appointmentDate" name="appointment_date"
                             class="mt-2 w-full border border-gray-300 bg-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
 
-                    <div id="appointmentTimeCalendar" class="hidden rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
-                    <div class="mb-6 flex flex-col gap-4 border-b border-slate-100 pb-5">
-                        <div class="flex items-start justify-between gap-3">
-                            <div>
-                                <h2 class="text-lg font-semibold text-slate-900">Choose a time</h2>
-                                <p id="appointmentDateMessage" class="mt-1 text-sm text-slate-500">Choose an appointment date first.</p>
+                    <div id="appointmentTimeCalendar"
+                        class="hidden rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
+                        <div class="mb-6 flex flex-col gap-4 border-b border-slate-100 pb-5">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <h2 class="text-lg font-semibold text-slate-900">Choose a time</h2>
+                                    <p id="appointmentDateMessage" class="mt-1 text-sm text-slate-500">Choose an
+                                        appointment date first.</p>
+                                </div>
+                                <span id="availableSlotCount"
+                                    class="shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700"></span>
                             </div>
-                            <span id="availableSlotCount"
-                                class="shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700"></span>
+                            <p class="text-xs text-slate-500">Select an available slot to continue booking. Red slots
+                                are
+                                already taken.</p>
+                            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500">
+                                <span class="flex items-center gap-2"><span
+                                        class="h-3 w-3 rounded-full bg-red-100 border border-red-200"></span>Taken</span>
+                                <span class="flex items-center gap-2"><span
+                                        class="h-3 w-3 rounded-full bg-slate-100 border border-slate-200"></span>Available</span>
+                                <span class="flex items-center gap-2"><span
+                                        class="h-3 w-3 rounded-full bg-sky-600"></span>Selected</span>
+                            </div>
                         </div>
-                        <p class="text-xs text-slate-500">Select an available slot to continue booking. Red slots are
-                            already taken.</p>
-                        <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500">
-                            <span class="flex items-center gap-2"><span
-                                    class="h-3 w-3 rounded-full bg-red-100 border border-red-200"></span>Taken</span>
-                            <span class="flex items-center gap-2"><span
-                                    class="h-3 w-3 rounded-full bg-slate-100 border border-slate-200"></span>Available</span>
-                            <span class="flex items-center gap-2"><span
-                                    class="h-3 w-3 rounded-full bg-sky-600"></span>Selected</span>
+
+                        <div class="mb-3 flex items-center justify-between">
+                            <h3 class="text-xs font-bold uppercase tracking-wide text-slate-500">Morning</h3>
+                            <span class="text-xs text-slate-400">8:00 AM - 12:00 PM</span>
                         </div>
-                    </div>
+                        <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                            <button type="button" data-time="08:00 AM"
+                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">08:00
+                                AM</button>
+                            <button type="button" data-time="08:30 AM"
+                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">08:30
+                                AM</button>
+                            <button type="button" data-time="09:00 AM"
+                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">09:00
+                                AM</button>
+                            <button type="button" data-time="09:30 AM"
+                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">09:30
+                                AM</button>
+                            <button type="button" data-time="10:00 AM"
+                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">10:00
+                                AM</button>
+                            <button type="button" data-time="10:30 AM"
+                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">10:30
+                                AM</button>
+                            <button type="button" data-time="11:00 AM"
+                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">11:00
+                                AM</button>
+                            <button type="button" data-time="11:30 AM"
+                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">11:30
+                                AM</button>
+                        </div>
 
-                    <div class="mb-3 flex items-center justify-between">
-                        <h3 class="text-xs font-bold uppercase tracking-wide text-slate-500">Morning</h3>
-                        <span class="text-xs text-slate-400">8:00 AM - 12:00 PM</span>
-                    </div>
-                    <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                        <button type="button" data-time="08:00 AM"
-                            class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">08:00
-                            AM</button>
-                        <button type="button" data-time="08:30 AM"
-                            class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">08:30
-                            AM</button>
-                        <button type="button" data-time="09:00 AM"
-                            class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">09:00
-                            AM</button>
-                        <button type="button" data-time="09:30 AM"
-                            class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">09:30
-                            AM</button>
-                        <button type="button" data-time="10:00 AM"
-                            class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">10:00
-                            AM</button>
-                        <button type="button" data-time="10:30 AM"
-                            class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">10:30
-                            AM</button>
-                        <button type="button" data-time="11:00 AM"
-                            class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">11:00
-                            AM</button>
-                        <button type="button" data-time="11:30 AM"
-                            class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">11:30
-                            AM</button>
-                    </div>
-
-                    <div class="mb-3 flex items-center justify-between">
-                        <h3 class="text-xs font-bold uppercase tracking-wide text-slate-500">Afternoon</h3>
-                        <span class="text-xs text-slate-400">2:00 PM - 5:00 PM</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                        <button type="button" data-time="02:00 PM"
-                            class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">02:00
-                            PM</button>
-                        <button type="button" data-time="02:30 PM"
-                            class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">02:30
-                            PM</button>
-                        <button type="button" data-time="03:00 PM"
-                            class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">03:00
-                            PM</button>
-                        <button type="button" data-time="03:30 PM"
-                            class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">03:30
-                            PM</button>
-                        <button type="button" data-time="04:00 PM"
-                            class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">04:00
-                            PM</button>
-                        <button type="button" data-time="04:30 PM"
-                            class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">04:30
-                            PM</button>
-                    </div>
+                        <div class="mb-3 flex items-center justify-between">
+                            <h3 class="text-xs font-bold uppercase tracking-wide text-slate-500">Afternoon</h3>
+                            <span class="text-xs text-slate-400">2:00 PM - 5:00 PM</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                            <button type="button" data-time="02:00 PM"
+                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">02:00
+                                PM</button>
+                            <button type="button" data-time="02:30 PM"
+                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">02:30
+                                PM</button>
+                            <button type="button" data-time="03:00 PM"
+                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">03:00
+                                PM</button>
+                            <button type="button" data-time="03:30 PM"
+                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">03:30
+                                PM</button>
+                            <button type="button" data-time="04:00 PM"
+                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">04:00
+                                PM</button>
+                            <button type="button" data-time="04:30 PM"
+                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">04:30
+                                PM</button>
+                        </div>
                     </div>
                 </div>
 
@@ -203,24 +211,91 @@ if (!$admin) {
 
             <div class="rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
                 <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-lg font-semibold text-slate-900">Today's Appointments</h2>
+                    <h2 class="text-lg font-semibold text-slate-900">Pending Requests</h2>
+                    <span
+                        class="inline-flex items-center justify-center rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">
+                        <?php
+                        $pendingCount = count(array_filter($appointments, fn($a) => $a['Status'] === 'Pending'));
+                        echo $pendingCount;
+                        ?>
+                    </span>
+                </div>
+
+                <div class="space-y-3">
+                    <?php
+                    $pendingAppointments = array_filter($appointments, fn($a) => $a['Status'] === 'Pending');
+
+                    if ($pendingAppointments) {
+                        foreach ($pendingAppointments as $appointment) {
+                            $appointmentDate = new DateTime($appointment['AppointmentDate']);
+                            $formattedDate = $appointmentDate->format('M d');
+                            $formattedTime = (new DateTime($appointment['AppointmentTime']))->format('g:i A');
+                            ?>
+
+                            <div class="rounded-lg bg-amber-50 p-4 border border-amber-100">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <p class="text-sm font-semibold text-slate-900">
+                                            <?= htmlspecialchars($appointment['patient_first_name'], ENT_QUOTES, 'UTF-8') ?>
+                                            <?= htmlspecialchars($appointment['patient_last_name'], ENT_QUOTES, 'UTF-8') ?>
+                                            <span class="text-slate-400 font-normal">
+                                                · <?= htmlspecialchars($appointment['PatientCode'], ENT_QUOTES, 'UTF-8') ?>
+                                            </span>
+                                        </p>
+                                        <p class="text-xs text-slate-500 mt-1">
+                                            <?= $formattedDate ?> at <?= $formattedTime ?> ·
+                                            <?= htmlspecialchars($appointment['Purpose'], ENT_QUOTES, 'UTF-8') ?>
+                                        </p>
+                                    </div>
+
+                                    <div class="flex gap-2 ml-4 items-center">
+                                        <?php if ($canApprove): ?>
+                                            <button
+                                                class="confirm-btn inline-flex items-center justify-center rounded-full bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 transition"
+                                                data-appointment-id="<?= htmlspecialchars($appointment['AppointmentID'], ENT_QUOTES, 'UTF-8') ?>"
+                                                title="Confirm">
+                                                ✓ Confirm
+                                            </button>
+                                            <button
+                                                class="decline-btn inline-flex items-center justify-center rounded-full bg-red-500 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700 transition"
+                                                data-appointment-id="<?= htmlspecialchars($appointment['AppointmentID'], ENT_QUOTES, 'UTF-8') ?>"
+                                                title="Decline">
+                                                ✕ Decline
+                                            </button>
+                                        <?php else: ?>
+                                            <span
+                                                class="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-full whitespace-nowrap">
+                                                Admin/Doctor Approval Required
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php
+                        }
+                    } else {
+                        echo '<p class="text-sm text-slate-500">No pending requests.</p>';
+                    }
+                    ?>
+                </div>
+            </div>
+
+            <div class="rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-lg font-semibold text-slate-900">Confirmed Schedule</h2>
                 </div>
 
                 <div class="space-y-3">
                     <?php
 
-                    $status = [
-                        'Confirmed' => ['bg' => 'emerald-100', 'text' => 'emerald-700'],
-                        'Pending' => ['bg' => 'amber-100', 'text' => 'amber-700'],
-                        'Cancelled' => ['bg' => 'rose-100', 'text' => 'rose-700']
-                    ];
+                    $confirmedAppointments = array_filter($appointments, fn($a) => $a['Status'] === 'Confirmed');
 
-                    if ($appointments) {
-                        foreach ($appointments as $appointment) {
+                    if ($confirmedAppointments) {
+                        foreach ($confirmedAppointments as $appointment) {
                             $appointmentDate = new DateTime($appointment['AppointmentDate']);
                             $formattedDate = $appointmentDate->format('M d, Y');
                             $formattedTime = (new DateTime($appointment['AppointmentTime']))->format('h:i A');
-                            $statusClass = $status[$appointment['Status']] ?? 'bg-slate-100 text-slate-700';
+                            $statusStyle = $status[$appointment['Status']] ?? ['bgColor' => '#4FFFB0', 'textColor' => '#3CB371'];
 
                             ?>
 
@@ -237,17 +312,20 @@ if (!$admin) {
                                             <?= htmlspecialchars($appointment['patient_last_name'], ENT_QUOTES, 'UTF-8') ?>
                                         </p>
                                         <p class="text-sm text-slate-500">
-                                            <?= $formattedDate ?> - <?= htmlspecialchars($appointment['Purpose'], ENT_QUOTES, 'UTF-8') ?>
+                                            <?= $formattedDate ?> -
+                                            <?= htmlspecialchars($appointment['Purpose'], ENT_QUOTES, 'UTF-8') ?>
                                         </p>
                                     </div>
                                 </div>
-                                <span
-                                    class="rounded-full bg-<?= $status[$appointment['Status']]['bg'] ?> px-3 py-1 text-xs font-semibold uppercase text-<?= $status[$appointment['Status']]['text'] ?>"><?= htmlspecialchars($appointment['Status'], ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="rounded-full px-3 py-1 text-xs font-semibold uppercase"
+                                    style="background-color: <?= htmlspecialchars($statusStyle['bgColor'], ENT_QUOTES, 'UTF-8') ?>; color: <?= htmlspecialchars($statusStyle['textColor'], ENT_QUOTES, 'UTF-8') ?>;">
+                                    <?= htmlspecialchars($appointment['Status'], ENT_QUOTES, 'UTF-8') ?>
+                                </span>
                             </div>
                             <?php
                         }
                     } else {
-                        echo '<p class="text-sm text-slate-500">No appointments found.</p>';
+                        echo '<p class="text-sm text-slate-500">No confirmed appointments.</p>';
                     }
                     ?>
                 </div>
@@ -271,6 +349,12 @@ if (!$admin) {
                         <input type="text" name="patient_id" required
                             class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="PT-YYYY-XXXX">
+                    </div>
+                    <div class="mb-4 w-auto">
+                        <label class="block text-gray-700 mb-1 text-sm">Purpose</label>
+                        <input type="text" name="purpose" required
+                            class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Enter the purpose of the appointment">
                     </div>
                     <input type="hidden" name="appointment_date" id="selectedAppointmentDate" required>
                     <div class="mb-4 w-auto">
@@ -300,6 +384,52 @@ if (!$admin) {
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="../assets/javascript/mapping.js"></script>
     <script src="../assets/javascript/appointment.js">
+    </script>
+
+    <script>
+        // Handle Confirm button clicks
+        document.querySelectorAll('.confirm-btn').forEach(btn => {
+            btn.addEventListener('click', async function () {
+                const appointmentId = this.getAttribute('data-appointment-id');
+                await updateAppointmentStatus(appointmentId, 'Confirmed');
+            });
+        });
+
+        // Handle Decline button clicks
+        document.querySelectorAll('.decline-btn').forEach(btn => {
+            btn.addEventListener('click', async function () {
+                const appointmentId = this.getAttribute('data-appointment-id');
+                await updateAppointmentStatus(appointmentId, 'Cancelled');
+            });
+        });
+
+        async function updateAppointmentStatus(appointmentId, status) {
+            try {
+                const response = await fetch('../php/update/update-appointment-status.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        appointment_id: appointmentId,
+                        status: status,
+                        csrf_token: window.csrfToken
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while updating the appointment.');
+            }
+        }
     </script>
 </body>
 
