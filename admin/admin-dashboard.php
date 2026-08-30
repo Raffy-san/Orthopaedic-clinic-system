@@ -4,7 +4,7 @@ require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/fetch.php';
 
 SessionManager::requireLogin();
-SessionManager::requireAnyRole(['admin', 'doctor']);
+SessionManager::requireAnyRole(['admin', 'doctor', 'staff']);
 
 $admin = SessionManager::getUser($pdo);
 
@@ -19,6 +19,7 @@ $displayName = $displayName !== '' ? $displayName : ($admin['username'] ?? 'User
 $patients = fetchAllData($pdo, "SELECT * FROM patients ORDER BY userID DESC LIMIT 5");
 $appointments = fetchAllData($pdo, "SELECT * FROM appointments");
 $pendingAppointments = fetchAllData($pdo, "SELECT * FROM appointments WHERE status = 'Pending'");
+$completedAppointments = fetchAllData($pdo, "SELECT * FROM appointments WHERE status = 'Completed'");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -61,7 +62,8 @@ $pendingAppointments = fetchAllData($pdo, "SELECT * FROM appointments WHERE stat
                     </div>
                 </div>
                 <p class="text-gray-800 text-3xl font-extrabold"><?php echo count($appointments); ?></p>
-                <p class="text-gray-500 text-sm font-medium"><?php echo count($pendingAppointments); ?> pending · <?php echo count($appointments) - count($pendingAppointments); ?> completed</p>
+                <p class="text-gray-500 text-sm font-medium"><?php echo count($pendingAppointments); ?> pending ·
+                    <?php echo count($completedAppointments); ?> completed</p>
             </div>
             <div class="bg-white p-6 rounded-lg shadow-md flex-1">
                 <div class="flex justify-between items-center mb-4">
@@ -92,10 +94,6 @@ $pendingAppointments = fetchAllData($pdo, "SELECT * FROM appointments WHERE stat
                     <h2 class="text-lg font-semibold text-gray-800">
                         Recent Patients
                     </h2>
-
-                    <button class="text-sm text-blue-500 hover:text-blue-600 font-medium">
-                        Today & Yesterday
-                    </button>
                 </div>
 
                 <div class="overflow-x-auto">

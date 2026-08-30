@@ -24,27 +24,30 @@ class SessionManager
         }
     }
 
-    public static function requireRole(string $accessType, string $redirect = '../unauthorized.php'): void
+    /**
+     * Central place to read the current user's role from the session,
+     * regardless of which key it was stored under. Both the sidebar and
+     * any role-guard method should call this instead of reading $_SESSION directly.
+     */
+    public static function getCurrentRole(): ?string
     {
-        $role = $_SESSION['access_type']
+        return $_SESSION['access_type']
             ?? $_SESSION['user']['Role']
             ?? $_SESSION['Role']
             ?? null;
+    }
 
-        if (!self::roleMatchesAccessType($role, $accessType)) {
+    public static function requireRole(string $accessType, string $redirect = '../unauthorized.php'): void
+    {
+        if (!self::roleMatchesAccessType(self::getCurrentRole(), $accessType)) {
             self::redirect($redirect);
         }
     }
 
     public static function requireAnyRole(array $accessTypes, string $redirect = '../unauthorized.php'): void
     {
-        $role = $_SESSION['access_type']
-            ?? $_SESSION['user']['Role']
-            ?? $_SESSION['Role']
-            ?? null;
-
         foreach ($accessTypes as $accessType) {
-            if (self::roleMatchesAccessType($role, (string) $accessType)) {
+            if (self::roleMatchesAccessType(self::getCurrentRole(), (string) $accessType)) {
                 return;
             }
         }
