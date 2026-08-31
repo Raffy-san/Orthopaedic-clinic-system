@@ -103,17 +103,17 @@ document.querySelectorAll('.time-slot').forEach((slot) => {
 
         slot.classList.remove('bg-slate-100', 'text-slate-700');
         slot.classList.add('bg-sky-600', 'text-white');
-        
+
         // Convert 24-hour format to 12-hour format
         const { time12, meridiem } = convertTo12HourFormat(slot.dataset.time);
         selectedAppointmentTime.value = time12;
-        
+
         // Set meridiem field if it exists
         const meridiem_field = document.getElementById('meridiem') || document.querySelector('[name="meridiem"]');
         if (meridiem_field) {
             meridiem_field.value = meridiem;
         }
-        
+
         openModal(bookingModal);
     });
 });
@@ -165,3 +165,47 @@ document.getElementById("addAppointmentForm").addEventListener("submit", (event)
             alert("An error occurred while booking the appointment. Please try again.");
         });
 });
+
+// Handle Confirm button clicks
+document.querySelectorAll('.confirm-btn').forEach(btn => {
+    btn.addEventListener('click', async function () {
+        const appointmentId = this.getAttribute('data-appointment-id');
+        await updateAppointmentStatus(appointmentId, 'Confirmed');
+    });
+});
+
+// Handle Decline button clicks
+document.querySelectorAll('.decline-btn').forEach(btn => {
+    btn.addEventListener('click', async function () {
+        const appointmentId = this.getAttribute('data-appointment-id');
+        await updateAppointmentStatus(appointmentId, 'Cancelled');
+    });
+});
+
+async function updateAppointmentStatus(appointmentId, status) {
+    try {
+        const response = await fetch('../php/update/update-appointment-status.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                appointment_id: appointmentId,
+                status: status,
+                csrf_token: window.csrfToken
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while updating the appointment.');
+    }
+}

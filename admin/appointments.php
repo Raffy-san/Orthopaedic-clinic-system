@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../includes/auth.php';
-require_once __DIR__ . '/../includes/fetch.php';
+require_once __DIR__ . '/../php/fetch/fetch.php';
 
 SessionManager::requireLogin();
 SessionManager::requireAnyRole(['admin', 'doctor', 'staff']);
@@ -383,54 +383,7 @@ if (!$admin) {
     </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="../assets/javascript/mapping.js"></script>
-    <script src="../assets/javascript/appointment.js">
-    </script>
-
-    <script>
-        // Handle Confirm button clicks
-        document.querySelectorAll('.confirm-btn').forEach(btn => {
-            btn.addEventListener('click', async function () {
-                const appointmentId = this.getAttribute('data-appointment-id');
-                await updateAppointmentStatus(appointmentId, 'Confirmed');
-            });
-        });
-
-        // Handle Decline button clicks
-        document.querySelectorAll('.decline-btn').forEach(btn => {
-            btn.addEventListener('click', async function () {
-                const appointmentId = this.getAttribute('data-appointment-id');
-                await updateAppointmentStatus(appointmentId, 'Cancelled');
-            });
-        });
-
-        async function updateAppointmentStatus(appointmentId, status) {
-            try {
-                const response = await fetch('../php/update/update-appointment-status.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        appointment_id: appointmentId,
-                        status: status,
-                        csrf_token: window.csrfToken
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.status === 'success') {
-                    alert(data.message);
-                    location.reload();
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('An error occurred while updating the appointment.');
-            }
-        }
-    </script>
+    <script src="../assets/javascript/appointment.js"></script>
 </body>
 
 </html>

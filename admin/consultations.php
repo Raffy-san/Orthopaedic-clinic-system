@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../includes/auth.php';
-require_once __DIR__ . '/../includes/fetch.php';
+require_once __DIR__ . '/../php/fetch/fetch.php';
 SessionManager::requireAdmin();
 SessionManager::requireLogin();
 SessionManager::requireAnyRole(['admin', 'doctor']);
