@@ -3,7 +3,8 @@ require_once '../../config/config.php';
 require_once '../../includes/auth.php';
 require_once '../../includes/crud.php';
 
-SessionManager::requireAdmin();
+SessionManager::requireLogin();
+SessionManager::requireAnyRole(['admin', 'doctor', 'staff']);
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

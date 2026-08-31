@@ -1,7 +1,7 @@
 <?php
 include_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../includes/auth.php';
-require_once __DIR__ . '/../includes/fetch.php';
+require_once __DIR__ . '/../php/fetch/fetch.php';
 
 SessionManager::requireLogin();
 SessionManager::requireAnyRole(['admin', 'doctor', 'staff']);
@@ -20,6 +20,8 @@ $patients = fetchAllData($pdo, "SELECT * FROM patients ORDER BY userID DESC LIMI
 $appointments = fetchAllData($pdo, "SELECT * FROM appointments");
 $pendingAppointments = fetchAllData($pdo, "SELECT * FROM appointments WHERE status = 'Pending'");
 $completedAppointments = fetchAllData($pdo, "SELECT * FROM appointments WHERE status = 'Completed'");
+$consultations = fetchAllData($pdo, "SELECT * FROM consultations");
+$confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE status = 'Confirmed'");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -63,7 +65,8 @@ $completedAppointments = fetchAllData($pdo, "SELECT * FROM appointments WHERE st
                 </div>
                 <p class="text-gray-800 text-3xl font-extrabold"><?php echo count($appointments); ?></p>
                 <p class="text-gray-500 text-sm font-medium"><?php echo count($pendingAppointments); ?> pending ·
-                    <?php echo count($completedAppointments); ?> completed</p>
+                    <?php echo count($completedAppointments); ?> completed
+                </p>
             </div>
             <div class="bg-white p-6 rounded-lg shadow-md flex-1">
                 <div class="flex justify-between items-center mb-4">
@@ -72,8 +75,9 @@ $completedAppointments = fetchAllData($pdo, "SELECT * FROM appointments WHERE st
                         <i class="fas fa-stethoscope text-orange-500"></i>
                     </div>
                 </div>
-                <p class="text-gray-800 text-3xl font-extrabold">11</p>
-                <p class="text-gray-500 text-sm font-medium">5 in progress</p>
+                <p class="text-gray-800 text-3xl font-extrabold"><?php echo count($consultations); ?></p>
+                <p class="text-gray-500 text-sm font-medium"><?php echo count($confirmedConsultations); ?> in progress
+                </p>
             </div>
             <div class="bg-white p-6 rounded-lg shadow-md flex-1">
                 <div class="flex justify-between items-center mb-4">
@@ -147,74 +151,62 @@ $completedAppointments = fetchAllData($pdo, "SELECT * FROM appointments WHERE st
                 </div>
 
                 <div class="p-5 space-y-4">
+                    <?php
+                    $todaysSchedule = fetchAllData($pdo, "
+            SELECT 
+                a.AppointmentID,
+                a.AppointmentTime,
+                a.Meridiem,
+                a.Purpose,
+                a.Status,
+                p.FirstName,
+                p.LastName
+            FROM appointments a
+            JOIN patients p ON p.PatientID = a.PatientID
+            WHERE DATE(a.AppointmentDate) = CURDATE()
+            ORDER BY a.AppointmentTime ASC
+        ");
 
-                    <div class="flex items-start gap-4">
-                        <div class="bg-blue-100 text-blue-600 rounded-xl px-3 py-2 text-sm font-semibold">
-                            9:00
-                        </div>
+                    // Rotate through a few color classes so each row isn't identical
+                    $colorClasses = [
+                        ['bg-blue-100', 'text-blue-600'],
+                        ['bg-green-100', 'text-green-600'],
+                        ['bg-yellow-100', 'text-yellow-700'],
+                        ['bg-purple-100', 'text-purple-600'],
+                    ];
 
-                        <div>
-                            <h3 class="font-semibold">
-                                Maria Santos
-                            </h3>
+                    if (empty($todaysSchedule)) {
+                        echo '<p class="text-sm text-gray-500">No appointments scheduled for today.</p>';
+                    } else {
+                        foreach ($todaysSchedule as $i => $item) {
+                            $colors = $colorClasses[$i % count($colorClasses)];
+                            $time = date('g:i', strtotime($item['AppointmentTime']));
+                            $patientName = trim($item['FirstName'] . ' ' . $item['LastName']);
+                            ?>
+                            <div class="flex items-start gap-4">
+                                <div class="<?= $colors[0] ?> <?= $colors[1] ?> rounded-xl px-3 py-2 text-sm font-semibold">
+                                    <?= htmlspecialchars($time) ?> <?= htmlspecialchars($item['Meridiem']) ?>
+                                </div>
 
-                            <p class="text-sm text-gray-500">
-                                Consultation
-                            </p>
-                        </div>
-                    </div>
+                                <div>
+                                    <h3 class="font-semibold">
+                                        <?= htmlspecialchars($patientName) ?>
+                                    </h3>
 
-                    <div class="flex items-start gap-4">
-                        <div class="bg-green-100 text-green-600 rounded-xl px-3 py-2 text-sm font-semibold">
-                            10:30
-                        </div>
-
-                        <div>
-                            <h3 class="font-semibold">
-                                Juan Dela Cruz
-                            </h3>
-
-                            <p class="text-sm text-gray-500">
-                                Follow-up
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="flex items-start gap-4">
-                        <div class="bg-yellow-100 text-yellow-700 rounded-xl px-3 py-2 text-sm font-semibold">
-                            1:00
-                        </div>
-
-                        <div>
-                            <h3 class="font-semibold">
-                                Roberto Lim
-                            </h3>
-
-                            <p class="text-sm text-gray-500">
-                                X-Ray Review
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="flex items-start gap-4">
-                        <div class="bg-purple-100 text-purple-600 rounded-xl px-3 py-2 text-sm font-semibold">
-                            3:00
-                        </div>
-
-                        <div>
-                            <h3 class="font-semibold">
-                                Ana Macaraeg
-                            </h3>
-
-                            <p class="text-sm text-gray-500">
-                                Billing
-                            </p>
-                        </div>
-                    </div>
-
+                                    <p class="text-sm text-gray-500">
+                                        <?= htmlspecialchars($item['Purpose']) ?>
+                                    </p>
+                                </div>
+                            </div>
+                            <?php
+                        }
+                    }
+                    ?>
                 </div>
 
             </div>
+
+        </div>
 
         </div>
 
