@@ -59,7 +59,7 @@ if (!$admin) {
                 </div>
             </div>
 
-            <div class="grid gap-4 xl:grid-cols-[1.05fr_1.35fr_0.85fr]">
+            <div class="grid gap-4 lg:grid-cols-[1fr_2fr_1fr]">
                 <div class="rounded-3xl bg-white p-4 shadow-sm">
                     <div class="mb-4">
                         <h2 class="text-lg font-semibold">Step 1 — Patient Type</h2>

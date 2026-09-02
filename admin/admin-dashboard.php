@@ -120,7 +120,7 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
                                 p.LastName,
                                 p.CreatedAt
                             FROM patients p
-                            GROUP BY p.PatientID ORDER BY p.CreatedAt DESC
+                            GROUP BY p.PatientID ORDER BY p.CreatedAt DESC LIMIT 5
                             ");
 
                             foreach ($patients as $patient) {

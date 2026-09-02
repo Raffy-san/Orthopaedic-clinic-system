@@ -169,4 +169,136 @@ function bookAppointment(PDO $pdo, array $data): array
         return ['status' => 'error', 'message' => 'Unable to book the appointment. Please try again.'];
     }
 }
+
+function saveConsultation(PDO $pdo, array $data, int $doctorID): array
+{
+    try {
+        $pdo->beginTransaction();
+
+        $stmt = $pdo->prepare("
+            INSERT INTO consultations (AppointmentID, PatientID, DoctorID, Diagnosis, Treatment, Notes, ConsultationFee, ConsultationDate)
+            VALUES (:appointment_id, :patient_id, :doctor_id, :diagnosis, :treatment, :notes, :consultation_fee, NOW())
+        ");
+        $stmt->execute([
+            ':appointment_id' => intval($data['appointment_id'] ?? 0),
+            ':patient_id' => intval($data['patient_id'] ?? 0),
+            ':doctor_id' => $doctorID,
+            ':diagnosis' => $data['diagnosis'] ?? '',
+            ':treatment' => $data['treatment'] ?? '',
+            ':notes' => $data['notes'] ?? '',
+            ':consultation_fee' => floatval($data['consultation_fee'] ?? 0)
+        ]);
+
+        $consultationID = $pdo->lastInsertId();
+
+        if (($data['has_prescription'] ?? false) && ($data['prescription'] ?? null)) {
+            $stmt = $pdo->prepare("
+                INSERT INTO prescriptions (ConsultationID, Medicine, Dosage, Frequency, Duration, Instructions)
+                VALUES (:consultation_id, :medicine, :dosage, :frequency, :duration, :instructions)
+            ");
+            $stmt->execute([
+                ':consultation_id' => $consultationID,
+                ':medicine' => $data['prescription']['medicine'] ?? '',
+                ':dosage' => $data['prescription']['dosage'] ?? '',
+                ':frequency' => $data['prescription']['frequency'] ?? '',
+                ':duration' => $data['prescription']['duration'] ?? '',
+                ':instructions' => $data['prescription']['instructions'] ?? ''
+            ]);
+        }
+
+        $stmt = $pdo->prepare("
+            INSERT INTO billing (ConsultationID, PatientID, OriginalAmount, DiscountType, DiscountPercent, DiscountAmount, FinalAmount, Status)
+            VALUES (:consultation_id, :patient_id, :original_amount, 'None', 0, 0, :original_amount, 'Unpaid')
+        ");
+        $stmt->execute([
+            ':consultation_id' => $consultationID,
+            ':patient_id' => intval($data['patient_id'] ?? 0),
+            ':original_amount' => floatval($data['consultation_fee'] ?? 0)
+        ]);
+
+        $stmt = $pdo->prepare("
+            UPDATE appointments 
+            SET Status = 'Completed' 
+            WHERE AppointmentID = :appointment_id
+        ");
+        $stmt->execute([':appointment_id' => intval($data['appointment_id'] ?? 0)]);
+
+        $pdo->commit();
+
+        return [
+            'status' => 'success',
+            'message' => 'Consultation saved successfully.'
+        ];
+
+    } catch (PDOException $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log('SaveConsultation failed: ' . $e->getMessage());
+        return ['status' => 'error', 'message' => 'Unable to save the consultation. Please try again.'];
+    }
+}
+
+function updatePatient(PDO $pdo, array $data): array
+{
+    try {
+        $pdo->beginTransaction();
+
+        if (empty($data['patient_code'] ?? '')) {
+            return ['status' => 'error', 'message' => 'Patient code is required.'];
+        }
+
+        $stmt = $pdo->prepare('SELECT UserID FROM patients WHERE PatientCode = ?');
+        $stmt->execute([$data['patient_code']]);
+        $patient = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$patient) {
+            return ['status' => 'error', 'message' => 'Patient not found.'];
+        }
+
+        $userID = $patient['UserID'];
+
+        $stmt = $pdo->prepare(
+            'UPDATE users 
+             SET FirstName = ?, LastName = ?, Phone = ?
+             WHERE UserID = ?'
+        );
+        $stmt->execute([
+            $data['firstName'] ?? '',
+            $data['lastName'] ?? '',
+            $data['phone'] ?? null,
+            $userID
+        ]);
+
+        $coords = geocodeAddress($data['address'] ?? '');
+
+        $stmt = $pdo->prepare(
+            'UPDATE patients 
+             SET FirstName = ?, LastName = ?, BirthDate = ?, Gender = ?, Phone = ?, PatientType = ?, Address = ?, Latitude = ?, Longitude = ?
+             WHERE PatientCode = ?'
+        );
+        $stmt->execute([
+            $data['firstName'] ?? '',
+            $data['lastName'] ?? '',
+            $data['birthDate'] ?? '',
+            $data['gender'] ?? '',
+            $data['phone'] ?? null,
+            $data['patientType'] ?? 'Regular',
+            $data['address'] ?? null,
+            $coords['lat'] ?? null,
+            $coords['lng'] ?? null,
+            $data['patient_code']
+        ]);
+
+        $pdo->commit();
+        return ['status' => 'success', 'message' => 'Patient information updated successfully.'];
+
+    } catch (PDOException $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log('UpdatePatient failed: ' . $e->getMessage());
+        return ['status' => 'error', 'message' => 'Unable to update the patient. Please try again.'];
+    }
+}
 ?>
