@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/crud.php';
 
 SessionManager::requireLogin();
+SessionManager::requireAnyRole(['admin', 'doctor', 'staff']);
 
 header('Content-Type: application/json');
 
@@ -17,12 +18,8 @@ if (empty($requestData['csrf_token']) || $requestData['csrf_token'] !== $csrfTok
     exit;
 }
 
-// Get doctor ID from session
-$doctor = SessionManager::getUser($pdo);
-$doctorID = $doctor['UserID'] ?? 1;
-
-// Call the saveConsultation function from crud.php
-$result = saveConsultation($pdo, $requestData, $doctorID);
+// Call the updatePatient function from crud.php
+$result = updatePatient($pdo, $requestData);
 
 // Regenerate CSRF token
 SessionManager::regenerateCsrfToken();

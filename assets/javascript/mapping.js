@@ -53,28 +53,61 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-// Keep a reference to each marker alongside its patient data so we can filter later
-const markers = patients.map((p, index) => {
-    const marker = L.circleMarker([p.lat, p.lng], {
+// Group patients by location (lat, lng)
+function groupPatientsByLocation(patients) {
+    const locationMap = {};
+    
+    patients.forEach((p, index) => {
+        const key = `${p.lat},${p.lng}`;
+        if (!locationMap[key]) {
+            locationMap[key] = {
+                lat: p.lat,
+                lng: p.lng,
+                patients: []
+            };
+        }
+        locationMap[key].patients.push({ ...p, originalIndex: index });
+    });
+    
+    return Object.values(locationMap);
+}
+
+// Create markers for each unique location
+const locations = groupPatientsByLocation(patients);
+
+const markers = locations.map((location) => {
+    const marker = L.circleMarker([location.lat, location.lng], {
         radius: 9,
-        fillColor: statusColors[p.status] || "#64748b",
+        fillColor: statusColors[location.patients[0].status] || "#64748b",
         color: "#ffffff",
         weight: 2,
         fillOpacity: 0.9
     });
 
+    // Build popup with all patients at this location
+    const patientsList = location.patients.map((p, idx) => `
+        <div class="patient-item" style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #e5e7eb;">
+            <h4 style="margin: 0 0 5px 0; font-weight: 600;">Patient ${p.originalIndex + 1}</h4>
+            <p style="margin: 3px 0; font-size: 12px;">(${getAgeLabel(p.age)}, ${p.gender})</p>
+            <p style="margin: 3px 0; font-size: 12px;">${p.city}</p>
+            <p style="margin: 3px 0; font-size: 12px;">${formatDate(p.date)} - ${convertTo12HourFormat(p.time).time12} ${convertTo12HourFormat(p.time).meridiem}</p>
+            <span class="status" style="display: inline-block; background: ${statusColors[p.status]}22; color: ${statusColors[p.status]}; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${p.status}</span>
+        </div>
+    `).join('');
+
     const popupHtml = `
-            <div class="patient-popup">
-                <h3>Patient ${index + 1}</h3>
-                <p>(${getAgeLabel(p.age)}, ${p.gender})</p>
-                <p>${p.city}</p>
-                <p>${formatDate(p.date)} - ${convertTo12HourFormat(p.time).time12} ${convertTo12HourFormat(p.time).meridiem}</p>
-                <span class="status" style="background:${statusColors[p.status]}22; color:${statusColors[p.status]};">${p.status}</span>
-            </div>
-        `;
+        <div class="patient-popup" style="max-width: 300px;">
+            <h3 style="margin: 0 0 10px 0;">${location.patients.length > 1 ? location.patients.length + ' Patients at this Location' : 'Patient Details'}</h3>
+            ${patientsList}
+        </div>
+    `;
+    
     marker.bindPopup(popupHtml);
 
-    return { marker, ageGroup: getAgeGroup(p.age) };
+    // Collect all age groups for patients at this location
+    const ageGroups = location.patients.map(p => getAgeGroup(p.age));
+
+    return { marker, ageGroups, location };
 });
 
 // All markers visible by default
@@ -90,8 +123,9 @@ filterButtons.forEach(btn => {
         filterButtons.forEach(b => b.classList.remove('active-filter'));
         btn.classList.add('active-filter');
 
-        markers.forEach(({ marker, ageGroup }) => {
-            const shouldShow = selected === "all" || ageGroup === selected;
+        markers.forEach(({ marker, ageGroups }) => {
+            // Show marker if selected is "all" OR if any patient at this location matches the age group
+            const shouldShow = selected === "all" || ageGroups.includes(selected);
             if (shouldShow) {
                 if (!map.hasLayer(marker)) marker.addTo(map);
             } else {
