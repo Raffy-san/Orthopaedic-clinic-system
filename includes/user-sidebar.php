@@ -21,8 +21,14 @@
                 Appointments</a>
         </div>
         <div
-            class="flex items-center p-3 rounded-lg gap-4 <?= basename($_SERVER['PHP_SELF']) == 'my-profile.php' ? 'active' : '' ?>">
+            class="flex items-center p-3 rounded-lg gap-4 <?= basename($_SERVER['PHP_SELF']) == 'my-records.php' ? 'active' : '' ?>">
             <i class="text-sm fa-solid fa-stethoscope text-white"></i>
+            <a href="../users/my-records.php" class="text-sm text-gray-300 hover:text-white font-medium">My
+                Records</a>
+        </div>
+        <div
+            class="flex items-center p-3 rounded-lg gap-4 <?= basename($_SERVER['PHP_SELF']) == 'my-profile.php' ? 'active' : '' ?>">
+            <i class="text-sm fa-solid fa-user text-white"></i>
             <a href="../users/my-profile.php" class="text-sm text-gray-300 hover:text-white font-medium">My Profile</a>
         </div>
     </div>
@@ -31,8 +37,10 @@
             <i class="text-sm fa-solid fa-user text-white p-4 bg-teal-600 rounded-full"></i>
             <div>
                 <?php if ($patient): ?>
-                    <h1 class="text-white text-md font-medium"><?= htmlspecialchars($patient['first_name'])?> <?= htmlspecialchars($patient['last_name']) ?></h1>
-                    <h3 class="text-gray-300 text-sm"><?= htmlspecialchars($patient['username'])?></h3>
+                    <h1 class="text-white text-md font-medium"><?= htmlspecialchars($patient['first_name']) ?>
+                        <?= htmlspecialchars($patient['last_name']) ?>
+                    </h1>
+                    <h3 class="text-gray-300 text-sm"><?= htmlspecialchars($patient['username']) ?></h3>
                 <?php endif; ?>
             </div>
         </div>
