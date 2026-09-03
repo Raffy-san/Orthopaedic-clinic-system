@@ -25,20 +25,20 @@ if (!$patient) {
     <link rel="stylesheet" href="../assets/css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="icon" href="../assets/img/rounded-logo.ico" type="image/x-icon">
-    <title>Profile</title>
+    <title>My Records</title>
 </head>
 
 <body class="h-screen flex bg-slate-200">
     <?php include '../includes/user-sidebar.php'; ?>
-
-    <section class="flex-1 p-6 overflow-auto">
-        <div>
-            <h1 class="text-2xl font-bold">My Profile</h1>
-            <h3 class="text-md font-medium text-gray-500">
-                Personal information on file
-            </h3>
-        </div>
-    </section>
+    
+     <section class="flex-1 p-6 overflow-auto">
+        <div class="max-w-5xl mx-auto">
+            <div class="mb-8">
+                <h1 class="text-2xl font-bold">My Appointments</h1>
+                <h3 class="text-md font-medium text-gray-500">
+                    Scheduled and past clinic visits
+                </h3>
+            </div>
 </body>
 
 </html>
