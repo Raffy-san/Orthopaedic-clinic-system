@@ -21,6 +21,7 @@ try {
             p.FirstName,
             p.LastName,
             p.Gender,
+            p.Allergies,
             p.BloodType,
             p.EmergencyContact,
             p.EmergencyPhone,

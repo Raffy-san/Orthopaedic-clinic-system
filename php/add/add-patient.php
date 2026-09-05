@@ -30,11 +30,13 @@ $allowedGenders = ['Male', 'Female', 'Other'];
 $allowedPatientTypes = ['Regular', 'Senior Citizen', 'PWD'];
 $data = [
 	'firstName' => trim($_POST['firstName'] ?? ''),
+	'middleName' => trim($_POST['middleName'] ?? ''),
 	'lastName' => trim($_POST['lastName'] ?? ''),
 	'birthDate' => trim($_POST['birthDate'] ?? ''),
 	'gender' => ucfirst(strtolower(trim($_POST['gender'] ?? ''))),
 	'phone' => trim($_POST['phone'] ?? ''),
 	'address' => trim($_POST['address'] ?? ''),
+	'allergies' => trim($_POST['allergies'] ?? ''),
 	'password' => $_POST['password'] ?? '',
 	'patientType' => $patientType
 ];
