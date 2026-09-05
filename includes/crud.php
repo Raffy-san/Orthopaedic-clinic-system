@@ -30,19 +30,21 @@ function addPatient(PDO $pdo, array $data): array
 
         $stmt = $pdo->prepare(
             'INSERT INTO patients
-             (PatientCode, UserID, FirstName, LastName, BirthDate, Gender, Phone, PatientType, Address, Latitude, Longitude)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+             (PatientCode, UserID, FirstName, MiddleName, LastName, BirthDate, Gender, Phone, PatientType, Address, Allergies, Latitude, Longitude)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $patientCode,
             $userId,
             $data['firstName'],
+            $data['middleName'] ?? null,
             $data['lastName'],
             $data['birthDate'],
             $data['gender'],
             $data['phone'] ?: null,
             $data['patientType'] ?: 'Regular',
             $data['address'] ?: null,
+            $data['allergies'] ?: null,
             $coords['lat'] ?? null,
             $coords['lng'] ?? null
         ]);
@@ -150,8 +152,8 @@ function bookAppointment(PDO $pdo, array $data): array
         }
 
         $stmt = $pdo->prepare(
-            'INSERT INTO appointments (PatientID, DoctorID, AppointmentDate, AppointmentTime, meridiem, Purpose, Status)
-             VALUES (?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO appointments (PatientID, DoctorID, AppointmentDate, AppointmentTime, meridiem, Purpose, ChiefComplaint, Status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $data['patientId'],
@@ -160,6 +162,7 @@ function bookAppointment(PDO $pdo, array $data): array
             $data['appointmentTime'],
             $data['meridiem'],
             $data['purpose'],
+            $data['chiefComplaint'],
             'Pending'
         ]);
 
@@ -265,6 +268,7 @@ function updatePatient(PDO $pdo, array $data): array
         );
         $stmt->execute([
             $data['firstName'] ?? '',
+            $data['middleName'] ?? '',
             $data['lastName'] ?? '',
             $data['phone'] ?? null,
             $userID
@@ -274,11 +278,12 @@ function updatePatient(PDO $pdo, array $data): array
 
         $stmt = $pdo->prepare(
             'UPDATE patients 
-             SET FirstName = ?, LastName = ?, BirthDate = ?, Gender = ?, Phone = ?, PatientType = ?, Address = ?, Latitude = ?, Longitude = ?
+             SET FirstName = ?, MiddleName = ?, LastName = ?, BirthDate = ?, Gender = ?, Phone = ?, PatientType = ?, Address = ?, Allergies = ?, Latitude = ?, Longitude = ?
              WHERE PatientCode = ?'
         );
         $stmt->execute([
             $data['firstName'] ?? '',
+            $data['middleName'] ?? '',
             $data['lastName'] ?? '',
             $data['birthDate'] ?? '',
             $data['gender'] ?? '',

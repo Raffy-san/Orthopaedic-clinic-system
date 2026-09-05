@@ -50,6 +50,7 @@ $data = [
     'appointmentDate' => $_POST['appointment_date'] ?? '',
     'appointmentTime' => $_POST['appointment_time'] ?? '',
     'purpose' => trim($_POST['purpose'] ?? 'General consultation'),
+    'chiefComplaint' => trim($_POST['chief_complaint'] ?? ''),
 ];
 
 $userId = $_SESSION['user_id'] ?? $_SESSION['userId'] ?? $_SESSION['user']['UserID'] ?? null;

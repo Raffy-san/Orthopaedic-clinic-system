@@ -81,6 +81,10 @@ function setActivePatientType(type) {
                             <input id="firstNameInput" name="firstName" type="text" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter first name">
                         </div>
                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+                            <label class="text-[11px] text-slate-600">Middle Name</label>
+                            <input id="MiddleNameInput" name="middleName" type="text" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter middle name">
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
                             <label class="text-[11px] text-slate-600">Last Name</label>
                             <input id="lastNameInput" name="lastName" type="text" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter last name">
                         </div>
@@ -108,6 +112,10 @@ function setActivePatientType(type) {
                                 <option value="Female">Female</option>
                                 <option value="Other">Other</option>
                             </select>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+                            <label class="text-[11px] text-slate-600">Allergies</label>
+                            <input name="allergies" type="text" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter allergies">
                         </div>
                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
                             <label class="text-[11px] text-slate-600">Patient Type</label>
@@ -152,7 +160,7 @@ let csrfToken = window.csrfToken || "";
 saveRecordBtn.addEventListener('click', () => {
     const newPatientForm = document.getElementById('addPatientForm');
     const updatePatientForm = document.getElementById('updatePatientForm');
-    
+
     if (newPatientForm) {
         newPatientForm.requestSubmit();
     } else if (updatePatientForm) {
@@ -201,11 +209,13 @@ step2Content.addEventListener('submit', (event) => {
             csrf_token: csrfToken,
             patient_code: formData.get('patient_code'),
             firstName: formData.get('firstName'),
+            middleName: formData.get('middleName'),
             lastName: formData.get('lastName'),
             birthDate: formData.get('birthDate'),
             phone: formData.get('phone'),
             address: formData.get('address'),
             gender: formData.get('gender'),
+            allergies: formData.get('allergies'),
             patientType: formData.get('patientType')
         };
 
@@ -281,7 +291,12 @@ function validateExistingPatient() {
                         <label class="text-[11px] text-slate-600">First Name</label>
                         <input id="existingFirstNameInput" name="firstName" type="text" value="${patient.FirstName}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
                     </div>
-                    
+
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+                        <label class="text-[11px] text-slate-600">Middle Name</label>
+                        <input id="existingMiddleNameInput" name="middleName" type="text" value="${patient.MiddleName || ''}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
+                    </div>
+
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
                         <label class="text-[11px] text-slate-600">Last Name</label>
                         <input id="existingLastNameInput" name="lastName" type="text" value="${patient.LastName}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
@@ -301,7 +316,7 @@ function validateExistingPatient() {
                         <label class="text-[11px] text-slate-600">Address</label>
                         <input name="address" type="text" value="${patient.Address || ''}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
                     </div>
-                    
+
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
                         <label class="text-[11px] text-slate-600">Gender</label>
                         <select name="gender" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
@@ -310,6 +325,11 @@ function validateExistingPatient() {
                             <option value="Female" ${patient.Gender === 'Female' ? 'selected' : ''}>Female</option>
                             <option value="Other" ${patient.Gender === 'Other' ? 'selected' : ''}>Other</option>
                         </select>
+                    </div>
+
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+                        <label class="text-[11px] text-slate-600">Allergies</label>
+                        <input name="allergies" type="text" value="${patient.Allergies || ''}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
                     </div>
                     
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
