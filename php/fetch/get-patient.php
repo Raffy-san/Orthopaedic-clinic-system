@@ -21,7 +21,7 @@ if ($patientCode === '') {
 
 $patient = fetchOneData(
     $pdo,
-    'SELECT PatientCode, FirstName, LastName, BirthDate, Gender, Phone, PatientType, Address
+    'SELECT PatientCode, FirstName, LastName, BirthDate, Gender, Phone, PatientType, Address, Allergies
      FROM patients WHERE PatientCode = ?',
     [$patientCode]
 );
