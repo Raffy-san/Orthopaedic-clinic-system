@@ -138,9 +138,34 @@ function addStaff(PDO $pdo, array $data): array
     }
 }
 
+function expirePendingAppointments(PDO $pdo): void
+{
+    $pdo->exec(
+        "UPDATE appointments
+         SET Status = 'Cancelled'
+         WHERE Status = 'Pending' AND CreatedAt < (NOW() - INTERVAL 24 HOUR)"
+    );
+}
+
 function bookAppointment(PDO $pdo, array $data): array
 {
     try {
+        expirePendingAppointments($pdo);
+
+        $activeAppointment = $pdo->prepare(
+            "SELECT AppointmentID, Status FROM appointments
+             WHERE PatientID = ? AND Status IN ('Pending', 'Confirmed')
+             LIMIT 1"
+        );
+        $activeAppointment->execute([$data['patientId']]);
+        $activeAppointmentStatus = $activeAppointment->fetchColumn(1);
+        if ($activeAppointmentStatus) {
+            return [
+                'status' => 'error',
+                'message' => "This patient already has a {$activeAppointmentStatus} appointment."
+            ];
+        }
+
         $existingAppointment = $pdo->prepare(
             "SELECT AppointmentID FROM appointments
              WHERE AppointmentDate = ? AND AppointmentTime = ? AND Status <> 'Cancelled'

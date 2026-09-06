@@ -182,6 +182,17 @@ document.querySelectorAll('.decline-btn').forEach(btn => {
     });
 });
 
+document.querySelectorAll('.cancel-confirmed-btn').forEach(btn => {
+    btn.addEventListener('click', async function () {
+        if (!window.confirm('Cancel this confirmed appointment?')) {
+            return;
+        }
+
+        const appointmentId = this.getAttribute('data-appointment-id');
+        await updateAppointmentStatus(appointmentId, 'Cancelled');
+    });
+});
+
 async function updateAppointmentStatus(appointmentId, status) {
     try {
         const response = await fetch('../php/update/update-appointment-status.php', {

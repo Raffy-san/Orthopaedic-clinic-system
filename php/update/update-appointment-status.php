@@ -19,6 +19,12 @@ if (empty($requestData['csrf_token']) || $requestData['csrf_token'] !== $csrfTok
 $appointmentId = intval($requestData['appointment_id'] ?? 0);
 $status = $requestData['status'] ?? '';
 
+if ($status === 'Cancelled' && !in_array(strtolower((string) SessionManager::getCurrentRole()), ['admin', 'doctor'], true)) {
+    http_response_code(403);
+    echo json_encode(['status' => 'error', 'message' => 'Only an admin or doctor can cancel appointments.']);
+    exit;
+}
+
 // Validate status
 $validStatuses = ['Pending', 'Confirmed', 'Completed', 'Cancelled', 'Rescheduled'];
 if (!in_array($status, $validStatuses)) {
@@ -28,6 +34,22 @@ if (!in_array($status, $validStatuses)) {
 }
 
 try {
+    if ($status === 'Cancelled') {
+        $appointmentStatement = $pdo->prepare(
+            "SELECT Status FROM appointments
+             WHERE AppointmentID = :appointment_id
+             LIMIT 1"
+        );
+        $appointmentStatement->execute([':appointment_id' => $appointmentId]);
+        $currentStatus = $appointmentStatement->fetchColumn();
+
+        if (!in_array($currentStatus, ['Pending', 'Confirmed'], true)) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'Only pending or confirmed appointments can be cancelled.']);
+            exit;
+        }
+    }
+
     $stmt = $pdo->prepare("
         UPDATE appointments 
         SET Status = :status 

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/crud.php';
 require_once __DIR__ . '/../php/fetch/fetch.php';
 
 SessionManager::requireLogin();
@@ -10,6 +11,7 @@ $currentRole = strtolower((string) (SessionManager::getCurrentRole() ?? ''));
 $canApprove = in_array($currentRole, ['admin', 'doctor'], true);
 
 $admin = SessionManager::getUser($pdo);
+expirePendingAppointments($pdo);
 $patientsWithCoordinates = fetchAllData($pdo, "
     SELECT p.Address AS city, p.Latitude AS lat, p.Longitude AS lng,
            TIMESTAMPDIFF(YEAR, p.BirthDate, CURDATE()) AS age, a.AppointmentDate as date, 
@@ -46,6 +48,7 @@ if (!$admin) {
     <link rel="stylesheet" href="../assets/css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+     <link rel="icon" href="../assets/img/rounded-logo.ico" type="image/x-icon">
     <title>Appointments</title>
 </head>
 
@@ -316,10 +319,20 @@ if (!$admin) {
                                         </p>
                                     </div>
                                 </div>
-                                <span class="rounded-full px-3 py-1 text-xs font-semibold uppercase"
-                                    style="background-color: <?= htmlspecialchars($statusStyle['bgColor'], ENT_QUOTES, 'UTF-8') ?>; color: <?= htmlspecialchars($statusStyle['textColor'], ENT_QUOTES, 'UTF-8') ?>;">
-                                    <?= htmlspecialchars($appointment['Status'], ENT_QUOTES, 'UTF-8') ?>
-                                </span>
+                                <div class="flex items-center gap-3">
+                                    <span class="rounded-full px-3 py-1 text-xs font-semibold uppercase"
+                                        style="background-color: <?= htmlspecialchars($statusStyle['bgColor'], ENT_QUOTES, 'UTF-8') ?>; color: <?= htmlspecialchars($statusStyle['textColor'], ENT_QUOTES, 'UTF-8') ?>;">
+                                        <?= htmlspecialchars($appointment['Status'], ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                    <?php if ($canApprove): ?>
+                                        <button
+                                            class="cancel-confirmed-btn inline-flex items-center justify-center rounded-full bg-red-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700"
+                                            data-appointment-id="<?= htmlspecialchars($appointment['AppointmentID'], ENT_QUOTES, 'UTF-8') ?>"
+                                            type="button" title="Cancel appointment">
+                                            Cancel
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                             <?php
                         }
