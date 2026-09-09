@@ -181,10 +181,10 @@ $defaultConsultationFee = 500; // PHP
     </section>
     </div>
 
-    <script src="../assets/javascript/consultation.js"></script>
     <script>
         window.csrfToken = <?= json_encode($csrfToken, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
     </script>
+    <script src="../assets/javascript/consultation.js"></script>
 </body>
 
 </html>

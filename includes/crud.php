@@ -255,7 +255,8 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
 
         return [
             'status' => 'success',
-            'message' => 'Consultation saved successfully.'
+            'message' => 'Consultation saved successfully.',
+            'consultation_id' => $consultationID
         ];
 
     } catch (PDOException $e) {
@@ -331,4 +332,6 @@ function updatePatient(PDO $pdo, array $data): array
         return ['status' => 'error', 'message' => 'Unable to update the patient. Please try again.'];
     }
 }
+
+
 ?>

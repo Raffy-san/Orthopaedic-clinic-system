@@ -24,6 +24,31 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="icon" href="../assets/img/rounded-logo.ico" type="image/x-icon">
     <title>Billing and Payment</title>
+    <style>
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            #receipt-card,
+            #receipt-card * {
+                visibility: visible;
+            }
+
+            #receipt-card {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                margin: 0;
+                box-shadow: none;
+                border: 0;
+            }
+
+            #receipt-card .print-hidden {
+                display: none;
+            }
+        }
+    </style>
 </head>
 
 <body class="h-screen flex bg-slate-200">
@@ -111,14 +136,22 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                         </div>
                     </div>
 
-                    <div class="mt-6">
+                    <div class="print-hidden mt-6">
                         <label for="amount-paid" class="block text-sm font-semibold text-slate-700 mb-2">Amount Paid</label>
                         <input type="number" id="amount-paid" placeholder="0.00" step="0.01" class="w-full py-2 px-3 rounded-lg border border-slate-200 text-gray-600" />
                     </div>
 
+                    <div id="paid-amount" class="hidden mt-6 flex justify-between text-sm font-semibold">
+                        <span>Amount Paid</span>
+                        <span>—</span>
+                    </div>
+
                     <button id="record-btn"
                         class="mt-6 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">Record
-                        Payment & Print Receipt</button>
+                        Payment</button>
+                    <button id="print-btn" type="button"
+                        class="print-hidden hidden mt-3 w-full bg-slate-700 hover:bg-slate-800 text-white font-semibold py-3 rounded-lg">
+                        <i class="fas fa-print mr-2" aria-hidden="true"></i>Print Receipt</button>
                 </div>
             </div>
         </div>
@@ -131,10 +164,15 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                 const receiptCard = document.getElementById('receipt-card');
                 const prescriptionSection = document.getElementById('prescription-section');
                 const recordBtn = document.getElementById('record-btn');
+                const printBtn = document.getElementById('print-btn');
                 
                 let currentBillingData = {};
                 let currentConsultationData = {};
                 let currentPatientData = {};
+
+                printBtn.addEventListener('click', function () {
+                    window.print();
+                });
 
                 loadBtn.addEventListener('click', async function () {
                     const patientCode = patientLookupInput.value.trim();
@@ -155,6 +193,7 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                             alert(data.message);
                             consultationCard.classList.add('hidden');
                             receiptCard.classList.add('hidden');
+                            printBtn.classList.add('hidden');
                             loadBtn.disabled = false;
                             loadBtn.innerText = 'Load';
                             return;
@@ -204,6 +243,8 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                         // Show cards
                         consultationCard.classList.remove('hidden');
                         receiptCard.classList.remove('hidden');
+                        printBtn.classList.add('hidden');
+                        document.getElementById('paid-amount').classList.add('hidden');
 
                         // Configure discount buttons based on patient eligibility
                         setupDiscountEligibility(data.patient.PatientType);
@@ -304,7 +345,7 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                         if (result.status === 'error') {
                             alert('Error: ' + result.message);
                             recordBtn.disabled = false;
-                            recordBtn.innerText = 'Record Payment & Print Receipt';
+                            recordBtn.innerText = 'Record Payment';
                             return;
                         }
 
@@ -313,19 +354,22 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
 
                         // Update billing data with new status
                         currentBillingData.Status = result.billing_status;
+                        document.getElementById('or-number').innerText = result.receipt_no;
+                        document.querySelector('#paid-amount span:last-child').innerText = '₱' + amountPaid.toFixed(2);
+                        document.getElementById('paid-amount').classList.remove('hidden');
+                        printBtn.classList.remove('hidden');
 
                         // Reset form
                         patientLookupInput.value = '';
                         document.getElementById('amount-paid').value = '';
                         consultationCard.classList.add('hidden');
-                        receiptCard.classList.add('hidden');
 
                     } catch (error) {
                         console.error('Error:', error);
                         alert('Error processing payment. Please try again.');
                     } finally {
                         recordBtn.disabled = false;
-                        recordBtn.innerText = 'Record Payment & Print Receipt';
+                        recordBtn.innerText = 'Record Payment';
                     }
                 });
             })();
