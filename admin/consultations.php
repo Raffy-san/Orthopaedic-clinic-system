@@ -90,6 +90,22 @@ $defaultConsultationFee = 500; // PHP
                     <p class="text-slate-500 text-sm">Select a patient from the queue to start consultation</p>
                 </div>
 
+                <!-- Patient Consultation History -->
+                <div id="consultationHistoryContainer"
+                    class="bg-white rounded-3xl shadow-sm p-6 border border-slate-100 mb-4 hidden max-h-64 overflow-y-auto">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-lg text-slate-900">Patient History</h3>
+                        <span id="visitCountBadge"
+                            class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-semibold">0
+                            visits</span>
+                    </div>
+                    <div id="historyListContainer" class="space-y-4">
+                        <div class="text-center py-4">
+                            <p class="text-sm text-slate-500">Loading history...</p>
+                        </div>
+                    </div>
+                </div>
+
                 <form id="consultationForm"
                     class="consultation-panel bg-white rounded-3xl shadow-sm p-6 border border-slate-100 hidden">
                     <input type="hidden" id="appointmentID" name="appointment_id">
@@ -167,6 +183,28 @@ $defaultConsultationFee = 500; // PHP
                                 <textarea id="prescriptionInstructions" name="prescription[instructions]"
                                     class="w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="e.g., Take with food, avoid alcohol..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex flex-col gap-4 border-t border-slate-100 pt-6">
+                            <div class="text-sm font-semibold text-slate-900">Schedule a Follow-Up?</div>
+                            <div class="flex gap-2">
+                                <button id="addFollowupBtn" type="button"
+                                    class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">Yes
+                                    — Schedule</button>
+                                <button id="skipFollowupBtn" type="button"
+                                    class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">No
+                                    — Skip</button>
+                            </div>
+
+                            <div id="followupDetails" class="hidden">
+                                <label class="text-sm font-semibold text-slate-700">Follow-up Date *</label>
+                                <input type="date" id="followupDate" name="followup[date]"
+                                    class="w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <label class="text-sm font-semibold text-slate-700 mt-3 block">Remarks</label>
+                                <textarea id="followupRemarks" name="followup[remarks]"
+                                    class="w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="e.g., Check healing progress, review X-ray"></textarea>
                             </div>
                         </div>
 
