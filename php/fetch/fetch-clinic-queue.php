@@ -26,7 +26,7 @@ try {
             p.EmergencyContact,
             p.EmergencyPhone,
             TIMESTAMPDIFF(YEAR, p.BirthDate, CURDATE()) AS Age,
-            c.ChiefComplaint,
+            a.ChiefComplaint,
             MAX(a2.AppointmentDate) AS LastVisitDate
         FROM appointments a
         INNER JOIN patients p ON a.PatientID = p.PatientID
