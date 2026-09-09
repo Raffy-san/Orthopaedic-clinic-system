@@ -81,7 +81,7 @@ function geocodeAddress(string $address): ?array
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => ['User-Agent: OrthopeadicClinic/1.0 (rafaelsanoria506@gmail.com)'], 
+        CURLOPT_HTTPHEADER => ['User-Agent: OrthopeadicClinic/1.0 (rafaelsanoria506@gmail.com)'],
         CURLOPT_TIMEOUT => 5
     ]);
     $response = curl_exec($ch);
@@ -245,18 +245,47 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
         ]);
 
         $stmt = $pdo->prepare("
-            UPDATE appointments 
-            SET Status = 'Completed' 
-            WHERE AppointmentID = :appointment_id
-        ");
+    UPDATE appointments 
+    SET Status = 'Completed' 
+    WHERE AppointmentID = :appointment_id
+");
         $stmt->execute([':appointment_id' => intval($data['appointment_id'] ?? 0)]);
+
+        // NEW: create a follow-up if the doctor requested one
+        $followupID = null;
+        if (($data['has_followup'] ?? false) && !empty($data['followup']['date'])) {
+            $followupDate = $data['followup']['date'];
+
+            // Basic validation: must be a real date, and not in the past
+            $dateObj = DateTime::createFromFormat('Y-m-d', $followupDate);
+            if (!$dateObj || $dateObj->format('Y-m-d') !== $followupDate) {
+                throw new PDOException('Invalid follow-up date format.');
+            }
+            if ($dateObj < new DateTime('today')) {
+                throw new PDOException('Follow-up date cannot be in the past.');
+            }
+
+            $stmt = $pdo->prepare("
+        INSERT INTO followups (PatientID, DoctorID, AppointmentID, FollowUpDate, Status, Remarks)
+        VALUES (:patient_id, :doctor_id, :appointment_id, :followup_date, 'Scheduled', :remarks)
+    ");
+            $stmt->execute([
+                ':patient_id' => intval($data['patient_id'] ?? 0),
+                ':doctor_id' => $doctorID,
+                ':appointment_id' => intval($data['appointment_id'] ?? 0),
+                ':followup_date' => $followupDate,
+                ':remarks' => $data['followup']['remarks'] ?? null
+            ]);
+            $followupID = $pdo->lastInsertId();
+        }
 
         $pdo->commit();
 
         return [
             'status' => 'success',
             'message' => 'Consultation saved successfully.',
-            'consultation_id' => $consultationID
+            'consultation_id' => $consultationID,
+            'followup_id' => $followupID  // NEW — optional, but useful for the frontend/debugging
         ];
 
     } catch (PDOException $e) {
