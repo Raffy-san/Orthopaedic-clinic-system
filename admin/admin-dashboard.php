@@ -12,9 +12,51 @@ if (!$admin) {
     SessionManager::logout('../index.php');
 }
 
-$today = date('l, F j, Y');
-$displayName = trim(($admin['first_name'] ?? '') . ' ' . ($admin['last_name'] ?? ''));
-$displayName = $displayName !== '' ? $displayName : ($admin['username'] ?? 'User');
+$totalStmt = $pdo->query("SELECT COUNT(*) FROM patients");
+$totalPatients = (int) $totalStmt->fetchColumn();
+
+$yesterdayStmt = $pdo->prepare("
+    SELECT COUNT(*) FROM patients 
+    WHERE CreatedAt < CURDATE()
+");
+$yesterdayStmt->execute();
+$totalAsOfYesterday = (int) $yesterdayStmt->fetchColumn();
+$diff = $totalPatients - $totalAsOfYesterday;
+
+if ($diff > 0) {
+    $changeText = "+{$diff} from yesterday";
+    $changeColor = "text-green-600";
+} elseif ($diff < 0) {
+    $changeText = "{$diff} from yesterday";
+    $changeColor = "text-red-600";
+} else {
+    $changeText = "No change from yesterday";
+    $changeColor = "text-gray-500";
+}
+
+$totalConsultStmt = $pdo->query("SELECT COUNT(*) FROM consultations");
+$totalConsultations = (int) $totalConsultStmt->fetchColumn();
+
+$consultYesterdayStmt = $pdo->prepare("
+    SELECT COUNT(*) FROM consultations 
+    WHERE ConsultationDate < CURDATE()
+");
+$consultYesterdayStmt->execute();
+$totalConsultAsOfYesterday = (int) $consultYesterdayStmt->fetchColumn();
+
+$consultDiff = $totalConsultations - $totalConsultAsOfYesterday;
+
+
+if ($consultDiff > 0) {
+    $consultChangeText = "+{$consultDiff} from yesterday";
+    $consultChangeColor = "text-green-600";
+} elseif ($consultDiff < 0) {
+    $consultChangeText = "{$consultDiff} from yesterday";
+    $consultChangeColor = "text-red-600";
+} else {
+    $consultChangeText = "No change from yesterday";
+    $consultChangeColor = "text-gray-500";
+}
 
 $patients = fetchAllData($pdo, "SELECT * FROM patients ORDER BY userID DESC LIMIT 5");
 $appointments = fetchAllData($pdo, "SELECT * FROM appointments");
@@ -39,11 +81,12 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
 <body class="h-screen flex bg-slate-200">
     <?php include_once '../includes/sidebar.php'; ?>
     <section class="flex-1 p-6 overflow-auto">
-        <div>
-            <h1 class="text-2xl font-bold">Dashboard</h1>
-            <h3 class="text-md font-medium text-gray-500">
-                <?= htmlspecialchars($today) ?> - Welcome, <?= htmlspecialchars($displayName) ?>
-            </h3>
+        <div class="flex items-center justify-between bg-blue-950 -mx-6 -mt-6 px-6 py-4">
+            <h1 class="text-2xl font-bold text-white">Southern Leyte Orthopaedic Clinic System</h1>
+            <div class="flex items-center gap-4">
+                <h1 class="text-lg font-semibold text-white">The College of Maasin</h1>
+                <img src="../assets/img/cmlogo.png" alt="College Logo" class="w-16 h-16 object-contain">
+            </div>
         </div>
         <div class="flex w-full gap-4 mt-6">
             <div class="bg-white p-6 rounded-lg shadow-md flex-1">
@@ -53,8 +96,8 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
                         <i class="fas fa-user-injured text-purple-600"></i>
                     </div>
                 </div>
-                <p class="text-gray-800 text-3xl font-extrabold"><?php echo count($patients); ?></p>
-                <p class="text-gray-500 text-sm font-medium">+3 from yesterday</p>
+                <p class="text-gray-800 text-3xl font-extrabold"><?= count($patients) ?></p>
+                <p class="<?= $changeColor ?> text-sm font-medium"><?= htmlspecialchars($changeText) ?></p>
             </div>
             <div class="bg-white p-6 rounded-lg shadow-md flex-1">
                 <div class="flex justify-between items-center mb-4">
@@ -76,18 +119,9 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
                     </div>
                 </div>
                 <p class="text-gray-800 text-3xl font-extrabold"><?php echo count($consultations); ?></p>
-                <p class="text-gray-500 text-sm font-medium"><?php echo count($confirmedConsultations); ?> in progress
+                <p class="<?= $consultChangeColor ?> text-sm font-medium">
+                    <?php echo htmlspecialchars($consultChangeText); ?></p>
                 </p>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow-md flex-1">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-gray-500 text-md font-semibold">Revenue Today</h2>
-                    <div class="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center">
-                        <i class="fas fa-money-bill text-green-600"></i>
-                    </div>
-                </div>
-                <p class="text-gray-800 text-3xl font-extrabold">₱12,345</p>
-                <p class="text-gray-500 text-sm font-medium">vs ₱20,000 yesterday</p>
             </div>
         </div>
         <div class="grid grid-cols-3 gap-6 mt-8">
@@ -185,7 +219,7 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
                             ?>
                             <div class="flex items-start gap-4">
                                 <div class="<?= $colors[0] ?> <?= $colors[1] ?> rounded-xl px-3 py-2 text-sm font-semibold">
-                                    <?= htmlspecialchars($time) ?> <?= htmlspecialchars($item['Meridiem']) ?>
+                                    <?= htmlspecialchars($time) ?>         <?= htmlspecialchars($item['Meridiem']) ?>
                                 </div>
 
                                 <div>

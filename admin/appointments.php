@@ -48,7 +48,7 @@ if (!$admin) {
     <link rel="stylesheet" href="../assets/css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-     <link rel="icon" href="../assets/img/rounded-logo.ico" type="image/x-icon">
+    <link rel="icon" href="../assets/img/rounded-logo.ico" type="image/x-icon">
     <title>Appointments</title>
 </head>
 
@@ -358,9 +358,26 @@ if (!$admin) {
                         value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                     <div class="mb-4 w-auto">
                         <label class="block text-gray-700 mb-1 text-sm">Patient ID</label>
-                        <input type="text" name="patient_id" required
+                        <select
                             class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="PT-YYYY-XXXX">
+                            name="patient_id" id="patient" required>
+                            <option value="" aria-readonly="true">Please Select Patient ID</option>
+
+                            <?php
+                            try {
+                                $stmt = $pdo->query("SELECT PatientCode, FirstName, LastName FROM patients ORDER BY CreatedAt DESC");
+                                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                                    $patientCode = htmlspecialchars($row['PatientCode'], ENT_QUOTES, 'UTF-8');
+                                    $firstName = htmlspecialchars($row['FirstName'], ENT_QUOTES, 'UTF-8');
+                                    $lastName = htmlspecialchars($row['LastName'], ENT_QUOTES, 'UTF-8');
+                                    echo "<option value=\"$patientCode\">$patientCode - $firstName $lastName</option>";
+                                }
+                            } catch (PDOException $e) {
+                                echo "<option value=\"\">Error fetching patients</option>";
+                            }
+                            ?>
+
+                        </select>
                     </div>
                     <div class="mb-4 w-auto">
                         <label class="block text-gray-700 mb-1 text-sm">Purpose</label>

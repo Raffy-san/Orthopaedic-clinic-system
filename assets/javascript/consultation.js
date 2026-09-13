@@ -212,8 +212,8 @@ document.getElementById('consultationForm').addEventListener('submit', async fun
         consultation_fee: document.getElementById('consultationFee').value,
         has_prescription: hasPrescription,
         prescription: prescriptionData,
-        has_followup: hasFollowup,       // NEW
-        followup: followupData,          // NEW
+        has_followup: hasFollowup,      
+        followup: followupData,          
         csrf_token: csrfToken
     };
 

@@ -90,7 +90,8 @@ CREATE TABLE `consultations` (
   `Treatment` text DEFAULT NULL,
   `Notes` text DEFAULT NULL,
   `ConsultationFee` decimal(10,2) NOT NULL DEFAULT 0.00,
-  `ConsultationDate` datetime NOT NULL DEFAULT current_timestamp()
+  `ConsultationDate` datetime NOT NULL DEFAULT current_timestamp(),
+  `IsCompleted` TINYINT(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------

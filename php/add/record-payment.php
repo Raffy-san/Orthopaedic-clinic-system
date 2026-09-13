@@ -12,7 +12,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['status' => 'error', 'message' => 'Invalid request method.']);
     exit;
 }
-
 $input = json_decode(file_get_contents('php://input'), true);
 
 if (!isset($input['billing_id']) || !isset($input['amount_paid'])) {
@@ -22,13 +21,19 @@ if (!isset($input['billing_id']) || !isset($input['amount_paid'])) {
 
 $billingID = intval($input['billing_id']);
 $amountPaid = floatval($input['amount_paid']);
-$paymentMethod = 'Cash'; 
-$referenceNo = null;
+$discountType = $input['discount_type'] ?? 'None';
 
-// Get current billing record
+// Server-side rate lookup — never trust a client-supplied percent
+$discountRates = [
+    'None' => 0,
+    'Senior Citizen' => 20,
+    'PWD' => 20,
+];
+$discountPercent = $discountRates[$discountType] ?? 0;
+
 $billing = fetchOneData(
     $pdo,
-    'SELECT BillingID, ConsultationID, PatientID, OriginalAmount, DiscountAmount, FinalAmount, Status FROM billing WHERE BillingID = ?',
+    'SELECT BillingID, ConsultationID, PatientID, OriginalAmount, Status FROM billing WHERE BillingID = ?',
     [$billingID]
 );
 
@@ -37,10 +42,27 @@ if (!$billing) {
     exit;
 }
 
+$patient = fetchOneData($pdo, 'SELECT PatientType FROM patients WHERE PatientID = ?', [$billing['PatientID']]);
+
+if ($discountType !== 'None' && strtolower($patient['PatientType']) !== strtolower($discountType)) {
+    echo json_encode(['status' => 'error', 'message' => 'Discount type does not match patient records.']);
+    exit;
+}
+
+$originalAmount = floatval($billing['OriginalAmount']);
+$discountAmount = round($originalAmount * $discountPercent / 100, 2);
+$finalAmount = $originalAmount - $discountAmount;
+
 try {
     $pdo->beginTransaction();
 
-    // Record the payment
+    // Persist the discount + recomputed FinalAmount before comparing payment
+    $updateBilling = $pdo->prepare(
+        'UPDATE billing SET DiscountType = ?, DiscountPercent = ?, DiscountAmount = ?, FinalAmount = ? WHERE BillingID = ?'
+    );
+    $updateBilling->execute([$discountType, $discountPercent, $discountAmount, $finalAmount, $billingID]);
+
+    // Record the payment (unchanged)
     $stmt = $pdo->prepare(
         'INSERT INTO payments (BillingID, AmountPaid, ReferenceNo, PaymentDate, ReceivedBy)
          VALUES (?, ?, ?, NOW(), ?)'
@@ -48,39 +70,32 @@ try {
     $stmt->execute([
         $billingID,
         $amountPaid,
-        $referenceNo,
+        null,
         SessionManager::getUser($pdo)['UserID'] ?? null
     ]);
 
     $paymentID = $pdo->lastInsertId();
 
-    // Calculate new billing status
-    $finalAmount = floatval($billing['FinalAmount']);
     $totalAmountPaid = $amountPaid;
-    
-    // Check if there are previous payments
     $previousPayments = fetchAllData(
         $pdo,
         'SELECT SUM(AmountPaid) as TotalPaid FROM payments WHERE BillingID = ? AND PaymentID != ?',
         [$billingID, $paymentID]
     );
-    
     if (!empty($previousPayments) && $previousPayments[0]['TotalPaid']) {
         $totalAmountPaid += floatval($previousPayments[0]['TotalPaid']);
     }
 
-    // Update billing status
-    if ($totalAmountPaid >= $finalAmount) {
-        $newStatus = 'Paid';
-    } else {
-        $newStatus = 'Partially Paid';
-    }
+    // Now compares against the freshly recalculated $finalAmount, not the stale 500
+    $newStatus = ($totalAmountPaid >= $finalAmount) ? 'Paid' : 'Partially Paid';
 
     $updateStmt = $pdo->prepare('UPDATE billing SET Status = ? WHERE BillingID = ?');
     $updateStmt->execute([$newStatus, $billingID]);
 
-    // Generate receipt number
-    $receiptNo = 'OR-2026-' . str_pad($paymentID, 5, '0', STR_PAD_LEFT);
+    $receiptNo = 'OR-' . date('Y') . '-' . str_pad($paymentID, 5, '0', STR_PAD_LEFT);
+
+    $updateRef = $pdo->prepare('UPDATE payments SET ReferenceNo = ? WHERE PaymentID = ?');
+    $updateRef->execute([$receiptNo, $paymentID]);
 
     $pdo->commit();
 
