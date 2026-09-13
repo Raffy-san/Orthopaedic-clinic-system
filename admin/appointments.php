@@ -20,7 +20,7 @@ $patientsWithCoordinates = fetchAllData($pdo, "
     FROM patients p
     INNER JOIN appointments a ON a.AppointmentID = (
         SELECT MAX(a2.AppointmentID) FROM appointments a2
-        WHERE a2.PatientID = p.PatientID
+        WHERE a2.PatientID = p.PatientID AND a2.Status IN ('Confirmed', 'Pending')
     )
     WHERE p.Latitude IS NOT NULL AND p.Longitude IS NOT NULL
     ORDER BY p.CreatedAt DESC

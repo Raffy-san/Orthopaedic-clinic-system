@@ -152,18 +152,132 @@ async function loadConsultationHistory(patientID) {
     }
 }
 
-// Handle prescription buttons
+const medicinePresets = [
+    { name: 'Ibuprofen', dosage: '400mg', frequency: '3x daily', duration: '5 days', instructions: 'Take with food.' },
+    { name: 'Naproxen', dosage: '500mg', frequency: '2x daily', duration: '7 days', instructions: 'Take with food.' },
+    { name: 'Celecoxib', dosage: '200mg', frequency: '1x daily', duration: '7 days', instructions: 'Take with food.' },
+    { name: 'Diclofenac', dosage: '50mg', frequency: '2x daily', duration: '5 days', instructions: 'Take with food.' },
+    { name: 'Tramadol', dosage: '50mg', frequency: 'Every 6 hours as needed', duration: '5 days', instructions: 'May cause drowsiness. Avoid driving.' },
+    { name: 'Paracetamol', dosage: '500mg', frequency: 'Every 6 hours as needed', duration: '5 days', instructions: 'Do not exceed 4g per day.' },
+    { name: 'Methylcobalamin', dosage: '500mcg', frequency: '1x daily', duration: '30 days', instructions: '' },
+    { name: 'Calcium + Vitamin D3', dosage: '600mg/400IU', frequency: '1x daily', duration: '30 days', instructions: '' },
+    { name: 'Tolperisone', dosage: '150mg', frequency: '3x daily', duration: '5 days', instructions: 'Muscle relaxant — may cause drowsiness.' },
+];
+
+const frequencyOptions = ['1x daily', '2x daily', '3x daily', '4x daily', 'Every 6 hours as needed', 'Every 8 hours as needed', 'At bedtime'];
+const durationOptions = ['3 days', '5 days', '7 days', '10 days', '14 days', '30 days', 'Until finished'];
+const instructionOptions = ['Take with food.', 'Take on an empty stomach.', 'May cause drowsiness. Avoid driving.', 'Do not exceed recommended dose.', 'Stop if rash or discomfort occurs.'];
+
+function buildChipRow(container, options, hiddenInput, multiFill) {
+    container.innerHTML = '';
+    options.forEach(option => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.textContent = option;
+        chip.className = 'chip-btn text-xs px-3 py-1.5 rounded-full border border-slate-300 text-slate-600 hover:bg-blue-50 hover:border-blue-400 transition';
+        chip.addEventListener('click', () => {
+            if (multiFill) {
+                const current = hiddenInput.value.trim();
+                if (current.includes(option)) {
+                    hiddenInput.value = current.split(option).join('').replace(/\s{2,}/g, ' ').trim();
+                    chip.classList.remove('bg-blue-100', 'border-blue-500', 'text-blue-700');
+                    chip.classList.add('border-slate-300', 'text-slate-600');
+                } else {
+                    hiddenInput.value = current ? current + ' ' + option : option;
+                    chip.classList.add('bg-blue-100', 'border-blue-500', 'text-blue-700');
+                    chip.classList.remove('border-slate-300', 'text-slate-600');
+                }
+            } else {
+                container.querySelectorAll('.chip-btn').forEach(c => {
+                    c.classList.remove('bg-blue-100', 'border-blue-500', 'text-blue-700');
+                    c.classList.add('border-slate-300', 'text-slate-600');
+                });
+                chip.classList.add('bg-blue-100', 'border-blue-500', 'text-blue-700');
+                chip.classList.remove('border-slate-300', 'text-slate-600');
+                hiddenInput.value = option;
+            }
+        });
+        container.appendChild(chip);
+    });
+}
+
+function highlightMatchingChip(container, value) {
+    container.querySelectorAll('.chip-btn').forEach(chip => {
+        const match = chip.textContent === value;
+        chip.classList.toggle('bg-blue-100', match);
+        chip.classList.toggle('border-blue-500', match);
+        chip.classList.toggle('text-blue-700', match);
+        chip.classList.toggle('border-slate-300', !match);
+        chip.classList.toggle('text-slate-600', !match);
+    });
+}
+
+function addPrescriptionRow() {
+    const template = document.getElementById('prescriptionRowTemplate');
+    const row = template.content.firstElementChild.cloneNode(true);
+    document.getElementById('prescriptionList').appendChild(row);
+
+    const medicineInput = row.querySelector('.rx-medicine');
+    const dosageInput = row.querySelector('.rx-dosage');
+    const frequencyHidden = row.querySelector('.rx-frequency');
+    const durationHidden = row.querySelector('.rx-duration');
+    const instructionsTextarea = row.querySelector('.rx-instructions');
+
+    buildChipRow(row.querySelector('.frequency-chips'), frequencyOptions, frequencyHidden, false);
+    buildChipRow(row.querySelector('.duration-chips'), durationOptions, durationHidden, false);
+    buildChipRow(row.querySelector('.instruction-chips'), instructionOptions, instructionsTextarea, true);
+
+    const presetGrid = row.querySelector('.medicine-preset-grid');
+    medicinePresets.forEach(preset => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'preset-btn text-left text-sm border border-slate-200 rounded-lg px-3 py-2 hover:bg-blue-50 hover:border-blue-400 transition';
+        card.innerHTML = `<div class="font-semibold text-slate-800">${preset.name}</div><div class="text-xs text-slate-500">${preset.dosage} · ${preset.frequency}</div>`;
+        card.addEventListener('click', () => {
+            medicineInput.value = preset.name;
+            dosageInput.value = preset.dosage;
+            frequencyHidden.value = preset.frequency;
+            durationHidden.value = preset.duration;
+            instructionsTextarea.value = preset.instructions;
+
+            presetGrid.querySelectorAll('.preset-btn').forEach(c => c.classList.remove('bg-blue-100', 'border-blue-500'));
+            card.classList.add('bg-blue-100', 'border-blue-500');
+
+            highlightMatchingChip(row.querySelector('.frequency-chips'), preset.frequency);
+            highlightMatchingChip(row.querySelector('.duration-chips'), preset.duration);
+        });
+        presetGrid.appendChild(card);
+    });
+
+    // Show "Remove" on every row except when it's the only one
+    updateRemoveButtons();
+
+    row.querySelector('.remove-row-btn').addEventListener('click', () => {
+        row.remove();
+        updateRemoveButtons();
+    });
+}
+
+function updateRemoveButtons() {
+    const rows = document.querySelectorAll('.prescription-row');
+    rows.forEach(row => {
+        row.querySelector('.remove-row-btn').classList.toggle('hidden', rows.length <= 1);
+    });
+}
+
+document.getElementById('addAnotherMedicineBtn').addEventListener('click', addPrescriptionRow);
+
+// ── Prescription Yes/No buttons ──────────────────────────
 document.getElementById('addPrescriptionBtn').addEventListener('click', () => {
     document.getElementById('prescriptionDetails').classList.remove('hidden');
+    if (document.getElementById('prescriptionList').children.length === 0) {
+        addPrescriptionRow(); // start with one card
+    }
 });
 
 document.getElementById('skipPrescriptionBtn').addEventListener('click', () => {
     document.getElementById('prescriptionDetails').classList.add('hidden');
-    document.getElementById('prescriptionMedicine').value = '';
-    document.getElementById('prescriptionDosage').value = '';
-    document.getElementById('prescriptionFrequency').value = '';
-    document.getElementById('prescriptionDuration').value = '';
-    document.getElementById('prescriptionInstructions').value = '';
+    document.getElementById('prescriptionList').innerHTML = '';
 });
 
 // Handle follow-up buttons
@@ -181,15 +295,30 @@ document.getElementById('consultationForm').addEventListener('submit', async fun
     e.preventDefault();
 
     const hasPrescription = !document.getElementById('prescriptionDetails').classList.contains('hidden');
-    const prescriptionData = hasPrescription ? {
-        medicine: document.getElementById('prescriptionMedicine').value,
-        dosage: document.getElementById('prescriptionDosage').value,
-        frequency: document.getElementById('prescriptionFrequency').value,
-        duration: document.getElementById('prescriptionDuration').value,
-        instructions: document.getElementById('prescriptionInstructions').value
-    } : null;
 
-    // NEW: follow-up data
+    let prescriptions = [];
+    if (hasPrescription) {
+        const rows = document.querySelectorAll('.prescription-row');
+        for (const row of rows) {
+            const medicine = row.querySelector('.rx-medicine').value.trim();
+            const dosage = row.querySelector('.rx-dosage').value.trim();
+            const frequency = row.querySelector('.rx-frequency').value.trim();
+
+            if (!medicine || !dosage || !frequency) {
+                alert('Please fill in medicine, dosage, and frequency for each prescription (or remove the empty card).');
+                return;
+            }
+
+            prescriptions.push({
+                medicine,
+                dosage,
+                frequency,
+                duration: row.querySelector('.rx-duration').value.trim(),
+                instructions: row.querySelector('.rx-instructions').value.trim()
+            });
+        }
+    }
+
     const hasFollowup = !document.getElementById('followupDetails').classList.contains('hidden');
     const followupDate = document.getElementById('followupDate').value;
 
@@ -211,9 +340,9 @@ document.getElementById('consultationForm').addEventListener('submit', async fun
         notes: document.querySelector('[name="notes"]').value,
         consultation_fee: document.getElementById('consultationFee').value,
         has_prescription: hasPrescription,
-        prescription: prescriptionData,
-        has_followup: hasFollowup,      
-        followup: followupData,          
+        prescriptions: prescriptions,
+        has_followup: hasFollowup,
+        followup: followupData,
         csrf_token: csrfToken
     };
 
@@ -244,13 +373,26 @@ document.getElementById('consultationForm').addEventListener('submit', async fun
     }
 });
 
-// Function to print prescription
+
 function printPrescription(consultationID, consultationData) {
     const patientName = document.getElementById('patientName').textContent;
     const patientInfo = document.getElementById('patientInfo').textContent;
     const diagnosis = consultationData.diagnosis;
     const treatment = consultationData.treatment;
-    const prescription = consultationData.prescription;
+    const prescriptions = consultationData.prescriptions; // now an array
+
+    // Build one <div class="prescription-item"> block per medicine
+    const prescriptionItemsHTML = prescriptions.map(prescription => `
+        <div class="prescription-item">
+            <div class="medicine-name">💊 ${prescription.medicine}</div>
+            <div class="prescription-details">
+                <div><strong>Dosage:</strong> ${prescription.dosage}</div>
+                <div><strong>Frequency:</strong> ${prescription.frequency}</div>
+                <div><strong>Duration:</strong> ${prescription.duration || 'As needed'}</div>
+                ${prescription.instructions ? '<div><strong>Instructions:</strong> ' + prescription.instructions + '</div>' : ''}
+            </div>
+        </div>
+    `).join('');
 
     const printWindow = window.open('', '', 'height=600,width=800');
     const printContent = `
@@ -398,15 +540,7 @@ function printPrescription(consultationID, consultationData) {
 
             <div class="prescription-section">
                 <h2>PRESCRIPTION</h2>
-                <div class="prescription-item">
-                    <div class="medicine-name">💊 ${prescription.medicine}</div>
-                    <div class="prescription-details">
-                        <div><strong>Dosage:</strong> ${prescription.dosage}</div>
-                        <div><strong>Frequency:</strong> ${prescription.frequency}</div>
-                        <div><strong>Duration:</strong> ${prescription.duration || 'As needed'}</div>
-                        ${prescription.instructions ? '<div><strong>Instructions:</strong> ' + prescription.instructions + '</div>' : ''}
-                    </div>
-                </div>
+                ${prescriptionItemsHTML}
             </div>
 
             <div class="signature-area">
@@ -425,7 +559,6 @@ function printPrescription(consultationID, consultationData) {
     printWindow.document.write(printContent);
     printWindow.document.close();
 
-    // Wait a moment for the content to load, then print
     setTimeout(function () {
         printWindow.print();
     }, 250);

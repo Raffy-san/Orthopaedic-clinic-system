@@ -120,7 +120,8 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
                 </div>
                 <p class="text-gray-800 text-3xl font-extrabold"><?php echo count($consultations); ?></p>
                 <p class="<?= $consultChangeColor ?> text-sm font-medium">
-                    <?php echo htmlspecialchars($consultChangeText); ?></p>
+                    <?php echo htmlspecialchars($consultChangeText); ?>
+                </p>
                 </p>
             </div>
         </div>
@@ -195,9 +196,9 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
                 a.Status,
                 p.FirstName,
                 p.LastName
-            FROM appointments a
+            FROM appointments a 
             JOIN patients p ON p.PatientID = a.PatientID
-            WHERE DATE(a.AppointmentDate) = CURDATE()
+            WHERE a.status = 'Confirmed' AND DATE(a.AppointmentDate) = CURDATE()
             ORDER BY a.AppointmentTime ASC
         ");
 
