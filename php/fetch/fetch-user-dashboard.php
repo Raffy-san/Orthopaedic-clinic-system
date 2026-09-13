@@ -16,7 +16,7 @@ function fetchUserDashboardData(PDO $pdo, int $userId): array
                     u.FirstName AS DoctorFirstName, u.LastName AS DoctorLastName
              FROM appointments a
              LEFT JOIN users u ON u.UserID = a.DoctorID
-             WHERE a.PatientID = ? AND a.AppointmentDate >= CURDATE() AND a.Status <> 'Cancelled'
+             WHERE a.PatientID = ? AND a.AppointmentDate >= CURDATE() AND a.Status <> 'Completed' AND a.Status <> 'Cancelled'
              ORDER BY a.AppointmentDate ASC, a.AppointmentTime ASC"
         );
         $upcomingStatement->execute([$patientId]);

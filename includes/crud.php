@@ -204,8 +204,8 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
         $pdo->beginTransaction();
 
         $stmt = $pdo->prepare("
-            INSERT INTO consultations (AppointmentID, PatientID, DoctorID, Diagnosis, Treatment, Notes, ConsultationFee, ConsultationDate)
-            VALUES (:appointment_id, :patient_id, :doctor_id, :diagnosis, :treatment, :notes, :consultation_fee, NOW())
+            INSERT INTO consultations (AppointmentID, PatientID, DoctorID, Diagnosis, Treatment, Notes, ConsultationFee, ConsultationDate, IsCompleted)
+            VALUES (:appointment_id, :patient_id, :doctor_id, :diagnosis, :treatment, :notes, :consultation_fee, NOW(), 0)
         ");
         $stmt->execute([
             ':appointment_id' => intval($data['appointment_id'] ?? 0),
@@ -250,6 +250,13 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
     WHERE AppointmentID = :appointment_id
 ");
         $stmt->execute([':appointment_id' => intval($data['appointment_id'] ?? 0)]);
+
+        $stmt = $pdo->prepare("
+            UPDATE consultations 
+            SET IsCompleted = 1 
+            WHERE ConsultationID = :consultation_id
+        ");
+        $stmt->execute([':consultation_id' => $consultationID]);
 
         // NEW: create a follow-up if the doctor requested one
         $followupID = null;
@@ -323,7 +330,6 @@ function updatePatient(PDO $pdo, array $data): array
         );
         $stmt->execute([
             $data['firstName'] ?? '',
-            $data['middleName'] ?? '',
             $data['lastName'] ?? '',
             $data['phone'] ?? null,
             $userID
@@ -345,6 +351,7 @@ function updatePatient(PDO $pdo, array $data): array
             $data['phone'] ?? null,
             $data['patientType'] ?? 'Regular',
             $data['address'] ?? null,
+            $data['allergies'] ?? null,
             $coords['lat'] ?? null,
             $coords['lng'] ?? null,
             $data['patient_code']

@@ -109,9 +109,12 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                     <div class="mt-4">
                         <label class="text-slate-500 text-sm">Discount Eligibility</label>
                         <div class="mt-2 flex gap-2">
-                            <button class="discount-btn px-3 py-1 rounded-lg border text-slate-600 text-sm" data-discount="None" data-percent="0">None</button>
-                            <button class="discount-btn px-3 py-1 rounded-lg border text-slate-600 text-sm" data-discount="Senior Citizen" data-percent="20">Senior Citizen (20%)</button>
-                            <button class="discount-btn px-3 py-1 rounded-lg border text-slate-600 text-sm" data-discount="PWD" data-percent="20">PWD (20%)</button>
+                            <button class="discount-btn px-3 py-1 rounded-lg border text-slate-600 text-sm"
+                                data-discount="None" data-percent="0">None</button>
+                            <button class="discount-btn px-3 py-1 rounded-lg border text-slate-600 text-sm"
+                                data-discount="Senior Citizen" data-percent="20">Senior Citizen (20%)</button>
+                            <button class="discount-btn px-3 py-1 rounded-lg border text-slate-600 text-sm"
+                                data-discount="PWD" data-percent="20">PWD (20%)</button>
                         </div>
                     </div>
                 </div>
@@ -137,8 +140,10 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                     </div>
 
                     <div class="print-hidden mt-6">
-                        <label for="amount-paid" class="block text-sm font-semibold text-slate-700 mb-2">Amount Paid</label>
-                        <input type="number" id="amount-paid" placeholder="0.00" step="0.01" class="w-full py-2 px-3 rounded-lg border border-slate-200 text-gray-600" />
+                        <label for="amount-paid" class="block text-sm font-semibold text-slate-700 mb-2">Amount
+                            Paid</label>
+                        <input type="number" id="amount-paid" placeholder="0.00" step="0.01"
+                            class="w-full py-2 px-3 rounded-lg border border-slate-200 text-gray-600" />
                     </div>
 
                     <div id="paid-amount" class="hidden mt-6 flex justify-between text-sm font-semibold">
@@ -165,7 +170,7 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                 const prescriptionSection = document.getElementById('prescription-section');
                 const recordBtn = document.getElementById('record-btn');
                 const printBtn = document.getElementById('print-btn');
-                
+
                 let currentBillingData = {};
                 let currentConsultationData = {};
                 let currentPatientData = {};
@@ -176,7 +181,7 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
 
                 loadBtn.addEventListener('click', async function () {
                     const patientCode = patientLookupInput.value.trim();
-                    
+
                     if (!patientCode) {
                         alert('Please enter a Patient ID');
                         return;
@@ -206,7 +211,7 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
 
                         // Populate consultation details
                         const patientName = data.patient.FirstName + ' ' + data.patient.LastName;
-                        const doctorName = data.consultation.DoctorFirstName && data.consultation.DoctorLastName 
+                        const doctorName = data.consultation.DoctorFirstName && data.consultation.DoctorLastName
                             ? 'Dr. ' + data.consultation.DoctorFirstName + ' ' + data.consultation.DoctorLastName
                             : 'Not Assigned';
                         const consultDate = new Date(data.consultation.ConsultationDate).toLocaleDateString();
@@ -263,7 +268,7 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                 // Setup discount eligibility - all options available for staff selection
                 function setupDiscountEligibility(patientType) {
                     const discountBtns = document.querySelectorAll('.discount-btn');
-                    
+
                     // All discount buttons are enabled for staff to select
                     discountBtns.forEach(btn => {
                         btn.disabled = false;
@@ -336,7 +341,8 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                             },
                             body: JSON.stringify({
                                 billing_id: currentBillingData.BillingID,
-                                amount_paid: amountPaid
+                                amount_paid: amountPaid,
+                                discount_type: currentBillingData.DiscountType
                             })
                         });
 
