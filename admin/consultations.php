@@ -152,39 +152,61 @@ $defaultConsultationFee = 500; // PHP
                         </div>
 
                         <div id="prescriptionDetails" class="hidden">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="text-sm font-semibold text-slate-700">Medicine Name *</label>
-                                    <input type="text" id="prescriptionMedicine" name="prescription[medicine]"
-                                        class="w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="e.g., Ibuprofen">
-                                </div>
-                                <div>
-                                    <label class="text-sm font-semibold text-slate-700">Dosage *</label>
-                                    <input type="text" id="prescriptionDosage" name="prescription[dosage]"
-                                        class="w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="e.g., 500mg">
-                                </div>
-                                <div>
-                                    <label class="text-sm font-semibold text-slate-700">Frequency *</label>
-                                    <input type="text" id="prescriptionFrequency" name="prescription[frequency]"
-                                        class="w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="e.g., 3x daily">
-                                </div>
-                                <div>
-                                    <label class="text-sm font-semibold text-slate-700">Duration</label>
-                                    <input type="text" id="prescriptionDuration" name="prescription[duration]"
-                                        class="w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="e.g., 7 days">
-                                </div>
-                            </div>
-                            <div class="mt-4">
-                                <label class="text-sm font-semibold text-slate-700">Instructions</label>
-                                <textarea id="prescriptionInstructions" name="prescription[instructions]"
-                                    class="w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="e.g., Take with food, avoid alcohol..."></textarea>
-                            </div>
+                            <div id="prescriptionList" class="space-y-4"></div>
+
+                            <button id="addAnotherMedicineBtn" type="button"
+                                class="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-800">
+                                <i class="fa-solid fa-plus"></i> Add another medicine
+                            </button>
                         </div>
+
+                        <!-- Hidden template — cloned by JS, never shown directly -->
+                        <template id="prescriptionRowTemplate">
+                            <div class="prescription-row border border-slate-200 rounded-xl p-4 bg-slate-50 relative">
+                                <button type="button"
+                                    class="remove-row-btn absolute top-3 right-3 text-xs text-red-500 hover:text-red-700 font-semibold hidden">
+                                    <i class="fa-solid fa-xmark"></i> Remove
+                                </button>
+
+                                <label class="text-sm font-semibold text-slate-700">Quick pick a medicine</label>
+                                <div class="medicine-preset-grid grid grid-cols-2 md:grid-cols-3 gap-2 mt-2"></div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                    <div>
+                                        <label class="text-sm font-semibold text-slate-700">Medicine Name *</label>
+                                        <input type="text"
+                                            class="rx-medicine w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="e.g., Ibuprofen">
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-semibold text-slate-700">Dosage *</label>
+                                        <input type="text"
+                                            class="rx-dosage w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="e.g., 500mg">
+                                    </div>
+                                </div>
+
+                                <div class="mt-4">
+                                    <label class="text-sm font-semibold text-slate-700">Frequency *</label>
+                                    <div class="frequency-chips flex flex-wrap gap-2 mt-2"></div>
+                                    <input type="hidden" class="rx-frequency">
+                                </div>
+
+                                <div class="mt-4">
+                                    <label class="text-sm font-semibold text-slate-700">Duration</label>
+                                    <div class="duration-chips flex flex-wrap gap-2 mt-2"></div>
+                                    <input type="hidden" class="rx-duration">
+                                </div>
+
+                                <div class="mt-4">
+                                    <label class="text-sm font-semibold text-slate-700">Instructions</label>
+                                    <div class="instruction-chips flex flex-wrap gap-2 mt-2"></div>
+                                    <textarea
+                                        class="rx-instructions w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Tap chips above, or type your own..." rows="2"></textarea>
+                                </div>
+                            </div>
+                        </template>
 
                         <div class="mt-6 flex flex-col gap-4 border-t border-slate-100 pt-6">
                             <div class="text-sm font-semibold text-slate-900">Schedule a Follow-Up?</div>

@@ -219,7 +219,7 @@ step2Content.addEventListener('submit', (event) => {
             patientType: formData.get('patientType')
         };
 
-        fetch('../php/add/update-existing-patient.php', {
+        fetch('../php/update/update-existing-patient.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -83,24 +83,44 @@ $doctorAccounts = count(array_filter($staff, static fn(array $account): bool => 
                     </div>
                     <div>
                         <h2 class="text-lg font-semibold text-slate-800">Add staff account</h2>
-                        <p class="text-sm text-slate-500 mt-1">Set up login details and access level for a team member.</p>
+                        <p class="text-sm text-slate-500 mt-1">Set up login details and access level for a team member.
+                        </p>
                     </div>
                 </div>
                 <form id="addStaffForm" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                <label class="text-sm font-medium text-slate-700">Username<input name="username" placeholder="e.g. maria.staff" required class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-blue-500 focus:outline-none"></label>
-                <label class="text-sm font-medium text-slate-700">Password<input name="password" type="password" placeholder="8+ characters" required class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-blue-500 focus:outline-none"></label>
-                <label class="text-sm font-medium text-slate-700">First name<input name="firstName" placeholder="First name" required class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-blue-500 focus:outline-none"></label>
-                <label class="text-sm font-medium text-slate-700">Last name<input name="lastName" placeholder="Last name" required class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-blue-500 focus:outline-none"></label>
-                <label class="text-sm font-medium text-slate-700">Role<select name="role" class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 bg-white focus:border-blue-500 focus:outline-none">
-                    <option value="Staff">Staff</option>
-                    <option value="Doctor">Doctor</option>
-                    <option value="Admin">Admin</option>
-                </select></label>
-                <label class="text-sm font-medium text-slate-700">Email<input name="email" type="email" placeholder="Optional email" class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-blue-500 focus:outline-none"></label>
-                <label class="text-sm font-medium text-slate-700">Phone<input name="phone" placeholder="Optional phone" class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-blue-500 focus:outline-none"></label>
-                <label class="flex items-center gap-3 self-end min-h-11 px-3 rounded-lg bg-slate-50 border border-slate-200 text-sm text-slate-700"><input name="isDoctor" type="checkbox" value="1" class="h-4 w-4 accent-blue-600"> Also a doctor</label>
-                <button class="md:col-span-2 xl:col-span-4 bg-blue-800 text-white rounded-lg p-2.5 font-semibold hover:bg-blue-900 transition" type="submit"><i class="fa-solid fa-plus mr-2"></i>Create account</button>
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                    <input type="hidden" name="userId" value="">
+                    <label class="text-sm font-medium text-slate-700">Username<input name="username"
+                            placeholder="e.g. maria.staff" required
+                            class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-blue-500 focus:outline-none"></label>
+                    <label class="text-sm font-medium text-slate-700">Password<input name="password" type="password"
+                            placeholder="8+ characters" required
+                            class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-blue-500 focus:outline-none"></label>
+                    <label class="text-sm font-medium text-slate-700">First name<input name="firstName"
+                            placeholder="First name" required
+                            class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-blue-500 focus:outline-none"></label>
+                    <label class="text-sm font-medium text-slate-700">Last name<input name="lastName"
+                            placeholder="Last name" required
+                            class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-blue-500 focus:outline-none"></label>
+                    <label class="text-sm font-medium text-slate-700">Role<select name="role"
+                            class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 bg-white focus:border-blue-500 focus:outline-none">
+                            <option value="Staff">Staff</option>
+                            <option value="Doctor">Doctor</option>
+                            <option value="Admin">Admin</option>
+                        </select></label>
+                    <label class="text-sm font-medium text-slate-700">Email<input name="email" type="email"
+                            placeholder="Optional email"
+                            class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-blue-500 focus:outline-none"></label>
+                    <label class="text-sm font-medium text-slate-700">Phone<input name="phone"
+                            placeholder="Optional phone"
+                            class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-blue-500 focus:outline-none"></label>
+                    <label
+                        class="flex items-center gap-3 self-end min-h-11 px-3 rounded-lg bg-slate-50 border border-slate-200 text-sm text-slate-700"><input
+                            name="isDoctor" type="checkbox" value="1" class="h-4 w-4 accent-blue-600"> Also a
+                        doctor</label>
+                    <button
+                        class="md:col-span-2 xl:col-span-4 bg-blue-800 text-white rounded-lg p-2.5 font-semibold hover:bg-blue-900 transition"
+                        type="submit"><i class="fa-solid fa-plus mr-2"></i>Create account</button>
                 </form>
             </section>
 
@@ -111,73 +131,57 @@ $doctorAccounts = count(array_filter($staff, static fn(array $account): bool => 
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
-                <thead class="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                    <tr>
-                        <th class="px-6 py-3">Name</th>
-                        <th class="px-6 py-3">Username</th>
-                        <th class="px-6 py-3">Role</th>
-                        <th class="px-6 py-3">Contact</th>
-                        <th class="px-6 py-3">Status</th>
-                    </tr>
-                </thead>
-                <tbody><?php foreach ($staff as $account): ?>
-                        <tr class="border-b last:border-0 border-slate-100 hover:bg-slate-50 transition">
-                            <td class="px-6 py-4 font-medium text-slate-800">
-                                <?= htmlspecialchars($account['FirstName'] . ' ' . $account['LastName']) ?>
-                            </td>
-                            <td class="px-6 py-4 text-sm text-slate-600"><?= htmlspecialchars($account['Username']) ?></td>
-                            <td class="px-6 py-4 text-sm text-slate-600">
-                                <?= htmlspecialchars($account['Role'] . ($account['IsDoctor'] ? ' / Doctor' : '')) ?>
-                            </td>
-                            <td class="px-6 py-4 text-sm text-slate-600"><?= htmlspecialchars($account['Email'] ?: $account['Phone'] ?: '-') ?></td>
-                            <td class="px-6 py-4"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold <?= $account['Status'] === 'Active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600' ?>"><?= htmlspecialchars($account['Status']) ?></span></td>
-                        </tr><?php endforeach; ?>
-                </tbody>
-            </table>
+                        <thead
+                            class="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                            <tr>
+                                <th class="px-6 py-3">Name</th>
+                                <th class="px-6 py-3">Username</th>
+                                <th class="px-6 py-3">Role</th>
+                                <th class="px-6 py-3">Contact</th>
+                                <th class="px-6 py-3">Status</th>
+                                <th class="px-6 py-3">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody><?php foreach ($staff as $account): ?>
+                                <tr class="border-b last:border-0 border-slate-100 hover:bg-slate-50 transition">
+                                    <td class="px-6 py-4 font-medium text-slate-800">
+                                        <?= htmlspecialchars($account['FirstName'] . ' ' . $account['LastName']) ?>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-slate-600">
+                                        <?= htmlspecialchars($account['Username']) ?>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-slate-600">
+                                        <?= htmlspecialchars($account['Role'] . ($account['IsDoctor'] ? ' / Doctor' : '')) ?>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-slate-600">
+                                        <?= htmlspecialchars($account['Email'] ?: $account['Phone'] ?: '-') ?>
+                                    </td>
+                                    <td class="px-6 py-4"><span
+                                            class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold <?= $account['Status'] === 'Active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600' ?>"><?= htmlspecialchars($account['Status']) ?></span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <button type="button"
+                                            class="edit-staff-btn inline-flex rounded-full px-4 py-2 text-white bg-blue-700 cursor-pointer hover:bg-blue-800"
+                                            data-id="<?= htmlspecialchars($account['UserID']) ?>"
+                                            data-username="<?= htmlspecialchars($account['Username']) ?>"
+                                            data-first-name="<?= htmlspecialchars($account['FirstName']) ?>"
+                                            data-last-name="<?= htmlspecialchars($account['LastName']) ?>"
+                                            data-role="<?= htmlspecialchars($account['Role']) ?>"
+                                            data-is-doctor="<?= (int) $account['IsDoctor'] ?>"
+                                            data-email="<?= htmlspecialchars($account['Email'] ?? '') ?>"
+                                            data-phone="<?= htmlspecialchars($account['Phone'] ?? '') ?>">Edit</button>
+                                    </td>
+                                </tr><?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
             </section>
         </div>
     </main>
     <script>
-        let csrfToken = <?= json_encode($csrfToken) ?>;
-        const form = document.getElementById('addStaffForm');
-        const message = document.getElementById('staffMessage');
-        const submitButton = form.querySelector('button[type="submit"]');
-
-        form.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            submitButton.disabled = true;
-            submitButton.textContent = 'Creating...';
-            message.className = 'mt-4 rounded p-3 hidden';
-
-            const formData = new FormData(form);
-            formData.set('csrf_token', csrfToken);
-
-            try {
-                const response = await fetch('../php/add/add-staff.php', {
-                    method: 'POST',
-                    body: formData,
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-                const data = await response.json();
-                if (data.csrf_token) {
-                    csrfToken = data.csrf_token;
-                }
-                if (data.status !== 'success') {
-                    throw new Error(data.message || 'Unable to create the account.');
-                }
-                message.textContent = data.message;
-                message.className = 'mt-4 rounded bg-green-100 p-3 text-green-700';
-                form.reset();
-            } catch (error) {
-                message.textContent = error.message;
-                message.className = 'mt-4 rounded bg-red-100 p-3 text-red-700';
-            } finally {
-                submitButton.disabled = false;
-                submitButton.textContent = 'Create account';
-            }
-        });
+        window.csrfToken = <?= json_encode($csrfToken, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
     </script>
+    <script src="../assets/javascript/staff-management.js"></script>
 </body>
 
 </html>

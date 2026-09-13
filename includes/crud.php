@@ -219,19 +219,21 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
 
         $consultationID = $pdo->lastInsertId();
 
-        if (($data['has_prescription'] ?? false) && ($data['prescription'] ?? null)) {
-            $stmt = $pdo->prepare("
-                INSERT INTO prescriptions (ConsultationID, Medicine, Dosage, Frequency, Duration, Instructions)
-                VALUES (:consultation_id, :medicine, :dosage, :frequency, :duration, :instructions)
-            ");
-            $stmt->execute([
-                ':consultation_id' => $consultationID,
-                ':medicine' => $data['prescription']['medicine'] ?? '',
-                ':dosage' => $data['prescription']['dosage'] ?? '',
-                ':frequency' => $data['prescription']['frequency'] ?? '',
-                ':duration' => $data['prescription']['duration'] ?? '',
-                ':instructions' => $data['prescription']['instructions'] ?? ''
-            ]);
+        if (($data['has_prescription'] ?? false) && !empty($data['prescriptions']) && is_array($data['prescriptions'])) {
+            $rxStmt = $pdo->prepare("
+        INSERT INTO prescriptions (ConsultationID, Medicine, Dosage, Frequency, Duration, Instructions)
+        VALUES (:consultation_id, :medicine, :dosage, :frequency, :duration, :instructions)
+    ");
+            foreach ($data['prescriptions'] as $rx) {
+                $rxStmt->execute([
+                    ':consultation_id' => $consultationID,
+                    ':medicine' => $rx['medicine'] ?? '',
+                    ':dosage' => $rx['dosage'] ?? '',
+                    ':frequency' => $rx['frequency'] ?? '',
+                    ':duration' => $rx['duration'] ?? '',
+                    ':instructions' => $rx['instructions'] ?? ''
+                ]);
+            }
         }
 
         $stmt = $pdo->prepare("
@@ -369,5 +371,65 @@ function updatePatient(PDO $pdo, array $data): array
     }
 }
 
+function updateStaff(PDO $pdo, array $data): array
+{
+    try {
+        $pdo->beginTransaction();
 
-?>
+        $stmt = $pdo->prepare('SELECT UserID FROM users WHERE UserID = ?');
+        $stmt->execute([$data['userId']]);
+        if (!$stmt->fetch()) {
+            $pdo->rollBack();
+            return ['status' => 'error', 'message' => 'That account no longer exists.'];
+        }
+
+        if ($data['password'] !== '') {
+            $statement = $pdo->prepare(
+                'UPDATE users
+                 SET Username = ?, PasswordHash = ?, FirstName = ?, LastName = ?, Role = ?, IsDoctor = ?, Email = ?, Phone = ?
+                 WHERE UserID = ?'
+            );
+            $statement->execute([
+                $data['username'],
+                password_hash($data['password'], PASSWORD_DEFAULT),
+                $data['firstName'],
+                $data['lastName'],
+                $data['role'],
+                $data['isDoctor'],
+                $data['email'] ?: null,
+                $data['phone'] ?: null,
+                $data['userId']
+            ]);
+        } else {
+            $statement = $pdo->prepare(
+                'UPDATE users
+                 SET Username = ?, FirstName = ?, LastName = ?, Role = ?, IsDoctor = ?, Email = ?, Phone = ?
+                 WHERE UserID = ?'
+            );
+            $statement->execute([
+                $data['username'],
+                $data['firstName'],
+                $data['lastName'],
+                $data['role'],
+                $data['isDoctor'],
+                $data['email'] ?: null,
+                $data['phone'] ?: null,
+                $data['userId']
+            ]);
+        }
+
+        $pdo->commit();
+        return ['status' => 'success', 'message' => 'Staff account updated successfully.'];
+    } catch (PDOException $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log('UpdateStaff failed: ' . $e->getMessage());
+        return [
+            'status' => 'error',
+            'message' => $e->getCode() === '23000'
+                ? 'That username or email is already in use.'
+                : 'Unable to update the staff account. Please try again.'
+        ];
+    }
+}
