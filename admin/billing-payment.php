@@ -161,11 +161,13 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
             </div>
         </div>
 
-        <script>
-            window.csrfToken = <?= json_encode($csrfToken, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
-        </script>
-        <script src="../assets/javascript/billing-payment.js"></script>
+        <?php include '../includes/message-modal.php' ?>
     </section>
+
+    <script>
+        window.csrfToken = <?= json_encode($csrfToken, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+    </script>
+    <script src="../assets/javascript/billing-payment.js"></script>
 </body>
 
 </html>
