@@ -62,6 +62,42 @@ async function loadClinicQueue() {
     }
 }
 
+function updateBodyScroll() {
+    const anyModalOpen = document.querySelectorAll('.modal:not(.hidden)').length > 0;
+    document.body.style.overflow = anyModalOpen ? 'hidden' : 'auto';
+}
+
+const openModal = (modal) => {
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+    updateBodyScroll();
+};
+
+const closeModal = (modal) => {
+    modal.classList.add("hidden");
+    updateBodyScroll();
+};
+
+function showMessage(title, message, type = "success", callback = null) {
+    const modal = document.getElementById("messageModal");
+    const titleElement = document.getElementById("messageTitle");
+    const textElement = document.getElementById("messageText");
+
+    titleElement.textContent = title;
+    textElement.textContent = message;
+
+    titleElement.classList.toggle("text-green-600", type === "success");
+    titleElement.classList.toggle("text-red-600", type !== "success");
+
+    openModal(modal);
+    modal.classList.add('flex');
+
+    document.getElementById("closeMessageBtn").onclick = () => {
+        closeModal(modal);
+        if (callback) callback();
+    };
+}
+
 // Load patient data and show form
 async function loadPatientData(appointmentData) {
     currentAppointmentData = appointmentData;
@@ -305,7 +341,7 @@ document.getElementById('consultationForm').addEventListener('submit', async fun
             const frequency = row.querySelector('.rx-frequency').value.trim();
 
             if (!medicine || !dosage || !frequency) {
-                alert('Please fill in medicine, dosage, and frequency for each prescription (or remove the empty card).');
+                showMessage('Missing Information', 'Please fill in medicine, dosage, and frequency for each prescription (or remove the empty card).', 'error');
                 return;
             }
 
@@ -323,7 +359,7 @@ document.getElementById('consultationForm').addEventListener('submit', async fun
     const followupDate = document.getElementById('followupDate').value;
 
     if (hasFollowup && !followupDate) {
-        alert('Please select a follow-up date, or click "No — Skip".');
+        showMessage('Missing Information', 'Please select a follow-up date, or click "No — Skip".', 'error');
         return;
     }
 
@@ -357,19 +393,19 @@ document.getElementById('consultationForm').addEventListener('submit', async fun
 
         if (result.status === 'success') {
             csrfToken = result.csrf_token;
-            alert('Consultation saved successfully!\nConsultation ID: ' + result.consultation_id);
 
-            if (hasPrescription) {
-                printPrescription(result.consultation_id, consultationData);
-            }
-
-            loadClinicQueue();
+            showMessage('Success', 'Consultation saved successfully! Consultation ID: ' + result.consultation_id, 'success', () => {
+                if (hasPrescription) {
+                    printPrescription(result.consultation_id, consultationData);
+                }
+                loadClinicQueue();
+            });
         } else {
-            alert('Error: ' + result.message);
+            showMessage('Error', 'Error: ' + result.message, 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('An error occurred while saving the consultation.');
+        showMessage('Error', 'An error occurred while saving the consultation.', 'error');
     }
 });
 

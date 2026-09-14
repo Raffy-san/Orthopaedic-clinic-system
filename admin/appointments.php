@@ -409,6 +409,8 @@ if (!$admin) {
                 </form>
             </div>
         </div>
+
+        <?php include '../includes/message-modal.php' ?>
     </section>
 
     <!-- Leaflet map library -->
