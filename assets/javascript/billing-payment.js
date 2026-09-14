@@ -16,11 +16,47 @@
         window.print();
     });
 
+    function updateBodyScroll() {
+        const anyModalOpen = document.querySelectorAll('.modal:not(.hidden)').length > 0;
+        document.body.style.overflow = anyModalOpen ? 'hidden' : 'auto';
+    }
+
+    const openModal = (modal) => {
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+        updateBodyScroll();
+    };
+
+    const closeModal = (modal) => {
+        modal.classList.add("hidden");
+        updateBodyScroll();
+    };
+
+    function showMessage(title, message, type = "success", callback = null) {
+        const modal = document.getElementById("messageModal");
+        const titleElement = document.getElementById("messageTitle");
+        const textElement = document.getElementById("messageText");
+
+        titleElement.textContent = title;
+        textElement.textContent = message;
+
+        titleElement.classList.toggle("text-green-600", type === "success");
+        titleElement.classList.toggle("text-red-600", type !== "success");
+
+        openModal(modal);
+        modal.classList.add('flex');
+
+        document.getElementById("closeMessageBtn").onclick = () => {
+            closeModal(modal);
+            if (callback) callback();
+        };
+    }
+
     loadBtn.addEventListener('click', async function () {
         const patientCode = patientLookupInput.value.trim();
 
         if (!patientCode) {
-            alert('Please enter a Patient ID');
+            showMessage('Missing Information', 'Please enter a Patient ID', 'error');
             return;
         }
 
@@ -32,7 +68,7 @@
             const data = await response.json();
 
             if (data.status === 'error') {
-                alert(data.message);
+                showMessage('Error', data.message, 'error');
                 consultationCard.classList.add('hidden');
                 receiptCard.classList.add('hidden');
                 printBtn.classList.add('hidden');
@@ -95,7 +131,7 @@
             document.getElementById('amount-paid').focus();
         } catch (error) {
             console.error('Error:', error);
-            alert('Error loading consultation data. Please try again.');
+            showMessage('Error', 'Error loading consultation data. Please try again.', 'error');
         } finally {
             loadBtn.disabled = false;
             loadBtn.innerText = 'Load';
@@ -163,7 +199,7 @@
 
         // Validation
         if (!amountPaid || amountPaid <= 0) {
-            alert('Please enter a valid amount');
+            showMessage('Missing Information', 'Please enter a valid amount', 'error');
             return;
         }
 
@@ -192,30 +228,34 @@
 
 
             if (result.status === 'error') {
-                alert('Error: ' + result.message);
+                showMessage('Error', 'Error: ' + result.message, 'error');
                 recordBtn.disabled = false;
                 recordBtn.innerText = 'Record Payment';
                 return;
             }
 
             // Show success message with payment details
-            alert(`Payment recorded successfully!\n\nReceipt No: ${result.receipt_no}\nStatus: ${result.billing_status}\nAmount Paid: ₱${amountPaid.toFixed(2)}\nAmount Due: ₱${result.amount_due.toFixed(2)}`);
+            showMessage(
+                'Payment Recorded',
+                `Receipt No: ${result.receipt_no}\nStatus: ${result.billing_status}\nAmount Paid: ₱${amountPaid.toFixed(2)}\nAmount Due: ₱${result.amount_due.toFixed(2)}`,
+                'success',
+                () => {
+                    // Update billing data with new status
+                    currentBillingData.Status = result.billing_status;
+                    document.getElementById('or-number').innerText = result.receipt_no;
+                    document.querySelector('#paid-amount span:last-child').innerText = '₱' + amountPaid.toFixed(2);
+                    document.getElementById('paid-amount').classList.remove('hidden');
+                    printBtn.classList.remove('hidden');
 
-            // Update billing data with new status
-            currentBillingData.Status = result.billing_status;
-            document.getElementById('or-number').innerText = result.receipt_no;
-            document.querySelector('#paid-amount span:last-child').innerText = '₱' + amountPaid.toFixed(2);
-            document.getElementById('paid-amount').classList.remove('hidden');
-            printBtn.classList.remove('hidden');
-
-            // Reset form
-            patientLookupInput.value = '';
-            document.getElementById('amount-paid').value = '';
-            consultationCard.classList.add('hidden');
-
+                    // Reset form
+                    patientLookupInput.value = '';
+                    document.getElementById('amount-paid').value = '';
+                    consultationCard.classList.add('hidden');
+                }
+            );
         } catch (error) {
             console.error('Error:', error);
-            alert('Error processing payment. Please try again.');
+            showMessage('Error', 'Error processing payment. Please try again.', 'error');
         } finally {
             recordBtn.disabled = false;
             recordBtn.innerText = 'Record Payment';

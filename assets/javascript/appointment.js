@@ -25,6 +25,48 @@ const closeModal = (modal) => {
     updateBodyScroll();
 };
 
+function showMessage(title, message, type = "success", callback = null) {
+    const modal = document.getElementById("messageModal");
+    const titleElement = document.getElementById("messageTitle");
+    const textElement = document.getElementById("messageText");
+
+    titleElement.textContent = title;
+    textElement.textContent = message;
+
+    titleElement.classList.toggle("text-green-600", type === "success");
+    titleElement.classList.toggle("text-red-600", type !== "success");
+
+    openModal(modal);
+    modal.classList.add('flex');
+
+    document.getElementById("closeMessageBtn").onclick = () => {
+        closeModal(modal);
+        if (callback) callback();
+    };
+}
+
+function showConfirm(title, message, onConfirm) {
+    const modal = document.getElementById("confirmModal");
+    const titleElement = document.getElementById("confirmTitle");
+    const textElement = document.getElementById("confirmText");
+    const okBtn = document.getElementById("confirmOkBtn");
+    const cancelBtn = document.getElementById("confirmCancelBtn");
+
+    titleElement.textContent = title;
+    textElement.textContent = message;
+
+    openModal(modal);
+
+    okBtn.onclick = () => {
+        closeModal(modal);
+        if (onConfirm) onConfirm();
+    };
+
+    cancelBtn.onclick = () => {
+        closeModal(modal);
+    };
+}
+
 document.querySelectorAll('.open-modal').forEach((trigger) => {
     trigger.addEventListener('click', () => {
         openModal(document.getElementById(trigger.dataset.modal));
@@ -84,7 +126,7 @@ const loadTimeSlots = async () => {
         appointmentTimeCalendar.classList.remove('hidden');
     } catch (error) {
         appointmentTimeCalendar.classList.add('hidden');
-        alert(error.message);
+        showMessage('Error', error.message, 'error');
     }
 };
 
@@ -154,15 +196,16 @@ document.getElementById("addAppointmentForm").addEventListener("submit", (event)
                 form.querySelector('[name="csrf_token"]').value = csrfToken;
             }
             if (data.status === "success") {
-                alert(data.message);
-                location.reload();
+                showMessage('Success', data.message, 'success', () => {
+                    location.reload();
+                });
             } else {
-                alert(data.message);
+                showMessage('Error', data.message, 'error');
             }
         })
         .catch(error => {
             console.error("Error:", error);
-            alert("An error occurred while booking the appointment. Please try again.");
+            showMessage('Error', 'An error occurred while booking the appointment. Please try again.', 'error');
         });
 });
 
@@ -183,13 +226,16 @@ document.querySelectorAll('.decline-btn').forEach(btn => {
 });
 
 document.querySelectorAll('.cancel-confirmed-btn').forEach(btn => {
-    btn.addEventListener('click', async function () {
-        if (!window.confirm('Cancel this confirmed appointment?')) {
-            return;
-        }
-
+    btn.addEventListener('click', function () {
         const appointmentId = this.getAttribute('data-appointment-id');
-        await updateAppointmentStatus(appointmentId, 'Cancelled');
+
+        showConfirm(
+            'Cancel Appointment',
+            'Cancel this confirmed appointment?',
+            async () => {
+                await updateAppointmentStatus(appointmentId, 'Cancelled');
+            }
+        );
     });
 });
 
@@ -210,13 +256,14 @@ async function updateAppointmentStatus(appointmentId, status) {
         const data = await response.json();
 
         if (data.status === 'success') {
-            alert(data.message);
-            location.reload();
+            showMessage('Success', data.message, 'success', () => {
+                location.reload();
+            });
         } else {
-            alert('Error: ' + data.message);
+            showMessage('Error', 'Error: ' + data.message, 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('An error occurred while updating the appointment.');
+        showMessage('Error', 'An error occurred while updating the appointment.', 'error');
     }
 }

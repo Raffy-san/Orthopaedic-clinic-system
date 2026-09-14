@@ -131,6 +131,8 @@ if (!$admin) {
                 </div>
             </div>
         </div>
+
+        <?php include '../includes/message-modal.php' ?>
     </section>
 
     <script>

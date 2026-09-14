@@ -238,8 +238,9 @@ $defaultConsultationFee = 500; // PHP
                     </div>
                 </form>
             </div>
+
+            <?php include '../includes/message-modal.php' ?>
     </section>
-    </div>
 
     <script>
         window.csrfToken = <?= json_encode($csrfToken, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;

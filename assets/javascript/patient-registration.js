@@ -33,6 +33,42 @@ function updateConfirmationStep() {
     confirmName.textContent = currentPatientName || '—';
 }
 
+function updateBodyScroll() {
+    const anyModalOpen = document.querySelectorAll('.modal:not(.hidden)').length > 0;
+    document.body.style.overflow = anyModalOpen ? 'hidden' : 'auto';
+}
+
+const openModal = (modal) => {
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+    updateBodyScroll();
+};
+
+const closeModal = (modal) => {
+    modal.classList.add("hidden");
+    updateBodyScroll();
+};
+
+function showMessage(title, message, type = "success", callback = null) {
+    const modal = document.getElementById("messageModal");
+    const titleElement = document.getElementById("messageTitle");
+    const textElement = document.getElementById("messageText");
+
+    titleElement.textContent = title;
+    textElement.textContent = message;
+
+    titleElement.classList.toggle("text-green-600", type === "success");
+    titleElement.classList.toggle("text-red-600", type !== "success");
+
+    openModal(modal);
+    modal.classList.add('flex');
+
+    document.getElementById("closeMessageBtn").onclick = () => {
+        closeModal(modal);
+        if (callback) callback();
+    };
+}
+
 function bindNameInputs() {
     const firstNameInput = document.getElementById('firstNameInput');
     const lastNameInput = document.getElementById('lastNameInput');
@@ -190,11 +226,12 @@ step2Content.addEventListener('submit', (event) => {
                 if (data.status !== 'success') {
                     throw new Error(data.message || 'Registration failed.');
                 }
-                alert(`${data.message} Patient ID: ${data.patient_code}`);
-                activateCompletionSteps();
-                event.target.reset();
+                showMessage('Success', `${data.message} Patient ID: ${data.patient_code}`, 'success', () => {
+                    activateCompletionSteps();
+                    event.target.reset();
+                });
             })
-            .catch(error => alert(error.message || 'Registration failed.'))
+            .catch(error => showMessage('Error', error.message || 'Registration failed.', 'error'))
             .finally(() => {
                 saveRecordBtn.disabled = false;
                 saveRecordBtn.textContent = 'Save & Create Record';
@@ -235,11 +272,12 @@ step2Content.addEventListener('submit', (event) => {
                 if (data.status !== 'success') {
                     throw new Error(data.message || 'Update failed.');
                 }
-                alert(data.message);
-                activateCompletionSteps();
-                event.target.reset();
+                showMessage('Success', data.message, 'success', () => {
+                    activateCompletionSteps();
+                    event.target.reset();
+                });
             })
-            .catch(error => alert(error.message || 'Update failed.'))
+            .catch(error => showMessage('Error', error.message || 'Update failed.', 'error'))
             .finally(() => {
                 saveRecordBtn.disabled = false;
                 saveRecordBtn.textContent = 'Save & Update Record';
@@ -259,7 +297,7 @@ function validateExistingPatient() {
     const patientId = patientIdInput?.value.trim();
 
     if (!patientId) {
-        alert('Please enter a Patient ID');
+        showMessage('Missing Information', 'Please enter a Patient ID', 'error');
         return;
     }
 
@@ -349,5 +387,5 @@ function validateExistingPatient() {
             bindNameInputs();
             activateEnterInfoStep();
         })
-        .catch(error => alert(error.message || 'Failed to load patient'));
+        .catch(error => showMessage('Error', error.message || 'Failed to load patient', 'error'));
 }
