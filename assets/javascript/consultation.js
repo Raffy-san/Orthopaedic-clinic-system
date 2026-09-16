@@ -1,6 +1,8 @@
 let currentAppointmentData = null;
 let csrfToken = window.csrfToken || "";
 let currentConsultationIndex = 0;
+let isSubmitting = false;
+let lastSavedConsultation = null;
 
 // Load clinic queue on page load
 async function loadClinicQueue() {
@@ -121,6 +123,12 @@ async function loadPatientData(appointmentData) {
     // Reset form
     document.getElementById('consultationForm').reset();
     document.getElementById('prescriptionDetails').classList.add('hidden');
+
+    isSubmitting = false;
+    const submitBtn = document.querySelector('#consultationForm button[type="submit"]');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Save & Pass to Billing';
+    hideReprintBanner();
 }
 
 // Load consultation history for patient
@@ -326,9 +334,10 @@ document.getElementById('skipFollowupBtn').addEventListener('click', () => {
     document.getElementById('followupDate').value = '';
     document.getElementById('followupRemarks').value = '';
 });
-
 document.getElementById('consultationForm').addEventListener('submit', async function (e) {
     e.preventDefault();
+
+    if (isSubmitting) return; // NEW — block double-clicks
 
     const hasPrescription = !document.getElementById('prescriptionDetails').classList.contains('hidden');
 
@@ -382,6 +391,12 @@ document.getElementById('consultationForm').addEventListener('submit', async fun
         csrf_token: csrfToken
     };
 
+    // NEW — lock the button before sending
+    isSubmitting = true;
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving...';
+
     try {
         const response = await fetch('../php/add/save-consultation.php', {
             method: 'POST',
@@ -391,24 +406,38 @@ document.getElementById('consultationForm').addEventListener('submit', async fun
 
         const result = await response.json();
 
-        if (result.status === 'success') {
+        // NEW — always resync the token, success or failure
+        if (result.csrf_token) {
             csrfToken = result.csrf_token;
+        }
+
+        if (result.status === 'success') {
+            lastSavedConsultation = { id: result.consultation_id, data: consultationData }; // NEW
 
             showMessage('Success', 'Consultation saved successfully! Consultation ID: ' + result.consultation_id, 'success', () => {
                 if (hasPrescription) {
                     printPrescription(result.consultation_id, consultationData);
+                    showReprintBanner(); // NEW
                 }
                 loadClinicQueue();
             });
+            // NOTE: button stays disabled — it's re-enabled in loadPatientData() when the next patient loads
         } else {
             showMessage('Error', 'Error: ' + result.message, 'error');
+            // NEW — unlock so the doctor can retry (e.g. transient network error)
+            isSubmitting = false;
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Save & Pass to Billing';
         }
     } catch (error) {
         console.error('Error:', error);
         showMessage('Error', 'An error occurred while saving the consultation.', 'error');
+        // NEW — unlock on network/JS error too
+        isSubmitting = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save & Pass to Billing';
     }
 });
-
 
 function printPrescription(consultationID, consultationData) {
     const patientName = document.getElementById('patientName').textContent;
@@ -598,6 +627,30 @@ function printPrescription(consultationID, consultationData) {
     setTimeout(function () {
         printWindow.print();
     }, 250);
+}
+
+function showReprintBanner() {
+    hideReprintBanner();
+    const banner = document.createElement('div');
+    banner.id = 'reprintBanner';
+    banner.className = 'fixed bottom-6 right-6 bg-white shadow-lg border border-slate-200 rounded-xl p-4 flex items-center gap-3 z-50';
+    banner.innerHTML = `
+        <span class="text-sm text-slate-700">Consultation saved.</span>
+        <button id="reprintBtn" type="button" class="text-sm font-semibold text-blue-600 hover:text-blue-800">
+            <i class="fa-solid fa-print"></i> Print Prescription
+        </button>
+    `;
+    document.body.appendChild(banner);
+    document.getElementById('reprintBtn').addEventListener('click', () => {
+        if (lastSavedConsultation) {
+            printPrescription(lastSavedConsultation.id, lastSavedConsultation.data);
+        }
+    });
+}
+
+function hideReprintBanner() {
+    const existing = document.getElementById('reprintBanner');
+    if (existing) existing.remove();
 }
 
 // Load queue on page load
