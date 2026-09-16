@@ -89,7 +89,7 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
             </div>
         </div>
         <div class="flex w-full gap-4 mt-6">
-            <div class="bg-white p-6 rounded-lg shadow-md flex-1">
+            <div class="bg-white p-6 rounded-2xl shadow-md flex-1">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-gray-500 text-md font-semibold">Patients Today</h2>
                     <div class="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center">
@@ -99,7 +99,7 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
                 <p class="text-gray-800 text-3xl font-extrabold"><?= count($patients) ?></p>
                 <p class="<?= $changeColor ?> text-sm font-medium"><?= htmlspecialchars($changeText) ?></p>
             </div>
-            <div class="bg-white p-6 rounded-lg shadow-md flex-1">
+            <div class="bg-white p-6 rounded-2xl shadow-md flex-1">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-gray-500 text-md font-semibold">Appointments </h2>
                     <div class="w-12 h-12 rounded-2xl bg-cyan-100 flex items-center justify-center">
@@ -111,7 +111,7 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
                     <?php echo count($completedAppointments); ?> completed
                 </p>
             </div>
-            <div class="bg-white p-6 rounded-lg shadow-md flex-1">
+            <div class="bg-white p-6 rounded-2xl shadow-md flex-1">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-gray-500 text-md font-semibold">Consultations</h2>
                     <div class="w-12 h-12 rounded-2xl bg-orange-100 flex items-center justify-center">

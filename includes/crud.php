@@ -203,12 +203,30 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
     try {
         $pdo->beginTransaction();
 
+        $appointmentID = intval($data['appointment_id'] ?? 0);
+
+        // Lock the appointment row and check it hasn't already been consulted
+        $checkStmt = $pdo->prepare("
+            SELECT Status FROM appointments WHERE AppointmentID = :appointment_id FOR UPDATE
+        ");
+        $checkStmt->execute([':appointment_id' => $appointmentID]);
+        $appointment = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$appointment) {
+            $pdo->rollBack();
+            return ['status' => 'error', 'message' => 'Appointment not found.'];
+        }
+        if ($appointment['Status'] === 'Completed') {
+            $pdo->rollBack();
+            return ['status' => 'error', 'message' => 'This consultation has already been saved and cannot be submitted again.'];
+        }
+
         $stmt = $pdo->prepare("
             INSERT INTO consultations (AppointmentID, PatientID, DoctorID, Diagnosis, Treatment, Notes, ConsultationFee, ConsultationDate, IsCompleted)
             VALUES (:appointment_id, :patient_id, :doctor_id, :diagnosis, :treatment, :notes, :consultation_fee, NOW(), 0)
         ");
         $stmt->execute([
-            ':appointment_id' => intval($data['appointment_id'] ?? 0),
+            ':appointment_id' => $appointmentID,
             ':patient_id' => intval($data['patient_id'] ?? 0),
             ':doctor_id' => $doctorID,
             ':diagnosis' => $data['diagnosis'] ?? '',

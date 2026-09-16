@@ -144,7 +144,9 @@ function reportMoney(mixed $value): string
                             class="block w-full text-left px-3 py-2 rounded-lg border-2 <?= $reportType === 'patients' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50' ?> transition">
                             <div class="flex items-center gap-2">
                                 <i class="fa-solid fa-file-user text-blue-600 text-sm"></i>
-                                <span class="font-medium <?= $reportType === 'patients' ? 'text-blue-700' : 'text-gray-700' ?> text-sm">Patient Records Report</span>
+                                <span
+                                    class="font-medium <?= $reportType === 'patients' ? 'text-blue-700' : 'text-gray-700' ?> text-sm">Patient
+                                    Records Report</span>
                             </div>
                         </a>
 
@@ -152,7 +154,9 @@ function reportMoney(mixed $value): string
                             class="block w-full text-left px-3 py-2 rounded-lg border-2 <?= $reportType === 'financial' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50' ?> transition">
                             <div class="flex items-center gap-2">
                                 <i class="fa-solid fa-chart-pie text-orange-500 text-sm"></i>
-                                <span class="font-medium <?= $reportType === 'financial' ? 'text-blue-700' : 'text-gray-700' ?> text-sm">Financial Summary</span>
+                                <span
+                                    class="font-medium <?= $reportType === 'financial' ? 'text-blue-700' : 'text-gray-700' ?> text-sm">Financial
+                                    Summary</span>
                             </div>
                         </a>
 
@@ -160,7 +164,9 @@ function reportMoney(mixed $value): string
                             class="block w-full text-left px-3 py-2 rounded-lg border-2 <?= $reportType === 'appointments' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50' ?> transition">
                             <div class="flex items-center gap-2">
                                 <i class="fa-solid fa-calendar text-blue-500 text-sm"></i>
-                                <span class="font-medium <?= $reportType === 'appointments' ? 'text-blue-700' : 'text-gray-700' ?> text-sm">Appointments Report</span>
+                                <span
+                                    class="font-medium <?= $reportType === 'appointments' ? 'text-blue-700' : 'text-gray-700' ?> text-sm">Appointments
+                                    Report</span>
                             </div>
                         </a>
 
@@ -168,7 +174,9 @@ function reportMoney(mixed $value): string
                             class="block w-full text-left px-3 py-2 rounded-lg border-2 <?= $reportType === 'consultations' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50' ?> transition">
                             <div class="flex items-center gap-2">
                                 <i class="fa-solid fa-stethoscope text-purple-500 text-sm"></i>
-                                <span class="font-medium <?= $reportType === 'consultations' ? 'text-blue-700' : 'text-gray-700' ?> text-sm">Consultation Log</span>
+                                <span
+                                    class="font-medium <?= $reportType === 'consultations' ? 'text-blue-700' : 'text-gray-700' ?> text-sm">Consultation
+                                    Log</span>
                             </div>
                         </a>
                     </div>
@@ -207,9 +215,11 @@ function reportMoney(mixed $value): string
                 <div class="flex items-start justify-between gap-4 mb-5">
                     <div>
                         <h2 class="text-lg font-bold text-gray-800"><?= reportValue($reportTypes[$reportType]) ?></h2>
-                        <p class="text-xs text-gray-500 mt-1"><?= reportValue($fromDate) ?> to <?= reportValue($toDate) ?></p>
+                        <p class="text-xs text-gray-500 mt-1"><?= reportValue($fromDate) ?> to
+                            <?= reportValue($toDate) ?>
+                        </p>
                     </div>
-                    <button type="button" onclick="window.print()"
+                    <button type="button" id="printReportBtn" data-report-type="<?= reportValue($reportType) ?>"
                         class="print-hidden inline-flex items-center gap-2 px-3 py-2 bg-slate-700 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">
                         <i class="fa-solid fa-print"></i> Print
                     </button>
@@ -221,47 +231,106 @@ function reportMoney(mixed $value): string
                     <div class="grid grid-cols-3 gap-3 mb-6">
                         <div class="rounded-lg bg-slate-50 p-4">
                             <p class="text-xs text-gray-500">Bills</p>
-                            <p class="text-xl font-bold text-gray-800 mt-1"><?= reportValue($reportSummary['bills'] ?? 0) ?></p>
+                            <p class="text-xl font-bold text-gray-800 mt-1"><?= reportValue($reportSummary['bills'] ?? 0) ?>
+                            </p>
                         </div>
                         <div class="rounded-lg bg-slate-50 p-4">
                             <p class="text-xs text-gray-500">Billed</p>
-                            <p class="text-xl font-bold text-gray-800 mt-1"><?= reportMoney($reportSummary['billed'] ?? 0) ?></p>
+                            <p class="text-xl font-bold text-gray-800 mt-1">
+                                <?= reportMoney($reportSummary['billed'] ?? 0) ?>
+                            </p>
                         </div>
                         <div class="rounded-lg bg-slate-50 p-4">
                             <p class="text-xs text-gray-500">Collected</p>
-                            <p class="text-xl font-bold text-emerald-700 mt-1"><?= reportMoney($reportSummary['collected'] ?? 0) ?></p>
+                            <p class="text-xl font-bold text-emerald-700 mt-1">
+                                <?= reportMoney($reportSummary['collected'] ?? 0) ?>
+                            </p>
                         </div>
                     </div>
                     <?php if (empty($reportRows)): ?>
                         <p class="text-sm text-gray-500">No payments found for this date range.</p>
                     <?php else: ?>
-                        <div class="overflow-x-auto"><table class="w-full text-sm text-left">
-                            <thead class="text-xs uppercase text-gray-500 border-b"><tr><th class="py-3">Date</th><th>Patient</th><th>Reference</th><th>Status</th><th class="text-right">Amount</th></tr></thead>
-                            <tbody><?php foreach ($reportRows as $row): ?><tr class="border-b last:border-0"><td class="py-3"><?= reportValue($row['PaymentDate']) ?></td><td><?= reportValue($row['PatientName']) ?></td><td><?= reportValue($row['ReferenceNo']) ?></td><td><?= reportValue($row['Status']) ?></td><td class="text-right"><?= reportMoney($row['AmountPaid']) ?></td></tr><?php endforeach; ?></tbody>
-                        </table></div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="text-xs uppercase text-gray-500 border-b">
+                                    <tr>
+                                        <th class="py-3">Date</th>
+                                        <th>Patient</th>
+                                        <th>Reference</th>
+                                        <th>Status</th>
+                                        <th class="text-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody><?php foreach ($reportRows as $row): ?>
+                                        <tr class="border-b last:border-0">
+                                            <td class="py-3"><?= reportValue($row['PaymentDate']) ?></td>
+                                            <td><?= reportValue($row['PatientName']) ?></td>
+                                            <td><?= reportValue($row['ReferenceNo']) ?></td>
+                                            <td><?= reportValue($row['Status']) ?></td>
+                                            <td class="text-right"><?= reportMoney($row['AmountPaid']) ?></td>
+                                        </tr><?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
                     <?php endif; ?>
                 <?php else: ?>
                     <?php if (empty($reportRows)): ?>
                         <p class="text-sm text-gray-500">No records found for this date range.</p>
                     <?php else: ?>
-                        <div class="overflow-x-auto"><table class="w-full text-sm text-left">
-                            <thead class="text-xs uppercase text-gray-500 border-b">
-                                <tr>
-                                    <?php if ($reportType === 'patients'): ?><th class="py-3">Patient ID</th><th>Name</th><th>Birth Date</th><th>Gender</th><th>Type</th><th>Phone</th>
-                                    <?php elseif ($reportType === 'appointments'): ?><th class="py-3">Date</th><th>Patient</th><th>Doctor</th><th>Purpose</th><th>Status</th>
-                                    <?php else: ?><th class="py-3">Date</th><th>Patient</th><th>Doctor</th><th>Diagnosis</th><th>Fee</th><?php endif; ?>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($reportRows as $row): ?>
-                                    <tr class="border-b last:border-0">
-                                        <?php if ($reportType === 'patients'): ?><td class="py-3"><?= reportValue($row['PatientCode']) ?></td><td><?= reportValue($row['PatientName']) ?></td><td><?= reportValue($row['BirthDate']) ?></td><td><?= reportValue($row['Gender']) ?></td><td><?= reportValue($row['PatientType']) ?></td><td><?= reportValue($row['Phone']) ?></td>
-                                        <?php elseif ($reportType === 'appointments'): ?><td class="py-3"><?= reportValue($row['AppointmentDate'] . ' ' . $row['AppointmentTime']) ?></td><td><?= reportValue($row['PatientName']) ?></td><td><?= reportValue($row['DoctorName']) ?></td><td><?= reportValue($row['Purpose']) ?></td><td><?= reportValue($row['Status']) ?></td>
-                                        <?php else: ?><td class="py-3"><?= reportValue($row['ConsultationDate']) ?></td><td><?= reportValue($row['PatientName']) ?></td><td><?= reportValue($row['DoctorName']) ?></td><td><?= reportValue($row['Diagnosis']) ?></td><td><?= reportMoney($row['ConsultationFee']) ?></td><?php endif; ?>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="text-xs uppercase text-gray-500 border-b">
+                                    <tr>
+                                        <?php if ($reportType === 'patients'): ?>
+                                            <th class="py-3">Patient ID</th>
+                                            <th>Name</th>
+                                            <th>Birth Date</th>
+                                            <th>Gender</th>
+                                            <th>Type</th>
+                                            <th>Phone</th>
+                                        <?php elseif ($reportType === 'appointments'): ?>
+                                            <th class="py-3">Date</th>
+                                            <th>Patient</th>
+                                            <th>Doctor</th>
+                                            <th>Purpose</th>
+                                            <th>Status</th>
+                                        <?php else: ?>
+                                            <th class="py-3">Date</th>
+                                            <th>Patient</th>
+                                            <th>Doctor</th>
+                                            <th>Diagnosis</th>
+                                            <th>Fee</th><?php endif; ?>
                                     </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table></div>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($reportRows as $row): ?>
+                                        <tr class="border-b last:border-0">
+                                            <?php if ($reportType === 'patients'): ?>
+                                                <td class="py-3"><?= reportValue($row['PatientCode']) ?></td>
+                                                <td><?= reportValue($row['PatientName']) ?></td>
+                                                <td><?= reportValue($row['BirthDate']) ?></td>
+                                                <td><?= reportValue($row['Gender']) ?></td>
+                                                <td><?= reportValue($row['PatientType']) ?></td>
+                                                <td><?= reportValue($row['Phone']) ?></td>
+                                            <?php elseif ($reportType === 'appointments'): ?>
+                                                <td class="py-3">
+                                                    <?= reportValue($row['AppointmentDate'] . ' ' . $row['AppointmentTime']) ?>
+                                                </td>
+                                                <td><?= reportValue($row['PatientName']) ?></td>
+                                                <td><?= reportValue($row['DoctorName']) ?></td>
+                                                <td><?= reportValue($row['Purpose']) ?></td>
+                                                <td><?= reportValue($row['Status']) ?></td>
+                                            <?php else: ?>
+                                                <td class="py-3"><?= reportValue($row['ConsultationDate']) ?></td>
+                                                <td><?= reportValue($row['PatientName']) ?></td>
+                                                <td><?= reportValue($row['DoctorName']) ?></td>
+                                                <td><?= reportValue($row['Diagnosis']) ?></td>
+                                                <td><?= reportMoney($row['ConsultationFee']) ?></td><?php endif; ?>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
                     <?php endif; ?>
                 <?php endif; ?>
             </div>
@@ -270,12 +339,51 @@ function reportMoney(mixed $value): string
 
     <style>
         @media print {
-            body * { visibility: hidden; }
-            #report-preview, #report-preview * { visibility: visible; }
-            #report-preview { position: absolute; inset: 0; width: 100%; box-shadow: none; }
-            .print-hidden { display: none !important; }
+            body * {
+                visibility: hidden;
+            }
+
+            #report-preview,
+            #report-preview * {
+                visibility: visible;
+            }
+
+            #report-preview {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                box-shadow: none;
+            }
+
+            .print-hidden {
+                display: none !important;
+            }
         }
     </style>
+
+    <div id="printPasswordModal" class="modal hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-[9999] px-2 sm:px-0"
+    style="background-color: rgba(0,0,0,0.4); print-hidden">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-sm p-5">
+            <h3 class="text-base font-bold text-gray-800 mb-1">Confirm your password</h3>
+            <p class="text-xs text-gray-500 mb-3">Printing financial reports requires re-entering your password.</p>
+            <input type="password" id="printPasswordInput" autocomplete="current-password"
+                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Password">
+            <p id="printPasswordError" class="text-xs text-red-600 mt-1 hidden"></p>
+            <div class="flex justify-end gap-2 mt-4">
+                <button type="button" id="printPasswordCancel"
+                    class="px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+                <button type="button" id="printPasswordConfirm"
+                    class="px-3 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg">Confirm
+                    & Print</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.csrfToken = <?= json_encode($csrfToken, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+    </script>
+    <script src="../assets/javascript/reports.js"></script>
 </body>
 
 </html>
