@@ -25,15 +25,16 @@ if (!$admin) {
     <title>Patient Registration</title>
 </head>
 
-<body class="h-screen flex bg-slate-200">
+<body class="h-screen flex bg-slate-200 overflow-hidden">
     <?php include_once '../includes/sidebar.php'; ?>
-    <section class="flex-1 p-6 overflow-auto">
-        <div class="mb-4 space-y-1">
-            <h1 class="text-2xl font-bold">Patient Registration</h1>
-            <h3 class="text-sm font-medium text-gray-500">Register new patients or update existing records</h3>
+    <section class="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div
+            class="flex-col items-center bg-gradient-to-r from-[#0b1f0b] via-[#1e6b34] to-[#2e8b47] px-6 py-4">
+            <h1 class="text-2xl font-bold text-white mb-2">Patient Registration</h1>
+            <h3 class="text-sm font-medium text-white mb-1">Register new patients or update existing records</h3>
         </div>
 
-        <div class="space-y-4">
+        <div class="flex-1 min-h-0 overflow-auto p-6 space-y-4">
             <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div class="rounded-full bg-white px-3 py-2 shadow-sm text-xs text-slate-600 w-full">
                     <div class="flex flex-wrap items-center gap-2">

@@ -3,9 +3,9 @@ require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/auth.php';
 
 if (SessionManager::isLoggedIn()) {
-    $role = $_SESSION['access_type'] ?? $_SESSION['user']['Role'] ?? null;
+    $role = SessionManager::getCurrentRole();
 
-    if (in_array($role, ['Admin', 'Doctor', 'Staff'], true)) {
+    if ($role !== null && in_array(strtolower($role), ['admin', 'doctor', 'staff'], true)) {
         header('Location: admin/admin-dashboard.php');
         exit;
     } else {
@@ -470,6 +470,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </section>
     </main>
     <script src="assets/javascript/login.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            <?php if ($loginError && !empty($_POST['loginType'])): ?>
+                selectRole('<?= htmlspecialchars($_POST['loginType'], ENT_QUOTES) ?>');
+            <?php endif; ?>
+        });
+    </script>
 </body>
 
 </html>
