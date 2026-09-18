@@ -52,21 +52,22 @@ if (!$admin) {
     <title>Appointments</title>
 </head>
 
-<body class="h-screen flex bg-slate-200">
+<body class="h-screen flex bg-slate-200 overflow-hidden">
     <?php include_once '../includes/sidebar.php'; ?>
-    <section class="flex-1 p-6 overflow-auto">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+     <section class="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div
+            class="flex items-center justify-between bg-gradient-to-r from-[#0b1f0b] via-[#1e6b34] to-[#2e8b47] px-6 py-4">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900">Appointment Scheduling</h1>
-                <p class="mt-1 text-sm text-slate-500">Manage and book patient appointments</p>
+                <h1 class="text-2xl font-bold text-white mb-2">Appointment Scheduling</h1>
+                <p class="mb-1 text-sm text-white">Manage and book patient appointments</p>
             </div>
             <button id="startBookingButton"
-                class="inline-flex items-center justify-center rounded-3xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
+                class="inline-flex items-center justify-center rounded-3xl bg-green-500 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-green-600">
                 + Book Appointment
             </button>
         </div>
 
-        <div class="space-y-6">
+        <div class="flex-1 min-h-0 overflow-auto p-6 space-y-4">
             <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
                 <div class="space-y-6">
                     <div class="rounded-3xl bg-white p-6 shadow-sm border border-slate-100">

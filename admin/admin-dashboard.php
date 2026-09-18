@@ -78,76 +78,78 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
     <title>Dashboard</title>
 </head>
 
-<body class="h-screen flex bg-slate-200">
+<body class="h-screen flex bg-slate-200 overflow-hidden">
     <?php include_once '../includes/sidebar.php'; ?>
-    <section class="flex-1 p-6 overflow-auto">
-        <div class="flex items-center justify-between bg-blue-950 -mx-6 -mt-6 px-6 py-4">
+    <section class="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div
+            class="flex items-center justify-between bg-gradient-to-r from-[#0b1f0b] via-[#1e6b34] to-[#2e8b47] px-6 py-4">
             <h1 class="text-2xl font-bold text-white">Southern Leyte Orthopaedic Clinic System</h1>
             <div class="flex items-center gap-4">
                 <h1 class="text-lg font-semibold text-white">The College of Maasin</h1>
                 <img src="../assets/img/cmlogo.png" alt="College Logo" class="w-16 h-16 object-contain">
             </div>
         </div>
-        <div class="flex w-full gap-4 mt-6">
-            <div class="bg-white p-6 rounded-2xl shadow-md flex-1">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-gray-500 text-md font-semibold">Patients Today</h2>
-                    <div class="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center">
-                        <i class="fas fa-user-injured text-purple-600"></i>
+        <div class="flex-1 min-h-0 overflow-auto p-6">
+            <div class="flex w-full gap-4">
+                <div class="bg-white p-6 rounded-2xl shadow-md flex-1">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-gray-500 text-md font-semibold">Patients Today</h2>
+                        <div class="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center">
+                            <i class="fas fa-user-injured text-purple-600"></i>
+                        </div>
                     </div>
+                    <p class="text-gray-800 text-3xl font-extrabold"><?= count($patients) ?></p>
+                    <p class="<?= $changeColor ?> text-sm font-medium"><?= htmlspecialchars($changeText) ?></p>
                 </div>
-                <p class="text-gray-800 text-3xl font-extrabold"><?= count($patients) ?></p>
-                <p class="<?= $changeColor ?> text-sm font-medium"><?= htmlspecialchars($changeText) ?></p>
-            </div>
-            <div class="bg-white p-6 rounded-2xl shadow-md flex-1">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-gray-500 text-md font-semibold">Appointments </h2>
-                    <div class="w-12 h-12 rounded-2xl bg-cyan-100 flex items-center justify-center">
-                        <i class="fas fa-calendar text-cyan-600"></i>
+                <div class="bg-white p-6 rounded-2xl shadow-md flex-1">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-gray-500 text-md font-semibold">Appointments </h2>
+                        <div class="w-12 h-12 rounded-2xl bg-cyan-100 flex items-center justify-center">
+                            <i class="fas fa-calendar text-cyan-600"></i>
+                        </div>
                     </div>
+                    <p class="text-gray-800 text-3xl font-extrabold"><?php echo count($appointments); ?></p>
+                    <p class="text-gray-500 text-sm font-medium"><?php echo count($pendingAppointments); ?> pending ·
+                        <?php echo count($completedAppointments); ?> completed
+                    </p>
                 </div>
-                <p class="text-gray-800 text-3xl font-extrabold"><?php echo count($appointments); ?></p>
-                <p class="text-gray-500 text-sm font-medium"><?php echo count($pendingAppointments); ?> pending ·
-                    <?php echo count($completedAppointments); ?> completed
-                </p>
-            </div>
-            <div class="bg-white p-6 rounded-2xl shadow-md flex-1">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-gray-500 text-md font-semibold">Consultations</h2>
-                    <div class="w-12 h-12 rounded-2xl bg-orange-100 flex items-center justify-center">
-                        <i class="fas fa-stethoscope text-orange-500"></i>
+                <div class="bg-white p-6 rounded-2xl shadow-md flex-1">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-gray-500 text-md font-semibold">Consultations</h2>
+                        <div class="w-12 h-12 rounded-2xl bg-orange-100 flex items-center justify-center">
+                            <i class="fas fa-stethoscope text-orange-500"></i>
+                        </div>
                     </div>
+                    <p class="text-gray-800 text-3xl font-extrabold"><?php echo count($consultations); ?></p>
+                    <p class="<?= $consultChangeColor ?> text-sm font-medium">
+                        <?php echo htmlspecialchars($consultChangeText); ?>
+                    </p>
+                    </p>
                 </div>
-                <p class="text-gray-800 text-3xl font-extrabold"><?php echo count($consultations); ?></p>
-                <p class="<?= $consultChangeColor ?> text-sm font-medium">
-                    <?php echo htmlspecialchars($consultChangeText); ?>
-                </p>
-                </p>
             </div>
-        </div>
-        <div class="grid grid-cols-3 gap-6 mt-8">
+            <div class="grid grid-cols-3 gap-6 mt-8">
 
-            <!-- Recent Patients -->
-            <div class="col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100">
-                <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-                    <h2 class="text-lg font-semibold text-gray-800">
-                        Recent Patients
-                    </h2>
-                </div>
+                <!-- Recent Patients -->
+                <div class="col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+                        <h2 class="text-lg font-semibold text-gray-800">
+                            Recent Patients
+                        </h2>
+                    </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="text-left text-sm text-gray-500">
-                            <tr class="border-b border-gray-100">
-                                <th class="px-6 py-4 font-medium">Patient ID</th>
-                                <th class="px-6 py-4 font-medium">Name</th>
-                                <th class="px-6 py-4 font-medium">Date</th>
-                            </tr>
-                        </thead>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="text-left text-sm text-gray-500">
+                                <tr class="border-b border-gray-100">
+                                    <th class="px-6 py-4 font-medium">Patient ID</th>
+                                    <th class="px-6 py-4 font-medium">Name</th>
+                                    <th class="px-6 py-4 font-medium">Date</th>
+                                </tr>
+                            </thead>
 
-                        <tbody class="text-sm">
-                            <?php
-                            $patients = fetchAllData($pdo, "SELECT 
+                            <tbody class="text-sm">
+                                <?php
+                                $patients = fetchAllData($pdo, "SELECT 
                                 p.PatientID AS PatientID, 
                                 p.PatientCode,
                                 p.FirstName, 
@@ -158,36 +160,36 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
                             GROUP BY p.PatientID ORDER BY p.CreatedAt DESC LIMIT 5
                             ");
 
-                            foreach ($patients as $patient) {
-                                echo ' <tr class="border-b border-gray-100 hover:bg-gray-50">';
-                                echo '<td class="px-6 py-4 text-gray-500">'
-                                    . htmlspecialchars($patient['PatientCode']) .
-                                    '</td>';
-                                echo '<td class="px-6 py-4 font-medium">'
-                                    . htmlspecialchars($patient['FirstName'] . ' ' . $patient['MiddleName'] . ' ' . $patient['LastName']) .
-                                    '</td>';
-                                echo '<td class="px-6 py-4 text-gray-500">'
-                                    . htmlspecialchars(date('M d, Y', strtotime($patient['CreatedAt']))) .
-                                    '</td>';
-                            }
-                            ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Today's Schedule -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
-
-                <div class="px-6 py-5 border-b border-gray-100">
-                    <h2 class="text-lg font-semibold text-gray-800">
-                        Today's Schedule
-                    </h2>
+                                foreach ($patients as $patient) {
+                                    echo ' <tr class="border-b border-gray-100 hover:bg-gray-50">';
+                                    echo '<td class="px-6 py-4 text-gray-500">'
+                                        . htmlspecialchars($patient['PatientCode']) .
+                                        '</td>';
+                                    echo '<td class="px-6 py-4 font-medium">'
+                                        . htmlspecialchars($patient['FirstName'] . ' ' . $patient['MiddleName'] . ' ' . $patient['LastName']) .
+                                        '</td>';
+                                    echo '<td class="px-6 py-4 text-gray-500">'
+                                        . htmlspecialchars(date('M d, Y', strtotime($patient['CreatedAt']))) .
+                                        '</td>';
+                                }
+                                ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                <div class="p-5 space-y-4">
-                    <?php
-                    $todaysSchedule = fetchAllData($pdo, "
+                <!-- Today's Schedule -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+
+                    <div class="px-6 py-5 border-b border-gray-100">
+                        <h2 class="text-lg font-semibold text-gray-800">
+                            Today's Schedule
+                        </h2>
+                    </div>
+
+                    <div class="p-5 space-y-4">
+                        <?php
+                        $todaysSchedule = fetchAllData($pdo, "
             SELECT 
                 a.AppointmentID,
                 a.AppointmentTime,
@@ -202,47 +204,48 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
             ORDER BY a.AppointmentTime ASC
         ");
 
-                    // Rotate through a few color classes so each row isn't identical
-                    $colorClasses = [
-                        ['bg-blue-100', 'text-blue-600'],
-                        ['bg-green-100', 'text-green-600'],
-                        ['bg-yellow-100', 'text-yellow-700'],
-                        ['bg-purple-100', 'text-purple-600'],
-                    ];
+                        // Rotate through a few color classes so each row isn't identical
+                        $colorClasses = [
+                            ['bg-blue-100', 'text-blue-600'],
+                            ['bg-green-100', 'text-green-600'],
+                            ['bg-yellow-100', 'text-yellow-700'],
+                            ['bg-purple-100', 'text-purple-600'],
+                        ];
 
-                    if (empty($todaysSchedule)) {
-                        echo '<p class="text-sm text-gray-500">No appointments scheduled for today.</p>';
-                    } else {
-                        foreach ($todaysSchedule as $i => $item) {
-                            $colors = $colorClasses[$i % count($colorClasses)];
-                            $time = date('g:i', strtotime($item['AppointmentTime']));
-                            $patientName = trim($item['FirstName'] . ' ' . $item['LastName']);
-                            ?>
-                            <div class="flex items-start gap-4">
-                                <div class="<?= $colors[0] ?> <?= $colors[1] ?> rounded-xl px-3 py-2 text-sm font-semibold">
-                                    <?= htmlspecialchars($time) ?>         <?= htmlspecialchars($item['Meridiem']) ?>
+                        if (empty($todaysSchedule)) {
+                            echo '<p class="text-sm text-gray-500">No appointments scheduled for today.</p>';
+                        } else {
+                            foreach ($todaysSchedule as $i => $item) {
+                                $colors = $colorClasses[$i % count($colorClasses)];
+                                $time = date('g:i', strtotime($item['AppointmentTime']));
+                                $patientName = trim($item['FirstName'] . ' ' . $item['LastName']);
+                                ?>
+                                <div class="flex items-start gap-4">
+                                    <div class="<?= $colors[0] ?> <?= $colors[1] ?> rounded-xl px-3 py-2 text-sm font-semibold">
+                                        <?= htmlspecialchars($time) ?>         <?= htmlspecialchars($item['Meridiem']) ?>
+                                    </div>
+
+                                    <div>
+                                        <h3 class="font-semibold">
+                                            <?= htmlspecialchars($patientName) ?>
+                                        </h3>
+
+                                        <p class="text-sm text-gray-500">
+                                            <?= htmlspecialchars($item['Purpose']) ?>
+                                        </p>
+                                    </div>
                                 </div>
-
-                                <div>
-                                    <h3 class="font-semibold">
-                                        <?= htmlspecialchars($patientName) ?>
-                                    </h3>
-
-                                    <p class="text-sm text-gray-500">
-                                        <?= htmlspecialchars($item['Purpose']) ?>
-                                    </p>
-                                </div>
-                            </div>
-                            <?php
+                                <?php
+                            }
                         }
-                    }
-                    ?>
+                        ?>
+                    </div>
+
                 </div>
 
             </div>
 
         </div>
-
         </div>
 
     </section>
