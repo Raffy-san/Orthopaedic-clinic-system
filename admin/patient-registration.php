@@ -29,9 +29,12 @@ if (!$admin) {
     <?php include_once '../includes/sidebar.php'; ?>
     <section class="flex-1 min-h-0 flex flex-col overflow-hidden">
         <div
-            class="flex-col items-center bg-gradient-to-r from-[#0b1f0b] via-[#1e6b34] to-[#2e8b47] px-6 py-4">
-            <h1 class="text-2xl font-bold text-white mb-2">Patient Registration</h1>
-            <h3 class="text-sm font-medium text-white mb-1">Register new patients or update existing records</h3>
+            class="flex items-center justify-between bg-gradient-to-r from-[#0b1f0b] via-[#1e6b34] to-[#2e8b47] px-6 py-4">
+            <h1 class="text-2xl font-bold text-white">Southern Leyte Orthopaedic Clinic System</h1>
+            <div class="flex flex-col gap-3 items-end">
+                <h1 class="text-2xl font-bold text-white">Patient Registration</h1>
+                <h3 class="text-sm font-medium text-white">Register new patients or update existing records</h3>
+            </div>
         </div>
 
         <div class="flex-1 min-h-0 overflow-auto p-6 space-y-4">

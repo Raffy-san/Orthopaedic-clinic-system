@@ -1,12 +1,12 @@
 let csrfToken = window.csrfToken || "";
-const form = document.getElementById('addStaffForm');
-const message = document.getElementById('staffMessage');
+const form = document.getElementById('addUserForm');
+const message = document.getElementById('userMessage');
 const submitButton = form.querySelector('button[type="submit"]');
 const userIdInput = form.querySelector('input[name="userId"]');
 const passwordInput = form.querySelector('input[name="password"]');
 
-const CREATE_ENDPOINT = '../php/add/add-staff.php';
-const UPDATE_ENDPOINT = '../php/update/update-staff.php';
+const CREATE_ENDPOINT = '../php/add/add-user.php';
+const UPDATE_ENDPOINT = '../php/update/update-user.php';
 
 let isEditMode = false;
 
@@ -59,7 +59,7 @@ function hideCancelButton() {
 }
 
 // Populate the form when any Edit button is clicked
-document.querySelectorAll('.edit-staff-btn').forEach((button) => {
+document.querySelectorAll('.edit-user-btn').forEach((button) => {
     button.addEventListener('click', () => {
         enterEditMode({
             id: button.dataset.id,
@@ -113,4 +113,11 @@ form.addEventListener('submit', async (event) => {
         submitButton.disabled = false;
         submitButton.textContent = isEditMode ? 'Update account' : 'Create account';
     }
+});
+
+document.getElementById('togglePassword').addEventListener('click', function () {
+    const passwordInput = document.getElementById('Password');
+    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+    passwordInput.setAttribute('type', type);
+    this.classList.toggle('fa-eye-slash');
 });

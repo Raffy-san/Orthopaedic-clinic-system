@@ -54,17 +54,14 @@ if (!$admin) {
 
 <body class="h-screen flex bg-slate-200 overflow-hidden">
     <?php include_once '../includes/sidebar.php'; ?>
-     <section class="flex-1 min-h-0 flex flex-col overflow-hidden">
+    <section class="flex-1 min-h-0 flex flex-col overflow-hidden">
         <div
             class="flex items-center justify-between bg-gradient-to-r from-[#0b1f0b] via-[#1e6b34] to-[#2e8b47] px-6 py-4">
-            <div>
-                <h1 class="text-2xl font-bold text-white mb-2">Appointment Scheduling</h1>
-                <p class="mb-1 text-sm text-white">Manage and book patient appointments</p>
+            <h1 class="text-2xl font-bold text-white">Southern Leyte Orthopaedic Clinic System</h1>
+            <div class="flex flex-col gap-3 items-end">
+                <h1 class="text-2xl font-bold text-white">Appointment Scheduling</h1>
+                <h3 class="text-sm font-medium text-white">Manage and book patient appointments</h3>
             </div>
-            <button id="startBookingButton"
-                class="inline-flex items-center justify-center rounded-3xl bg-green-500 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-green-600">
-                + Book Appointment
-            </button>
         </div>
 
         <div class="flex-1 min-h-0 overflow-auto p-6 space-y-4">

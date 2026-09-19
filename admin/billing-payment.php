@@ -51,16 +51,20 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
     </style>
 </head>
 
-<body class="h-screen flex bg-slate-200">
+<body class="h-screen flex bg-slate-200 overflow-hidden">
     <?php include_once '../includes/sidebar.php'; ?>
 
-    <section class="flex-1 p-6 overflow-auto">
-        <div class="mb-6 space-y-1">
-            <h1 class="text-2xl font-bold">Billing & Payment</h1>
-            <h3 class="text-sm font-medium text-gray-500">Fee computation, discounts, and receipt generation</h3>
+    <section class="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div
+            class="flex items-center justify-between bg-gradient-to-r from-[#0b1f0b] via-[#1e6b34] to-[#2e8b47] px-6 py-4">
+            <h1 class="text-2xl font-bold text-white">Southern Leyte Orthopaedic Clinic System</h1>
+            <div class="flex flex-col gap-3 items-end">
+                <h1 class="text-2xl font-bold text-white">Billing & Payment</h1>
+                <h3 class="text-sm font-medium text-white">Fee computation, discounts, and receipt generation</h3>
+            </div>
         </div>
 
-        <div class="grid grid-cols-12 gap-6">
+        <div class="grid grid-cols-12 gap-6 min-h-0 overflow-auto p-6 space-y-4">
             <div class="col-span-6">
                 <div class="bg-white rounded-2xl p-6 shadow-md border border-slate-100">
                     <label for="patient-lookup" class="block text-lg font-semibold text-slate-800">Patient
@@ -68,7 +72,7 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
 
                     <div class="mt-4 flex items-center gap-4">
                         <select
-                            class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            class="w-full border border-gray-300 bg-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                             name="patient_id" id="patient-lookup" required>
                             <option value="" aria-readonly="true">Please Select Patient ID</option>
 

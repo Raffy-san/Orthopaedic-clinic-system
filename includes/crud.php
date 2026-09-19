@@ -102,7 +102,7 @@ function geocodeAddress(string $address): ?array
     ];
 }
 
-function addStaff(PDO $pdo, array $data): array
+function addUser(PDO $pdo, array $data): array
 {
     try {
         $pdo->beginTransaction();
@@ -123,17 +123,17 @@ function addStaff(PDO $pdo, array $data): array
         ]);
 
         $pdo->commit();
-        return ['status' => 'success', 'message' => 'Staff account created successfully.'];
+        return ['status' => 'success', 'message' => 'User account created successfully.'];
     } catch (PDOException $e) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
-        error_log('AddStaff failed: ' . $e->getMessage());
+        error_log('AddUser failed: ' . $e->getMessage());
         return [
             'status' => 'error',
             'message' => $e->getCode() === '23000'
                 ? 'That username or email is already in use.'
-                : 'Unable to create the staff account. Please try again.'
+                : 'Unable to create the User account. Please try again.'
         ];
     }
 }
@@ -389,7 +389,7 @@ function updatePatient(PDO $pdo, array $data): array
     }
 }
 
-function updateStaff(PDO $pdo, array $data): array
+function updateUser(PDO $pdo, array $data): array
 {
     try {
         $pdo->beginTransaction();
@@ -437,17 +437,17 @@ function updateStaff(PDO $pdo, array $data): array
         }
 
         $pdo->commit();
-        return ['status' => 'success', 'message' => 'Staff account updated successfully.'];
+        return ['status' => 'success', 'message' => 'User account updated successfully.'];
     } catch (PDOException $e) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
-        error_log('UpdateStaff failed: ' . $e->getMessage());
+        error_log('UpdateUser failed: ' . $e->getMessage());
         return [
             'status' => 'error',
             'message' => $e->getCode() === '23000'
                 ? 'That username or email is already in use.'
-                : 'Unable to update the staff account. Please try again.'
+                : 'Unable to update the user account. Please try again.'
         ];
     }
 }

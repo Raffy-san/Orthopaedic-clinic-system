@@ -53,11 +53,11 @@ if ($data['password'] !== '' && strlen($data['password']) < 8) {
     exit;
 }
 
-if (!in_array($data['role'], ['Admin', 'Doctor', 'Staff'], true)) {
+if (!in_array($data['role'], ['Admin', 'Doctor', 'Staff', 'Patient'], true)) {
     echo json_encode(['status' => 'error', 'message' => 'Please select a valid role.']);
     exit;
 }
 
-$result = updateStaff($pdo, $data);
+$result = updateUser($pdo, $data);
 $result['csrf_token'] = SessionManager::regenerateCsrfToken();
 echo json_encode($result);

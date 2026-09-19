@@ -89,6 +89,7 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
                 <img src="../assets/img/cmlogo.png" alt="College Logo" class="w-16 h-16 object-contain">
             </div>
         </div>
+
         <div class="flex-1 min-h-0 overflow-auto p-6">
             <div class="flex w-full gap-4">
                 <div class="bg-white p-6 rounded-2xl shadow-md flex-1">
@@ -127,113 +128,108 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
                     </p>
                 </div>
             </div>
-            <div class="grid grid-cols-3 gap-6 mt-8">
 
-                <!-- Recent Patients -->
-                <div class="col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100">
-                    <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-                        <h2 class="text-lg font-semibold text-gray-800">
-                            Recent Patients
-                        </h2>
-                    </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="text-left text-sm text-gray-500">
-                                <tr class="border-b border-gray-100">
-                                    <th class="px-6 py-4 font-medium">Patient ID</th>
-                                    <th class="px-6 py-4 font-medium">Name</th>
-                                    <th class="px-6 py-4 font-medium">Date</th>
-                                </tr>
-                            </thead>
+            <div class="grid grid-cols-2 gap-6 mt-8 mb-8">
 
-                            <tbody class="text-sm">
-                                <?php
-                                $patients = fetchAllData($pdo, "SELECT 
-                                p.PatientID AS PatientID, 
-                                p.PatientCode,
-                                p.FirstName, 
-                                p.MiddleName,
-                                p.LastName,
-                                p.CreatedAt
-                            FROM patients p
-                            GROUP BY p.PatientID ORDER BY p.CreatedAt DESC LIMIT 5
-                            ");
-
-                                foreach ($patients as $patient) {
-                                    echo ' <tr class="border-b border-gray-100 hover:bg-gray-50">';
-                                    echo '<td class="px-6 py-4 text-gray-500">'
-                                        . htmlspecialchars($patient['PatientCode']) .
-                                        '</td>';
-                                    echo '<td class="px-6 py-4 font-medium">'
-                                        . htmlspecialchars($patient['FirstName'] . ' ' . $patient['MiddleName'] . ' ' . $patient['LastName']) .
-                                        '</td>';
-                                    echo '<td class="px-6 py-4 text-gray-500">'
-                                        . htmlspecialchars(date('M d, Y', strtotime($patient['CreatedAt']))) .
-                                        '</td>';
-                                }
-                                ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Today's Schedule -->
+                <!-- Completed -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
 
                     <div class="px-6 py-5 border-b border-gray-100">
                         <h2 class="text-lg font-semibold text-gray-800">
-                            Today's Schedule
+                            Completed
                         </h2>
                     </div>
 
-                    <div class="p-5 space-y-4">
+                    <div class="p-5 space-y-3 max-h-96 overflow-y-auto">
                         <?php
-                        $todaysSchedule = fetchAllData($pdo, "
-            SELECT 
-                a.AppointmentID,
-                a.AppointmentTime,
-                a.Meridiem,
-                a.Purpose,
-                a.Status,
-                p.FirstName,
-                p.LastName
-            FROM appointments a 
-            JOIN patients p ON p.PatientID = a.PatientID
-            WHERE a.status = 'Confirmed' AND DATE(a.AppointmentDate) = CURDATE()
-            ORDER BY a.AppointmentTime ASC
-        ");
+                        // NOTE: adjust column names (StartTime/EndTime) to match your actual `consultations` table
+                        $completedToday = fetchAllData($pdo, "
+                SELECT 
+                    c.ConsultationID,
+                    c.StartTime,
+                    c.EndTime,
+                    p.FirstName,
+                    p.LastName
+                FROM consultations c
+                JOIN patients p ON p.PatientID = c.PatientID
+                WHERE DATE(c.ConsultationDate) = CURDATE()
+                ORDER BY c.EndTime DESC
+            ");
 
-                        // Rotate through a few color classes so each row isn't identical
-                        $colorClasses = [
-                            ['bg-blue-100', 'text-blue-600'],
-                            ['bg-green-100', 'text-green-600'],
-                            ['bg-yellow-100', 'text-yellow-700'],
-                            ['bg-purple-100', 'text-purple-600'],
-                        ];
-
-                        if (empty($todaysSchedule)) {
-                            echo '<p class="text-sm text-gray-500">No appointments scheduled for today.</p>';
+                        if (empty($completedToday)) {
+                            echo '<p class="text-sm text-gray-500">No completed consultations yet today.</p>';
                         } else {
-                            foreach ($todaysSchedule as $i => $item) {
-                                $colors = $colorClasses[$i % count($colorClasses)];
-                                $time = date('g:i', strtotime($item['AppointmentTime']));
-                                $patientName = trim($item['FirstName'] . ' ' . $item['LastName']);
+                            foreach ($completedToday as $c) {
+                                $patientName = trim($c['FirstName'] . ' ' . $c['LastName']);
+                                $start = date('g:i A', strtotime($c['StartTime']));
+                                $end = date('g:i A', strtotime($c['EndTime']));
                                 ?>
-                                <div class="flex items-start gap-4">
-                                    <div class="<?= $colors[0] ?> <?= $colors[1] ?> rounded-xl px-3 py-2 text-sm font-semibold">
-                                        <?= htmlspecialchars($time) ?>         <?= htmlspecialchars($item['Meridiem']) ?>
-                                    </div>
-
+                                <div class="flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3">
                                     <div>
-                                        <h3 class="font-semibold">
+                                        <h3 class="font-semibold text-sm"><?= htmlspecialchars($patientName) ?></h3>
+                                        <p class="text-xs text-gray-500"><?= $start ?> – <?= $end ?></p>
+                                    </div>
+                                    <span class="text-xs px-3 py-1 rounded-full font-semibold bg-gray-100 text-gray-500">
+                                        Completed
+                                    </span>
+                                </div>
+                                <?php
+                            }
+                        }
+                        ?>
+                    </div>
+
+                </div>
+
+                <!-- Waiting Queue -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+
+                    <div class="px-6 py-5 border-b border-gray-100">
+                        <h2 class="text-lg font-semibold text-gray-800">
+                            Waiting Queue
+                        </h2>
+                    </div>
+
+                    <div class="p-5 space-y-3 max-h-96 overflow-y-auto">
+                        <?php
+                        // Confirmed appointments today that haven't been completed yet
+                        $waitingQueue = fetchAllData($pdo, "
+                SELECT 
+                    a.AppointmentID,
+                    a.AppointmentTime,
+                    a.Meridiem,
+                    p.FirstName,
+                    p.LastName
+                FROM appointments a
+                JOIN patients p ON p.PatientID = a.PatientID
+                WHERE a.Status = 'Confirmed' AND DATE(a.AppointmentDate) = CURDATE()
+                ORDER BY a.AppointmentTime ASC
+            ");
+
+                        if (empty($waitingQueue)) {
+                            echo '<p class="text-sm text-gray-500">No patients waiting.</p>';
+                        } else {
+                            foreach ($waitingQueue as $i => $w) {
+                                $patientName = trim($w['FirstName'] . ' ' . $w['LastName']);
+                                $time = date('g:i', strtotime($w['AppointmentTime']));
+                                $isFirst = ($i === 0);
+                                ?>
+                                <div
+                                    class="flex items-center justify-between rounded-xl border <?= $isFirst ? 'border-emerald-200 bg-emerald-50' : 'border-gray-100' ?> px-4 py-3">
+                                    <div>
+                                        <h3 class="font-semibold text-sm">
                                             <?= htmlspecialchars($patientName) ?>
                                         </h3>
-
-                                        <p class="text-sm text-gray-500">
-                                            <?= htmlspecialchars($item['Purpose']) ?>
+                                        <p class="text-xs text-gray-500">
+                                            <?= htmlspecialchars($time) ?>
+                                            <?= htmlspecialchars($w['Meridiem']) ?>
                                         </p>
                                     </div>
+                                    <span
+                                        class="text-xs px-3 py-1 rounded-full font-semibold <?= $isFirst ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500' ?>">
+                                        <?= $isFirst ? 'In Progress' : 'Waiting' ?>
+                                    </span>
                                 </div>
                                 <?php
                             }
@@ -245,7 +241,57 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
 
             </div>
 
+            <!-- Recent Patients -->
+            <div class="col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+                    <h2 class="text-lg font-semibold text-gray-800">
+                        Recent Patients
+                    </h2>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="text-left text-sm text-gray-500">
+                            <tr class="border-b border-gray-100">
+                                <th class="px-6 py-4 font-medium">Patient ID</th>
+                                <th class="px-6 py-4 font-medium">Name</th>
+                                <th class="px-6 py-4 font-medium">Date</th>
+                            </tr>
+                        </thead>
+
+                        <tbody class="text-sm">
+                            <?php
+                            $patients = fetchAllData($pdo, "SELECT 
+                                p.PatientID AS PatientID, 
+                                p.PatientCode,
+                                p.FirstName, 
+                                p.MiddleName,
+                                p.LastName,
+                                p.CreatedAt
+                            FROM patients p
+                            GROUP BY p.PatientID ORDER BY p.CreatedAt DESC LIMIT 5
+                            ");
+
+                            foreach ($patients as $patient) {
+                                echo ' <tr class="border-b border-gray-100 hover:bg-gray-50">';
+                                echo '<td class="px-6 py-4 text-gray-500">'
+                                    . htmlspecialchars($patient['PatientCode']) .
+                                    '</td>';
+                                echo '<td class="px-6 py-4 font-medium">'
+                                    . htmlspecialchars($patient['FirstName'] . ' ' . $patient['MiddleName'] . ' ' . $patient['LastName']) .
+                                    '</td>';
+                                echo '<td class="px-6 py-4 text-gray-500">'
+                                    . htmlspecialchars(date('M d, Y', strtotime($patient['CreatedAt']))) .
+                                    '</td>';
+                            }
+                            ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
+
         </div>
 
     </section>

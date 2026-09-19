@@ -124,16 +124,20 @@ function reportMoney(mixed $value): string
     <title>Reports</title>
 </head>
 
-<body class="h-screen flex bg-slate-200">
+<body class="h-screen flex bg-slate-200 overflow-hidden">
     <?php include_once '../includes/sidebar.php'; ?>
 
-    <section class="flex-1 p-6 overflow-auto">
-        <div class="mb-8 space-y-1">
-            <h1 class="text-2xl font-bold text-gray-800">Report Generation</h1>
-            <p class="text-sm font-medium text-gray-500">Generate and export administrative reports</p>
+    <section class="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div
+            class="flex items-center justify-between bg-gradient-to-r from-[#0b1f0b] via-[#1e6b34] to-[#2e8b47] px-6 py-4">
+            <h1 class="text-2xl font-bold text-white">Southern Leyte Orthopaedic Clinic System</h1>
+            <div class="flex flex-col gap-3 items-end">
+                <h1 class="text-2xl font-bold text-white">Report Generations</h1>
+                <h3 class="text-sm font-medium text-white">Generate and export administrative reports</h3>
+            </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-6">
+        <div class="grid grid-cols-3 gap-6 min-h-0 overflow-auto p-6 space-y-4">
             <!-- Left Column: Report Selection and Filters -->
             <div class="space-y-6 col-span-1">
                 <!-- Report Type Selection -->
@@ -361,8 +365,9 @@ function reportMoney(mixed $value): string
         }
     </style>
 
-    <div id="printPasswordModal" class="modal hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-[9999] px-2 sm:px-0"
-    style="background-color: rgba(0,0,0,0.4); print-hidden">
+    <div id="printPasswordModal"
+        class="modal hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-[9999] px-2 sm:px-0"
+        style="background-color: rgba(0,0,0,0.4); print-hidden">
         <div class="bg-white rounded-lg shadow-lg w-full max-w-sm p-5">
             <h3 class="text-base font-bold text-gray-800 mb-1">Confirm your password</h3>
             <p class="text-xs text-gray-500 mb-3">Printing financial reports requires re-entering your password.</p>
