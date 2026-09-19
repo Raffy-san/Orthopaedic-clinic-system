@@ -26,17 +26,21 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
     <title>Follow-up Check-ups</title>
 </head>
 
-<body class="h-screen flex bg-slate-200">
+<body class="h-screen flex bg-slate-200 overflow-hidden">
     <?php include_once '../includes/sidebar.php'; ?>
 
-    <section class="flex-1 p-6 overflow-auto">
-        <div class="mb-8 space-y-1">
-            <h1 class="text-2xl font-bold text-gray-800">Follow-up Check-ups</h1>
-            <p class="text-sm font-medium text-gray-500">Manage and track patient follow-up appointments</p>
+    <section class="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div
+            class="flex items-center justify-between bg-gradient-to-r from-[#0b1f0b] via-[#1e6b34] to-[#2e8b47] px-6 py-4">
+            <h1 class="text-2xl font-bold text-white">Southern Leyte Orthopaedic Clinic System</h1>
+            <div class="flex flex-col gap-3 items-end">
+                <h1 class="text-2xl font-bold text-white">Follow-up Check-ups</h1>
+                <h3 class="text-sm font-medium text-white">Manage and track patient follow-up appointments</h3>
+            </div>
         </div>
 
         <!-- Appointments List -->
-        <div id="followupsContainer" class="space-y-4">
+        <div id="followupsContainer" class="space-y-4 min-h-0 overflow-auto p-6">
             <div class="bg-white rounded-lg p-8 text-center">
                 <p class="text-sm text-gray-500">Loading follow-up appointments...</p>
             </div>

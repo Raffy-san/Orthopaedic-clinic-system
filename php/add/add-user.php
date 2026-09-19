@@ -50,6 +50,6 @@ if (!in_array($data['role'], ['Admin', 'Doctor', 'Staff'], true)) {
 	exit;
 }
 
-$result = addStaff($pdo, $data);
+$result = addUser($pdo, $data);
 $result['csrf_token'] = SessionManager::regenerateCsrfToken();
 echo json_encode($result);

@@ -81,11 +81,6 @@ const appointmentDateMessage = document.getElementById('appointmentDateMessage')
 const availableSlotCount = document.getElementById('availableSlotCount');
 const bookingModal = document.getElementById('bookAppointmentModal');
 
-document.getElementById('startBookingButton').addEventListener('click', () => {
-    appointmentDate.focus();
-    appointmentDate.scrollIntoView({ behavior: 'smooth', block: 'center' });
-});
-
 
 const resetTimeSlots = () => {
     document.querySelectorAll('.time-slot').forEach((slot) => {
