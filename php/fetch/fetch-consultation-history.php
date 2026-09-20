@@ -34,7 +34,7 @@ try {
             u.LastName as DoctorLastName
         FROM consultations c
         LEFT JOIN users u ON c.DoctorID = u.UserID
-        WHERE c.PatientID = ?
+        WHERE c.PatientID = ? AND c.IsCompleted = 1
         ORDER BY c.ConsultationDate DESC
     ");
     $stmt->execute([$patientID]);

@@ -65,18 +65,20 @@ function formatDob($dob)
     <title>Profile</title>
 </head>
 
-<body class="h-screen flex bg-slate-200">
+<body class="h-screen flex bg-slate-200 overflow-hidden">
     <?php include '../includes/user-sidebar.php'; ?>
 
-    <section class="flex-1 p-6 overflow-auto">
-        <div class="max-w-5xl mx-auto">
-
-            <div class="mb-6">
-                <h1 class="text-2xl font-bold">My Profile</h1>
-                <h3 class="text-md font-medium text-gray-500">
-                    Personal information on file
-                </h3>
+    <section class="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div
+            class="flex items-center justify-between bg-gradient-to-r from-[#0b1f0b] via-[#1e6b34] to-[#2e8b47] px-6 py-4">
+            <h1 class="text-2xl font-bold text-white">Southern Leyte Orthopaedic Clinic System</h1>
+            <div class="flex flex-col gap-3 items-end">
+                <h1 class="text-2xl font-bold text-white">My Profile</h1>
+                <h3 class="text-sm font-medium text-white">Personal information on file</h3>
             </div>
+        </div>
+
+        <div class="flex-1 min-h-0 overflow-auto p-6 space-y-4">
 
             <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
 

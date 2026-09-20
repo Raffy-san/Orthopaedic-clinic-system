@@ -1,4 +1,6 @@
 <?php
+date_default_timezone_set('Asia/Manila');
+
 $host = "localhost";
 $dbname = "orthopaedic_clinic_system";
 $username = "root";

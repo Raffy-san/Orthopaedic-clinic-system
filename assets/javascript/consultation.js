@@ -23,10 +23,12 @@ async function loadClinicQueue() {
 
         let queueHTML = '';
         appointments.forEach((appointment, index) => {
-            const isActive = index === 0;
+            // CHANGED — real status instead of index === 0
+            const isActive = !!appointment.ConsultationStartTime;
+
             const statusBadge = isActive ?
                 '<span class="text-xs bg-emerald-600 text-white px-2 py-1 rounded-full font-semibold">In Consultation</span>' :
-                '<span class="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full font-semibold">' + (index === 1 ? 'Next' : 'Queue') + '</span>';
+                '<span class="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full font-semibold">' + (index === 0 ? 'Next' : 'Queue') + '</span>';
 
             const bgClass = isActive ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200 hover:bg-slate-100';
 
@@ -45,7 +47,6 @@ async function loadClinicQueue() {
 
         document.getElementById('clinicQueueContainer').innerHTML = queueHTML;
 
-        // Add click handlers to queue items
         document.querySelectorAll('.queue-btn').forEach(btn => {
             btn.addEventListener('click', function () {
                 const appointmentData = appointments[parseInt(this.getAttribute('data-index'))];
@@ -53,7 +54,6 @@ async function loadClinicQueue() {
             });
         });
 
-        // Load first patient automatically
         if (appointments.length > 0) {
             loadPatientData(appointments[0]);
         }
@@ -112,10 +112,23 @@ async function loadPatientData(appointmentData) {
 
     document.getElementById('appointmentID').value = appointmentData.AppointmentID;
     document.getElementById('patientID').value = appointmentData.PatientID;
+    document.getElementById('consultationID').value = ''; // NEW — reset; only set once Start is clicked
 
     document.getElementById('patientHeaderContainer').classList.remove('hidden');
     document.getElementById('noPatientSelected').classList.add('hidden');
-    document.getElementById('consultationForm').classList.remove('hidden');
+
+    // CHANGED — form stays hidden until Start Consultation is clicked
+    document.getElementById('consultationForm').classList.add('hidden');
+
+    // NEW — reset badge + button to "not started" state
+    const badge = document.getElementById('patientStatusBadge');
+    badge.textContent = 'Selected';
+    badge.className = 'text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-semibold';
+
+    const startBtn = document.getElementById('startConsultationBtn');
+    startBtn.classList.remove('hidden');
+    startBtn.disabled = false;
+    startBtn.textContent = 'Start Consultation';
 
     // Load consultation history
     await loadConsultationHistory(appointmentData.PatientID);
@@ -130,6 +143,47 @@ async function loadPatientData(appointmentData) {
     submitBtn.textContent = 'Save & Pass to Billing';
     hideReprintBanner();
 }
+
+async function startConsultation() {
+    const startBtn = document.getElementById('startConsultationBtn');
+    startBtn.disabled = true;
+    startBtn.textContent = 'Starting...';
+
+    try {
+        const response = await fetch('../php/add/start-consultation.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                appointment_id: document.getElementById('appointmentID').value,
+                patient_id: document.getElementById('patientID').value
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            document.getElementById('consultationID').value = result.consultation_id;
+
+            const badge = document.getElementById('patientStatusBadge');
+            badge.textContent = 'In Consultation';
+            badge.className = 'text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-semibold';
+
+            startBtn.classList.add('hidden'); // hide the button now that it's started
+            document.getElementById('consultationForm').classList.remove('hidden');
+        } else {
+            showMessage('Error', result.message || 'Unable to start consultation.', 'error');
+            startBtn.disabled = false;
+            startBtn.textContent = 'Start Consultation';
+        }
+    } catch (error) {
+        console.error('Error starting consultation:', error);
+        showMessage('Error', 'An error occurred while starting the consultation.', 'error');
+        startBtn.disabled = false;
+        startBtn.textContent = 'Start Consultation';
+    }
+}
+
+document.getElementById('startConsultationBtn').addEventListener('click', startConsultation);
 
 // Load consultation history for patient
 async function loadConsultationHistory(patientID) {
@@ -380,6 +434,7 @@ document.getElementById('consultationForm').addEventListener('submit', async fun
     const consultationData = {
         appointment_id: document.getElementById('appointmentID').value,
         patient_id: document.getElementById('patientID').value,
+        consultation_id: document.getElementById('consultationID').value,
         diagnosis: document.querySelector('[name="diagnosis"]').value,
         treatment: document.querySelector('[name="treatment"]').value,
         notes: document.querySelector('[name="notes"]').value,

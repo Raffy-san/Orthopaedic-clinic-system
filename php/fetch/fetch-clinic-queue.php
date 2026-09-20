@@ -27,7 +27,9 @@ try {
             p.EmergencyPhone,
             TIMESTAMPDIFF(YEAR, p.BirthDate, CURDATE()) AS Age,
             a.ChiefComplaint,
-            MAX(a2.AppointmentDate) AS LastVisitDate
+            MAX(a2.AppointmentDate) AS LastVisitDate,
+            active_c.ConsultationID AS ActiveConsultationID,
+            active_c.StartTime AS ConsultationStartTime
         FROM appointments a
         INNER JOIN patients p ON a.PatientID = p.PatientID
         LEFT JOIN (
@@ -38,12 +40,13 @@ try {
             LIMIT 1
         ) c ON a.PatientID = c.PatientID
         LEFT JOIN appointments a2 ON a.PatientID = a2.PatientID AND a2.Status = 'Completed' AND a2.AppointmentID != a.AppointmentID
+        LEFT JOIN consultations active_c ON active_c.AppointmentID = a.AppointmentID AND active_c.IsCompleted = 0
         WHERE DATE(a.AppointmentDate) = CURDATE() 
         AND a.Status = 'Confirmed'
         GROUP BY a.AppointmentID
         ORDER BY a.AppointmentTime ASC
     ");
-    
+
     $stmt->execute();
     $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -59,4 +62,4 @@ try {
         'message' => 'Database error: ' . $e->getMessage()
     ]);
 }
-?>
+?>  
