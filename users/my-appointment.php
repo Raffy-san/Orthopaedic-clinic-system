@@ -51,18 +51,20 @@ if ($patientId) {
     <title>My Appointments</title>
 </head>
 
-<body class="h-screen flex bg-slate-200">
+<body class="h-screen flex bg-slate-200 overflow-hidden">
     <?php include '../includes/user-sidebar.php'; ?>
 
-    <section class="flex-1 p-6 overflow-auto">
-        <div>
-            <h1 class="text-2xl font-bold">My Appointments</h1>
-            <h3 class="text-md font-medium text-gray-500">
-                Scheduled and past clinic visits
-            </h3>
+    <section class="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div
+            class="flex items-center justify-between bg-gradient-to-r from-[#0b1f0b] via-[#1e6b34] to-[#2e8b47] px-6 py-4">
+            <h1 class="text-2xl font-bold text-white">Southern Leyte Orthopaedic Clinic System</h1>
+            <div class="flex flex-col gap-3 items-end">
+                <h1 class="text-2xl font-bold text-white">My Appointments</h1>
+                <h3 class="text-sm font-medium text-white">Scheduled and past clinic visits</h3>
+            </div>
         </div>
 
-        <div class="w-full gap-4 mt-6">
+        <div class="flex-1 min-h-0 overflow-auto p-6 space-y-4">
             <?php if (empty($appointments)): ?>
                 <div
                     class="rounded-2xl border border-slate-200 bg-white/80 px-6 py-12 text-center text-slate-500 shadow-sm">

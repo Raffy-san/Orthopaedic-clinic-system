@@ -62,8 +62,22 @@ $defaultConsultationFee = 500; // PHP
                     class="patient-header bg-white rounded-3xl shadow-sm p-6 border border-slate-100 mb-4 hidden">
                     <div class="flex items-start justify-between">
                         <div class="flex-1">
-                            <h2 id="patientName" class="text-xl font-bold text-slate-900">-</h2>
-                            <div id="patientInfo" class="text-sm text-slate-500 mt-1">-</div>
+                            <div class="flex justify-between">
+                                <div>
+                                    <h2 id="patientName" class="text-xl font-bold text-slate-900">-</h2>
+                                    <div id="patientInfo" class="text-sm text-slate-500 mt-1">-</div>
+                                </div>
+
+                                <!-- Replaces the old hardcoded "In Consultation" badge -->
+                                <div class="ml-4 flex flex-col items-end gap-2">
+                                    <span id="patientStatusBadge"
+                                        class="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-semibold">Selected</span>
+                                    <button id="startConsultationBtn" type="button"
+                                        class="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition">
+                                        Start Consultation
+                                    </button>
+                                </div>
+                            </div>
 
                             <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
@@ -81,11 +95,6 @@ $defaultConsultationFee = 500; // PHP
                             </div>
                         </div>
 
-                        <div class="ml-4">
-                            <span
-                                class="text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-semibold">In
-                                Consultation</span>
-                        </div>
                     </div>
                 </div>
 
@@ -112,6 +121,7 @@ $defaultConsultationFee = 500; // PHP
 
                 <form id="consultationForm"
                     class="consultation-panel bg-white rounded-3xl shadow-sm p-6 border border-slate-100 hidden">
+                    <input type="hidden" id="consultationID" name="consultation_id">
                     <input type="hidden" id="appointmentID" name="appointment_id">
                     <input type="hidden" id="patientID" name="patient_id">
                     <input type="hidden" name="csrf_token"

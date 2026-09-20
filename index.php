@@ -80,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <section id="roleSelection" class="flex h-screen">
             <!-- Left Section -->
             <div
-                class="hidden lg:flex lg:w-2/5 bg-gradient-to-br from-blue-950 to-blue-900 flex-col justify-center px-12 py-8">
+                class="hidden lg:flex lg:w-2/5 bg-gradient-to-br from-green-950 to-green-900 flex-col justify-center px-12 py-8">
                 <div class="max-w-md">
                     <div class="flex gap-6 items-center mb-4">
                         <img src="assets/img/logo.jpg" alt="" class="w-18 h-18 rounded-full">
@@ -189,14 +189,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <section id="adminScreen" class="flex h-screen hidden">
             <!-- Left Section -->
             <div
-                class="hidden lg:flex lg:w-2/5 bg-gradient-to-br from-blue-950 to-blue-900 flex-col justify-center px-12 py-8">
+                class="hidden lg:flex lg:w-2/5 bg-gradient-to-br from-green-950 to-green-900 flex-col justify-center px-12 py-8">
                 <div class="max-w-md">
                     <div class="flex gap-6 items-center mb-4">
                         <img src="assets/img/logo.jpg" alt="" class="w-18 h-18 rounded-full">
                         <h1 class="text-white text-3xl font-bold leading-tight">Southern
                             Leyte<br>Orthopaedic Clinic</h1>
                     </div>
-                    <p class="text-blue-100 text-base leading-relaxed mb-8">
+                    <p class="text-green-100 text-base leading-relaxed mb-8">
                         Integrated clinic management — patients can book appointments online while staff manage
                         consultations, billing, and reports.
                     </p>
@@ -281,33 +281,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <section id="staffScreen" class="flex h-screen hidden">
             <!-- Left Section -->
             <div
-                class="hidden lg:flex lg:w-2/5 bg-gradient-to-br from-blue-950 to-blue-900 flex-col justify-center px-12 py-8">
+                class="hidden lg:flex lg:w-2/5 bg-gradient-to-br from-green-950 to-green-900 flex-col justify-center px-12 py-8">
                 <div class="max-w-md">
                     <div class="flex gap-6 items-center mb-4">
                         <img src="assets/img/logo.jpg" alt="" class="w-18 h-18 rounded-full">
                         <h1 class="text-white text-3xl font-bold leading-tight">Southern
                             Leyte<br>Orthopaedic Clinic</h1>
                     </div>
-                    <p class="text-blue-100 text-base leading-relaxed mb-8">
+                    <p class="text-green-100 text-base leading-relaxed mb-8">
                         Integrated clinic management — patients can book appointments online while staff manage
                         consultations, billing, and reports.
                     </p>
                     <div class="space-y-4">
                         <div class="flex items-start gap-3">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
-                            <span class="text-blue-100 text-sm">Online Appointment Booking</span>
+                            <span class="text-green-100 text-sm">Online Appointment Booking</span>
                         </div>
                         <div class="flex items-start gap-3">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
-                            <span class="text-blue-100 text-sm">Patient Self-Service Portal</span>
+                            <span class="text-green-100 text-sm">Patient Self-Service Portal</span>
                         </div>
                         <div class="flex items-start gap-3">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
-                            <span class="text-blue-100 text-sm">Consultation & Billing</span>
+                            <span class="text-green-100 text-sm">Consultation & Billing</span>
                         </div>
                         <div class="flex items-start gap-3">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
-                            <span class="text-blue-100 text-sm">Report Generation</span>
+                            <span class="text-green-100 text-sm">Report Generation</span>
                         </div>
                     </div>
                 </div>
@@ -373,25 +373,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <section id="patientScreen" class="flex h-screen hidden">
             <!-- Left Section -->
             <div
-                class="hidden lg:flex lg:w-2/5 bg-gradient-to-br from-blue-950 to-blue-900 flex-col justify-center px-12 py-8">
+                class="hidden lg:flex lg:w-2/5 bg-gradient-to-br from-green-950 to-green-900 flex-col justify-center px-12 py-8">
                 <div class="max-w-md">
                     <div class="flex gap-6 items-center mb-4">
                         <img src="assets/img/logo.jpg" alt="" class="w-18 h-18 rounded-full">
                         <h1 class="text-white text-3xl font-bold leading-tight">Southern
                             Leyte<br>Orthopaedic Clinic</h1>
                     </div>
-                    <p class="text-blue-100 text-base leading-relaxed mb-8">
+                    <p class="text-green-100 text-base leading-relaxed mb-8">
                         Integrated clinic management — patients can book appointments online while staff manage
                         consultations, billing, and reports.
                     </p>
                     <div class="space-y-4">
                         <div class="flex items-start gap-3">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
-                            <span class="text-blue-100 text-sm">Online Appointment Booking</span>
+                            <span class="text-green-100 text-sm">Online Appointment Booking</span>
                         </div>
                         <div class="flex items-start gap-3">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
-                            <span class="text-blue-100 text-sm">Patient Self-Service Portal</span>
+                            <span class="text-green-100 text-sm">Patient Self-Service Portal</span>
                         </div>
                         <div class="flex items-start gap-3">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>

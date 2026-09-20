@@ -197,13 +197,18 @@ function bookAppointment(PDO $pdo, array $data): array
         return ['status' => 'error', 'message' => 'Unable to book the appointment. Please try again.'];
     }
 }
-
 function saveConsultation(PDO $pdo, array $data, int $doctorID): array
 {
     try {
         $pdo->beginTransaction();
 
         $appointmentID = intval($data['appointment_id'] ?? 0);
+        $consultationID = intval($data['consultation_id'] ?? 0);
+
+        if (!$consultationID) {
+            $pdo->rollBack();
+            return ['status' => 'error', 'message' => 'No active consultation found. Please click Start Consultation first.'];
+        }
 
         // Lock the appointment row and check it hasn't already been consulted
         $checkStmt = $pdo->prepare("
@@ -221,27 +226,45 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
             return ['status' => 'error', 'message' => 'This consultation has already been saved and cannot be submitted again.'];
         }
 
+        // Lock and verify the consultation row started earlier actually belongs to this appointment
+        $consultCheck = $pdo->prepare("
+            SELECT ConsultationID FROM consultations 
+            WHERE ConsultationID = :consultation_id AND AppointmentID = :appointment_id AND IsCompleted = 0
+            FOR UPDATE
+        ");
+        $consultCheck->execute([
+            ':consultation_id' => $consultationID,
+            ':appointment_id' => $appointmentID
+        ]);
+        if (!$consultCheck->fetch()) {
+            $pdo->rollBack();
+            return ['status' => 'error', 'message' => 'Consultation record not found or already completed.'];
+        }
+
+        // Fill in the details and close out the consultation
         $stmt = $pdo->prepare("
-            INSERT INTO consultations (AppointmentID, PatientID, DoctorID, Diagnosis, Treatment, Notes, ConsultationFee, ConsultationDate, IsCompleted)
-            VALUES (:appointment_id, :patient_id, :doctor_id, :diagnosis, :treatment, :notes, :consultation_fee, NOW(), 0)
+            UPDATE consultations 
+            SET Diagnosis = :diagnosis, 
+                Treatment = :treatment, 
+                Notes = :notes, 
+                ConsultationFee = :consultation_fee, 
+                EndTime = CURTIME(), 
+                IsCompleted = 1
+            WHERE ConsultationID = :consultation_id
         ");
         $stmt->execute([
-            ':appointment_id' => $appointmentID,
-            ':patient_id' => intval($data['patient_id'] ?? 0),
-            ':doctor_id' => $doctorID,
             ':diagnosis' => $data['diagnosis'] ?? '',
             ':treatment' => $data['treatment'] ?? '',
             ':notes' => $data['notes'] ?? '',
-            ':consultation_fee' => floatval($data['consultation_fee'] ?? 0)
+            ':consultation_fee' => floatval($data['consultation_fee'] ?? 0),
+            ':consultation_id' => $consultationID
         ]);
-
-        $consultationID = $pdo->lastInsertId();
 
         if (($data['has_prescription'] ?? false) && !empty($data['prescriptions']) && is_array($data['prescriptions'])) {
             $rxStmt = $pdo->prepare("
-        INSERT INTO prescriptions (ConsultationID, Medicine, Dosage, Frequency, Duration, Instructions)
-        VALUES (:consultation_id, :medicine, :dosage, :frequency, :duration, :instructions)
-    ");
+                INSERT INTO prescriptions (ConsultationID, Medicine, Dosage, Frequency, Duration, Instructions)
+                VALUES (:consultation_id, :medicine, :dosage, :frequency, :duration, :instructions)
+            ");
             foreach ($data['prescriptions'] as $rx) {
                 $rxStmt->execute([
                     ':consultation_id' => $consultationID,
@@ -265,25 +288,16 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
         ]);
 
         $stmt = $pdo->prepare("
-    UPDATE appointments 
-    SET Status = 'Completed' 
-    WHERE AppointmentID = :appointment_id
-");
-        $stmt->execute([':appointment_id' => intval($data['appointment_id'] ?? 0)]);
-
-        $stmt = $pdo->prepare("
-            UPDATE consultations 
-            SET IsCompleted = 1 
-            WHERE ConsultationID = :consultation_id
+            UPDATE appointments 
+            SET Status = 'Completed' 
+            WHERE AppointmentID = :appointment_id
         ");
-        $stmt->execute([':consultation_id' => $consultationID]);
+        $stmt->execute([':appointment_id' => $appointmentID]);
 
-        // NEW: create a follow-up if the doctor requested one
         $followupID = null;
         if (($data['has_followup'] ?? false) && !empty($data['followup']['date'])) {
             $followupDate = $data['followup']['date'];
 
-            // Basic validation: must be a real date, and not in the past
             $dateObj = DateTime::createFromFormat('Y-m-d', $followupDate);
             if (!$dateObj || $dateObj->format('Y-m-d') !== $followupDate) {
                 throw new PDOException('Invalid follow-up date format.');
@@ -293,13 +307,13 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
             }
 
             $stmt = $pdo->prepare("
-        INSERT INTO followups (PatientID, DoctorID, AppointmentID, FollowUpDate, Status, Remarks)
-        VALUES (:patient_id, :doctor_id, :appointment_id, :followup_date, 'Scheduled', :remarks)
-    ");
+                INSERT INTO followups (PatientID, DoctorID, AppointmentID, FollowUpDate, Status, Remarks)
+                VALUES (:patient_id, :doctor_id, :appointment_id, :followup_date, 'Scheduled', :remarks)
+            ");
             $stmt->execute([
                 ':patient_id' => intval($data['patient_id'] ?? 0),
                 ':doctor_id' => $doctorID,
-                ':appointment_id' => intval($data['appointment_id'] ?? 0),
+                ':appointment_id' => $appointmentID,
                 ':followup_date' => $followupDate,
                 ':remarks' => $data['followup']['remarks'] ?? null
             ]);
@@ -312,7 +326,7 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
             'status' => 'success',
             'message' => 'Consultation saved successfully.',
             'consultation_id' => $consultationID,
-            'followup_id' => $followupID  // NEW — optional, but useful for the frontend/debugging
+            'followup_id' => $followupID
         ];
 
     } catch (PDOException $e) {
@@ -323,7 +337,6 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
         return ['status' => 'error', 'message' => 'Unable to save the consultation. Please try again.'];
     }
 }
-
 function updatePatient(PDO $pdo, array $data): array
 {
     try {

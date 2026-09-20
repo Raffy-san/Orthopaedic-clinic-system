@@ -33,98 +33,106 @@ $nextAppointment = $dashboardData['nextAppointment'];
     <title>Dashboard</title>
 </head>
 
-<body class="h-screen flex bg-slate-200">
+<body class="h-screen flex bg-slate-200 overflow-hidden">
     <?php include '../includes/user-sidebar.php'; ?>
-    <section class="flex-1 p-6 overflow-auto">
-        <div>
-            <h1 class="text-2xl font-bold">My Dashboard</h1>
-            <h3 class="text-md font-medium text-gray-500">
-                Your health summary
-            </h3>
-        </div>
 
-        <div class="flex w-full gap-4 mt-6">
-            <div class="bg-white p-6 rounded-xl shadow-md flex-1">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-gray-500 text-md font-semibold">Upcoming Appointments</h2>
-                    <div class="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center">
-                        <i class="fas fa-user-injured text-purple-600"></i>
-                    </div>
-                </div>
-                <p class="text-gray-800 text-3xl font-extrabold"><?= count($upcomingAppointments) ?></p>
-                <p class="text-gray-500 text-sm font-medium">Next:
-                    <?= htmlspecialchars(formatDashboardDate($nextAppointment['AppointmentDate'] ?? null)) ?></p>
-            </div>
-            <div class="bg-white p-6 rounded-xl shadow-md flex-1">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-gray-500 text-md font-semibold">Past Consultations</h2>
-                    <div class="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center">
-                        <i class="fas fa-user-injured text-purple-600"></i>
-                    </div>
-                </div>
-                <p class="text-gray-800 text-3xl font-extrabold"><?= count($pastConsultations) ?></p>
-                <p class="text-gray-500 text-sm font-medium">Last:
-                    <?= htmlspecialchars(formatDashboardDate($pastConsultations[0]['ConsultationDate'] ?? null)) ?></p>
-            </div>
-            <div class="bg-white p-6 rounded-xl shadow-md flex-1">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-gray-500 text-md font-semibold">Follow-up Check-ups</h2>
-                    <div class="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center">
-                        <i class="fas fa-user-injured text-purple-600"></i>
-                    </div>
-                </div>
-                <p class="text-gray-800 text-3xl font-extrabold">—</p>
-                <p class="text-gray-500 text-sm font-medium">Follow-up data unavailable</p>
+    <section class="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div
+            class="flex items-center justify-between bg-gradient-to-r from-[#0b1f0b] via-[#1e6b34] to-[#2e8b47] px-6 py-4">
+            <h1 class="text-2xl font-bold text-white">Southern Leyte Orthopaedic Clinic System</h1>
+            <div class="flex flex-col gap-3 items-end">
+                <h1 class="text-2xl font-bold text-white">My Dashboard</h1>
+                <h3 class="text-sm font-medium text-white"> Your health summary</h3>
             </div>
         </div>
 
-        <div class="flex w-full gap-4 mt-6">
-            <div class="bg-white p-6 rounded-xl shadow-md flex-1">
-                <h1 class="font-semibold mb-4">Next Appointment</h1>
-                <?php if ($nextAppointment): ?>
-                    <div class="bg-blue-100 p-4 rounded-xl flex flex-1 justify-between w-full items-center">
-                        <div>
-                            <h3 class="font-semibold text-md"><?= htmlspecialchars($nextAppointment['Purpose']) ?></h3>
-                            <h5 class="text-gray-500 text-sm font-medium">
-                                <?= htmlspecialchars(formatDashboardDate($nextAppointment['AppointmentDate'], $nextAppointment['AppointmentTime'])) ?>
-                            </h5>
-                            <div class="w-auto">
-                                <h5
-                                    class="rounded-xl p-1 px-2 mt-3 inline-block text-green-500 bg-green-200 text-sm font-semibold">
-                                    <?= htmlspecialchars($nextAppointment['Status']) ?>
-                                </h5>
-                            </div>
+        <div class="flex-1 min-h-0 overflow-auto p-6">
+            <div class="flex w-full gap-4 mt-6 ">
+                <div class="bg-white p-6 rounded-xl shadow-md flex-1">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-gray-500 text-md font-semibold">Upcoming Appointments</h2>
+                        <div class="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center">
+                            <i class="fas fa-user-injured text-purple-600"></i>
                         </div>
-                        <h1 class="text-5xl">📋</h1>
                     </div>
-                <?php else: ?>
-                    <p class="text-gray-500 text-sm">No upcoming appointments.</p>
-                <?php endif; ?>
+                    <p class="text-gray-800 text-3xl font-extrabold"><?= count($upcomingAppointments) ?></p>
+                    <p class="text-gray-500 text-sm font-medium">Next:
+                        <?= htmlspecialchars(formatDashboardDate($nextAppointment['AppointmentDate'] ?? null)) ?>
+                    </p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md flex-1">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-gray-500 text-md font-semibold">Past Consultations</h2>
+                        <div class="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center">
+                            <i class="fas fa-user-injured text-purple-600"></i>
+                        </div>
+                    </div>
+                    <p class="text-gray-800 text-3xl font-extrabold"><?= count($pastConsultations) ?></p>
+                    <p class="text-gray-500 text-sm font-medium">Last:
+                        <?= htmlspecialchars(formatDashboardDate($pastConsultations[0]['ConsultationDate'] ?? null)) ?>
+                    </p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md flex-1">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-gray-500 text-md font-semibold">Follow-up Check-ups</h2>
+                        <div class="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center">
+                            <i class="fas fa-user-injured text-purple-600"></i>
+                        </div>
+                    </div>
+                    <p class="text-gray-800 text-3xl font-extrabold">—</p>
+                    <p class="text-gray-500 text-sm font-medium">Follow-up data unavailable</p>
+                </div>
             </div>
-        </div>
 
-        <div class="flex w-full gap-4 mt-6">
-            <div class="bg-white p-6 rounded-xl shadow-md flex-1">
-                <h1 class="font-semibold mb-4">Recent Visits</h1>
-                <div class="divide-y divide-gray-200">
-                    <?php if (empty($recentVisits)): ?>
-                        <p class="py-3 text-sm text-gray-500">No completed visits yet.</p>
-                    <?php else: ?>
-                        <?php foreach ($recentVisits as $visit): ?>
-                            <div class="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                                <div>
-                                    <h3 class="font-semibold text-md"><?= htmlspecialchars($visit['Purpose']) ?></h3>
-                                    <p class="text-gray-500 text-sm">
-                                        <?= htmlspecialchars(formatDashboardDate($visit['AppointmentDate'], $visit['AppointmentTime'])) ?>
-                                    </p>
+            <div class="flex w-full gap-4 mt-6">
+                <div class="bg-white p-6 rounded-xl shadow-md flex-1">
+                    <h1 class="font-semibold mb-4">Next Appointment</h1>
+                    <?php if ($nextAppointment): ?>
+                        <div class="bg-blue-100 p-4 rounded-xl flex flex-1 justify-between w-full items-center">
+                            <div>
+                                <h3 class="font-semibold text-md"><?= htmlspecialchars($nextAppointment['Purpose']) ?></h3>
+                                <h5 class="text-gray-500 text-sm font-medium">
+                                    <?= htmlspecialchars(formatDashboardDate($nextAppointment['AppointmentDate'], $nextAppointment['AppointmentTime'])) ?>
+                                </h5>
+                                <div class="w-auto">
+                                    <h5
+                                        class="rounded-xl p-1 px-2 mt-3 inline-block text-green-500 bg-green-200 text-sm font-semibold">
+                                        <?= htmlspecialchars($nextAppointment['Status']) ?>
+                                    </h5>
                                 </div>
-                                <span
-                                    class="rounded-md px-2 py-1 text-green-600 bg-green-100 text-sm font-semibold"><?= htmlspecialchars($visit['Status']) ?></span>
                             </div>
-                        <?php endforeach; ?>
+                            <h1 class="text-5xl">📋</h1>
+                        </div>
+                    <?php else: ?>
+                        <p class="text-gray-500 text-sm">No upcoming appointments.</p>
                     <?php endif; ?>
                 </div>
             </div>
+
+            <div class="flex w-full gap-4 mt-6">
+                <div class="bg-white p-6 rounded-xl shadow-md flex-1">
+                    <h1 class="font-semibold mb-4">Recent Visits</h1>
+                    <div class="divide-y divide-gray-200">
+                        <?php if (empty($recentVisits)): ?>
+                            <p class="py-3 text-sm text-gray-500">No completed visits yet.</p>
+                        <?php else: ?>
+                            <?php foreach ($recentVisits as $visit): ?>
+                                <div class="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                                    <div>
+                                        <h3 class="font-semibold text-md"><?= htmlspecialchars($visit['Purpose']) ?></h3>
+                                        <p class="text-gray-500 text-sm">
+                                            <?= htmlspecialchars(formatDashboardDate($visit['AppointmentDate'], $visit['AppointmentTime'])) ?>
+                                        </p>
+                                    </div>
+                                    <span
+                                        class="rounded-md px-2 py-1 text-green-600 bg-green-100 text-sm font-semibold"><?= htmlspecialchars($visit['Status']) ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
 
