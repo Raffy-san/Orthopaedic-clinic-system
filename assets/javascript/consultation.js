@@ -387,7 +387,31 @@ document.getElementById('skipFollowupBtn').addEventListener('click', () => {
     document.getElementById('followupDetails').classList.add('hidden');
     document.getElementById('followupDate').value = '';
     document.getElementById('followupRemarks').value = '';
+    document.getElementById('followupAlternatives').classList.add('hidden');
 });
+
+document.getElementById('followupAlternativeDate').addEventListener('change', function () {
+    if (this.value) {
+        document.getElementById('followupDate').value = this.value;
+    }
+});
+
+function showFollowupAlternatives(dates) {
+    const alternatives = document.getElementById('followupAlternatives');
+    const select = document.getElementById('followupAlternativeDate');
+    select.innerHTML = '<option value="">Select an alternative date</option>';
+
+    dates.forEach(dateValue => {
+        const option = document.createElement('option');
+        option.value = dateValue;
+        option.textContent = new Date(dateValue + 'T00:00:00').toLocaleDateString('en-US', {
+            weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+        });
+        select.appendChild(option);
+    });
+
+    alternatives.classList.toggle('hidden', dates.length === 0);
+}
 document.getElementById('consultationForm').addEventListener('submit', async function (e) {
     e.preventDefault();
 
@@ -478,7 +502,12 @@ document.getElementById('consultationForm').addEventListener('submit', async fun
             });
             // NOTE: button stays disabled — it's re-enabled in loadPatientData() when the next patient loads
         } else {
-            showMessage('Error', 'Error: ' + result.message, 'error');
+            if (result.code === 'followup_date_unavailable') {
+                showFollowupAlternatives(result.available_dates || []);
+                showMessage('Date Unavailable', result.message + ' Please select an available alternative date and submit again.', 'error');
+            } else {
+                showMessage('Error', 'Error: ' + result.message, 'error');
+            }
             // NEW — unlock so the doctor can retry (e.g. transient network error)
             isSubmitting = false;
             submitBtn.disabled = false;

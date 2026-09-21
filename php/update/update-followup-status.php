@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/notifications.php';
 
 SessionManager::requireLogin();
 SessionManager::requireAnyRole(['admin', 'doctor', 'staff']);
@@ -30,12 +31,40 @@ if (!in_array($status, $validStatuses)) {
 }
 
 try {
+    $followupStatement = $pdo->prepare(
+        'SELECT PatientID, FollowUpDate, Status FROM followups WHERE FollowUpID = ?'
+    );
+    $followupStatement->execute([$followupID]);
+    $followup = $followupStatement->fetch(PDO::FETCH_ASSOC);
+
+    if (!$followup) {
+        echo json_encode(['status' => 'error', 'message' => 'Follow-up not found.']);
+        exit;
+    }
+
     $stmt = $pdo->prepare("
         UPDATE followups 
         SET Status = ? 
         WHERE FollowUpID = ?
     ");
     $stmt->execute([$status, $followupID]);
+
+    if ($followup['Status'] !== $status) {
+        $message = match ($status) {
+            'Completed' => 'Your follow-up check-up on ' . date('F j, Y', strtotime($followup['FollowUpDate'])) . ' has been marked completed.',
+            'Cancelled' => 'Your follow-up check-up on ' . date('F j, Y', strtotime($followup['FollowUpDate'])) . ' has been cancelled.',
+            default => 'Your follow-up check-up is scheduled for ' . date('F j, Y', strtotime($followup['FollowUpDate'])) . '.',
+        };
+
+        createPatientNotification(
+            $pdo,
+            (int) $followup['PatientID'],
+            'Follow-up status updated',
+            $message,
+            'followup',
+            $followupID
+        );
+    }
 
     echo json_encode([
         'status' => 'success',

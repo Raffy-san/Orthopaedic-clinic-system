@@ -18,6 +18,19 @@ if (empty($requestData['csrf_token']) || $requestData['csrf_token'] !== $csrfTok
     exit;
 }
 
+$streetAddress = trim($requestData['streetAddress'] ?? '');
+$province = trim($requestData['province'] ?? '');
+$city = trim($requestData['city'] ?? '');
+$barangay = trim($requestData['barangay'] ?? '');
+
+if ($province === '' || $city === '' || $barangay === '') {
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Please select a complete address (province, city/municipality, and barangay).']);
+    exit;
+}
+
+$requestData['address'] = implode(', ', array_filter([$streetAddress, $barangay, $city, $province]));
+
 // Call the updatePatient function from crud.php
 $result = updatePatient($pdo, $requestData);
 

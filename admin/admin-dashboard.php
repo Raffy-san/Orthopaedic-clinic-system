@@ -256,29 +256,28 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
 
                 </div>
             </div>
-        </div>
 
-        <!-- Recent Patients -->
-        <div class="col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100">
-            <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-                <h2 class="text-lg font-semibold text-gray-800">
-                    Recent Patients
-                </h2>
-            </div>
+            <!-- Recent Patients -->
+            <div class="col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+                    <h2 class="text-lg font-semibold text-gray-800">
+                        Recent Patients
+                    </h2>
+                </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="text-left text-sm text-gray-500">
-                        <tr class="border-b border-gray-100">
-                            <th class="px-6 py-4 font-medium">Patient ID</th>
-                            <th class="px-6 py-4 font-medium">Name</th>
-                            <th class="px-6 py-4 font-medium">Date</th>
-                        </tr>
-                    </thead>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="text-left text-sm text-gray-500">
+                            <tr class="border-b border-gray-100">
+                                <th class="px-6 py-4 font-medium">Patient ID</th>
+                                <th class="px-6 py-4 font-medium">Name</th>
+                                <th class="px-6 py-4 font-medium">Date</th>
+                            </tr>
+                        </thead>
 
-                    <tbody class="text-sm">
-                        <?php
-                        $patients = fetchAllData($pdo, "SELECT 
+                        <tbody class="text-sm">
+                            <?php
+                            $patients = fetchAllData($pdo, "SELECT 
                                 p.PatientID AS PatientID, 
                                 p.PatientCode,
                                 p.FirstName, 
@@ -289,25 +288,23 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
                             GROUP BY p.PatientID ORDER BY p.CreatedAt DESC LIMIT 5
                             ");
 
-                        foreach ($patients as $patient) {
-                            echo ' <tr class="border-b border-gray-100 hover:bg-gray-50">';
-                            echo '<td class="px-6 py-4 text-gray-500">'
-                                . htmlspecialchars($patient['PatientCode']) .
-                                '</td>';
-                            echo '<td class="px-6 py-4 font-medium">'
-                                . htmlspecialchars($patient['FirstName'] . ' ' . $patient['MiddleName'] . ' ' . $patient['LastName']) .
-                                '</td>';
-                            echo '<td class="px-6 py-4 text-gray-500">'
-                                . htmlspecialchars(date('M d, Y', strtotime($patient['CreatedAt']))) .
-                                '</td>';
-                        }
-                        ?>
-                    </tbody>
-                </table>
+                            foreach ($patients as $patient) {
+                                echo ' <tr class="border-b border-gray-100 hover:bg-gray-50">';
+                                echo '<td class="px-6 py-4 text-gray-500">'
+                                    . htmlspecialchars($patient['PatientCode']) .
+                                    '</td>';
+                                echo '<td class="px-6 py-4 font-medium">'
+                                    . htmlspecialchars($patient['FirstName'] . ' ' . $patient['MiddleName'] . ' ' . $patient['LastName']) .
+                                    '</td>';
+                                echo '<td class="px-6 py-4 text-gray-500">'
+                                    . htmlspecialchars(date('M d, Y', strtotime($patient['CreatedAt']))) .
+                                    '</td>';
+                            }
+                            ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
-
-        </div>
 
         </div>
 

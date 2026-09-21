@@ -159,9 +159,15 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                             <div class="text-sm font-semibold">Total Due</div>
                             <div id="total-due" class="text-lg font-bold">—</div>
                         </div>
+
+                        <div id="balance-remaining-row"
+                            class="hidden mt-2 flex justify-between items-center text-orange-600">
+                            <div class="text-sm font-semibold">Balance Remaining</div>
+                            <div id="balance-remaining" class="text-lg font-bold">—</div>
+                        </div>
                     </div>
 
-                    <div class="print-hidden mt-6">
+                    <div class="print-hidden mt-6" id="amount-paid-field">
                         <label for="amount-paid" class="block text-sm font-semibold text-slate-700 mb-2">Amount
                             Paid</label>
                         <input type="number" id="amount-paid" placeholder="0.00" step="0.01"
@@ -180,10 +186,10 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                         class="print-hidden hidden mt-3 w-full bg-slate-700 hover:bg-slate-800 text-white font-semibold py-3 rounded-lg">
                         <i class="fas fa-print mr-2" aria-hidden="true"></i>Print Receipt</button>
                 </div>
+                    </div>
             </div>
-        </div>
 
-        <?php include '../includes/message-modal.php' ?>
+            <?php include '../includes/message-modal.php' ?>
     </section>
 
     <script>

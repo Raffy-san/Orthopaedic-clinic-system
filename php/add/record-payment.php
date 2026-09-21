@@ -44,8 +44,18 @@ if (!$billing) {
 
 $patient = fetchOneData($pdo, 'SELECT PatientType FROM patients WHERE PatientID = ?', [$billing['PatientID']]);
 
-if ($discountType !== 'None' && strtolower($patient['PatientType']) !== strtolower($discountType)) {
-    echo json_encode(['status' => 'error', 'message' => 'Discount type does not match patient records.']);
+$patientType = trim((string) ($patient['PatientType'] ?? 'Regular'));
+$requiredDiscountType = match (strtolower($patientType)) {
+    'senior citizen' => 'Senior Citizen',
+    'pwd' => 'PWD',
+    default => 'None',
+};
+
+if ($discountType !== $requiredDiscountType) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Wrong discount type. This patient is registered as ' . $patientType . ' and must use ' . $requiredDiscountType . '.'
+    ]);
     exit;
 }
 
@@ -55,6 +65,23 @@ $finalAmount = $originalAmount - $discountAmount;
 
 try {
     $pdo->beginTransaction();
+
+    $paidSummary = fetchOneData(
+        $pdo,
+        'SELECT COALESCE(SUM(AmountPaid), 0) AS TotalPaid FROM payments WHERE BillingID = ?',
+        [$billingID]
+    );
+    $totalPaidBeforePayment = (float) ($paidSummary['TotalPaid'] ?? 0);
+    $remainingBalance = max(0, $finalAmount - $totalPaidBeforePayment);
+
+    if ($amountPaid > $remainingBalance) {
+        $pdo->rollBack();
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Payment exceeds the remaining balance of ₱' . number_format($remainingBalance, 2) . '.'
+        ]);
+        exit;
+    }
 
     // Persist the discount + recomputed FinalAmount before comparing payment
     $updateBilling = $pdo->prepare(
@@ -92,7 +119,15 @@ try {
     $updateStmt = $pdo->prepare('UPDATE billing SET Status = ? WHERE BillingID = ?');
     $updateStmt->execute([$newStatus, $billingID]);
 
-    $receiptNo = 'OR-' . date('Y') . '-' . str_pad($paymentID, 5, '0', STR_PAD_LEFT);
+    // Count payments on this bill (including the one we just inserted) to build a sequence number
+    $paymentCount = fetchOneData(
+        $pdo,
+        'SELECT COUNT(*) as cnt FROM payments WHERE BillingID = ?',
+        [$billingID]
+    );
+    $sequence = intval($paymentCount['cnt'] ?? 1);
+
+    $receiptNo = 'OR-' . date('Y') . '-' . str_pad($billingID, 5, '0', STR_PAD_LEFT) . '-' . $sequence;
 
     $updateRef = $pdo->prepare('UPDATE payments SET ReferenceNo = ? WHERE PaymentID = ?');
     $updateRef->execute([$receiptNo, $paymentID]);

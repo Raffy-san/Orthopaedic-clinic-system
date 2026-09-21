@@ -1,71 +1,68 @@
 (function () {
     let csrfToken = window.csrfToken || "";
     const printBtn = document.getElementById('printReportBtn');
-    const modal = document.getElementById('printPasswordModal');
-    const input = document.getElementById('printPasswordInput');
-    const errorEl = document.getElementById('printPasswordError');
-    const confirmBtn = document.getElementById('printPasswordConfirm');
-    const cancelBtn = document.getElementById('printPasswordCancel');
+    const unlockBtn = document.getElementById('unlockFinancialReportBtn');
+    const financialModal = document.getElementById('financialPasswordModal');
+    const financialInput = document.getElementById('financialPasswordInput');
+    const financialError = document.getElementById('financialPasswordError');
+    const financialConfirm = document.getElementById('financialPasswordConfirm');
+    const financialCancel = document.getElementById('financialPasswordCancel');
 
-    function openModal() {
-        errorEl.classList.add('hidden');
-        input.value = '';
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        input.focus();
+    function openFinancialModal() {
+        financialError.classList.add('hidden');
+        financialInput.value = '';
+        financialModal.classList.remove('hidden');
+        financialModal.classList.add('flex');
+        financialInput.focus();
     }
-    function closeModal() {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
+
+    function closeFinancialModal() {
+        financialModal.classList.add('hidden');
+        financialModal.classList.remove('flex');
     }
 
     printBtn.addEventListener('click', function () {
-        if (printBtn.dataset.reportType === 'financial') {
-            openModal();
-        } else {
-            window.print();
-        }
+        window.print();
     });
 
-    cancelBtn.addEventListener('click', closeModal);
-    modal.addEventListener('click', function (e) {
-        if (e.target === modal) closeModal();
-    });
-
-    async function attemptVerify() {
-        const password = input.value;
+    async function unlockFinancialReport() {
+        const password = financialInput.value;
         if (!password) {
-            errorEl.textContent = 'Please enter your password.';
-            errorEl.classList.remove('hidden');
+            financialError.textContent = 'Please enter your password.';
+            financialError.classList.remove('hidden');
             return;
         }
-        confirmBtn.disabled = true;
-        confirmBtn.textContent = 'Checking...';
+
+        financialConfirm.disabled = true;
+        financialConfirm.textContent = 'Checking...';
         try {
             const res = await fetch('verify-password.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password, csrf_token: csrfToken })
+                body: JSON.stringify({ password, purpose: 'financial_report', csrf_token: csrfToken })
             });
             const data = await res.json();
             if (data.success) {
-                closeModal();
-                window.print();
+                const url = new URL(window.location.href);
+                url.searchParams.set('financial_unlock', data.unlock_token);
+                window.location.href = url.toString();
             } else {
-                errorEl.textContent = data.message || 'Incorrect password.';
-                errorEl.classList.remove('hidden');
+                financialError.textContent = data.message || 'Incorrect password.';
+                financialError.classList.remove('hidden');
             }
         } catch (err) {
-            errorEl.textContent = 'Something went wrong. Try again.';
-            errorEl.classList.remove('hidden');
+            financialError.textContent = 'Something went wrong. Try again.';
+            financialError.classList.remove('hidden');
         } finally {
-            confirmBtn.disabled = false;
-            confirmBtn.textContent = 'Confirm & Print';
+            financialConfirm.disabled = false;
+            financialConfirm.textContent = 'Unlock';
         }
     }
 
-    confirmBtn.addEventListener('click', attemptVerify);
-    input.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') attemptVerify();
+    if (unlockBtn) unlockBtn.addEventListener('click', openFinancialModal);
+    if (financialCancel) financialCancel.addEventListener('click', closeFinancialModal);
+    if (financialConfirm) financialConfirm.addEventListener('click', unlockFinancialReport);
+    if (financialInput) financialInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') unlockFinancialReport();
     });
 })();

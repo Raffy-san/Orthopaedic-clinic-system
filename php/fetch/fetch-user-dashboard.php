@@ -9,6 +9,10 @@ function fetchUserDashboardData(PDO $pdo, int $userId): array
     $pastConsultations = [];
     $recentVisits = [];
     $nextAppointment = null;
+    $notifications = [];
+    $unreadNotifications = 0;
+    $followups = [];
+    $totalFollowups = 0;
 
     if ($patientId) {
         $upcomingStatement = $pdo->prepare(
@@ -41,13 +45,49 @@ function fetchUserDashboardData(PDO $pdo, int $userId): array
         );
         $recentVisitsStatement->execute([$patientId]);
         $recentVisits = $recentVisitsStatement->fetchAll(PDO::FETCH_ASSOC);
+
+        $followupStatement = $pdo->prepare(
+            'SELECT f.FollowUpID, f.FollowUpDate, f.Status
+             FROM followups f
+                         WHERE f.PatientID = ?
+                             AND f.FollowUpDate >= CURDATE()
+                             AND f.Status = \'Scheduled\'
+                         ORDER BY f.FollowUpDate ASC'
+        );
+        $followupStatement->execute([$patientId]);
+        $followups = $followupStatement->fetchAll(PDO::FETCH_ASSOC);
+
+        $totalFollowupsStatement = $pdo -> prepare (
+            'SELECT f.FollowUpID, f.FollowUpDate, f.Status
+             FROM followups f
+                         WHERE f.PatientID = ?
+                         AND f.Status = \'Completed\'
+                         ORDER BY f.FollowUpDate DESC'
+        );
+        $totalFollowupsStatement->execute([$patientId]);
+        $totalFollowups = $totalFollowupsStatement->rowCount();
+
+        $notificationStatement = $pdo->prepare(
+            'SELECT NotificationID, Title, Message, IsRead, CreatedAt
+             FROM notifications
+             WHERE UserID = ?
+             ORDER BY CreatedAt DESC
+             LIMIT 10'
+        );
+        $notificationStatement->execute([$userId]);
+        $notifications = $notificationStatement->fetchAll(PDO::FETCH_ASSOC);
+        $unreadNotifications = count(array_filter($notifications, static fn(array $notification): bool => !(bool) $notification['IsRead']));
     }
 
     return [
         'upcomingAppointments' => $upcomingAppointments,
         'pastConsultations' => $pastConsultations,
         'recentVisits' => $recentVisits,
+        'followups' => $followups,
         'nextAppointment' => $nextAppointment,
+        'notifications' => $notifications,
+        'unreadNotifications' => $unreadNotifications,
+        'totalFollowups' => $totalFollowups,
     ];
 }
 

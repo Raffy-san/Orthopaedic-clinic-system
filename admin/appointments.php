@@ -12,9 +12,9 @@ $canApprove = in_array($currentRole, ['admin', 'doctor'], true);
 
 $admin = SessionManager::getUser($pdo);
 expirePendingAppointments($pdo);
-$patientsWithCoordinates = fetchAllData($pdo, "
-    SELECT p.Address AS city, p.Latitude AS lat, p.Longitude AS lng,
-           TIMESTAMPDIFF(YEAR, p.BirthDate, CURDATE()) AS age, a.AppointmentDate as date, 
+$patientsRaw = fetchAllData($pdo, "
+    SELECT p.Province AS province, p.City AS city, p.Barangay AS barangay,
+           TIMESTAMPDIFF(YEAR, p.BirthDate, CURDATE()) AS age, a.AppointmentDate as date,
            a.AppointmentTime as time, a.meridiem as meridiem,
            p.Gender AS gender, COALESCE(a.Status, 'Pending') AS status
     FROM patients p
@@ -22,9 +22,81 @@ $patientsWithCoordinates = fetchAllData($pdo, "
         SELECT MAX(a2.AppointmentID) FROM appointments a2
         WHERE a2.PatientID = p.PatientID AND a2.Status IN ('Confirmed', 'Pending')
     )
-    WHERE p.Latitude IS NOT NULL AND p.Longitude IS NOT NULL
+    WHERE p.Province IS NOT NULL AND p.City IS NOT NULL AND p.Barangay IS NOT NULL
     ORDER BY p.CreatedAt DESC
 ");
+
+function slugifyProvinceName(string $name): string
+{
+    $slug = strtolower($name);
+    $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
+    return trim($slug, '-');
+}
+
+$boundaryCache = [];
+
+function normalizeBarangayName(string $name): string
+{
+    // Boundary dataset doesn't include the "(Pob.)" poblacion marker that
+    // PSGC dropdown data uses — strip it so names match.
+    $name = preg_replace('/\s*\(Pob\.?\)\s*/i', '', $name);
+    return trim($name);
+}
+
+function getBarangayCentroid(string $province, string $city, string $barangay, array &$cache): ?array
+{
+    $slug = slugifyProvinceName($province);
+
+    if (!isset($cache[$slug])) {
+        $path = __DIR__ . '/../boundaries/' . $slug . '.json';
+        if (!file_exists($path)) {
+            $cache[$slug] = null;
+        } else {
+            $cache[$slug] = json_decode(file_get_contents($path), true);
+        }
+    }
+
+    $data = $cache[$slug];
+    if (!$data) {
+        return null;
+    }
+
+    $matchedCity = null;
+    foreach ($data['cities'] as $c) {
+        if (strcasecmp($c['name'], $city) === 0) {
+            $matchedCity = $c;
+            break;
+        }
+    }
+    if (!$matchedCity) {
+        return null;
+    }
+
+    $normalizedBarangay = normalizeBarangayName($barangay);
+
+    foreach ($data['barangays'] as $b) {
+        if (
+            $b['cityCode'] === $matchedCity['code']
+            && strcasecmp(normalizeBarangayName($b['name']), $normalizedBarangay) === 0
+        ) {
+            return $b['centroid'] ?? null;
+        }
+    }
+
+    return null;
+}
+
+$patientsWithCoordinates = [];
+foreach ($patientsRaw as $row) {
+    $centroid = getBarangayCentroid($row['province'], $row['city'], $row['barangay'], $boundaryCache);
+    if (!$centroid) {
+        continue; // no matching boundary data — skip rather than plot a wrong/blank pin
+    }
+
+    $row['lat'] = $centroid['lat'];
+    $row['lng'] = $centroid['lng'];
+    $patientsWithCoordinates[] = $row;
+}
 
 $appointments = fetchAllData($pdo, "
     SELECT a.AppointmentID, a.AppointmentDate, a.AppointmentTime, a.Purpose, a.Status,

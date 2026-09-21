@@ -113,9 +113,24 @@ async function loadFollowups() {
 }
 
 // Notify patient function
-function notifyPatient(e) {
+async function notifyPatient(e) {
     const followupID = e.currentTarget.getAttribute('data-followup-id');
-    showMessage('Notification Sent', 'Patient notification sent for follow-up ID: ' + followupID + '\n(SMS/Email feature to be implemented)', 'success');
+
+    try {
+        const response = await fetch('../php/add/add-notification.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ followup_id: followupID, csrf_token: csrfToken })
+        });
+        const result = await response.json();
+        showMessage(
+            result.status === 'success' ? 'Notification Sent' : 'Error',
+            result.message,
+            result.status === 'success' ? 'success' : 'error'
+        );
+    } catch (error) {
+        showMessage('Error', 'Unable to send the patient notification.', 'error');
+    }
 }
 
 // Confirm follow-up function

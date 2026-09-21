@@ -28,6 +28,18 @@ if ($sessionToken === '' || $submittedToken === '' || !hash_equals($sessionToken
 $patientType = $_POST['patientType'] ?? 'Regular';
 $allowedGenders = ['Male', 'Female', 'Other'];
 $allowedPatientTypes = ['Regular', 'Senior Citizen', 'PWD'];
+$streetAddress = trim($_POST['streetAddress'] ?? ''); // if you added this field
+$province = trim($_POST['province'] ?? '');
+$city = trim($_POST['city'] ?? '');
+$barangay = trim($_POST['barangay'] ?? '');
+
+if ($province === '' || $city === '' || $barangay === '') {
+	echo json_encode(['status' => 'error', 'message' => 'Please select a complete address (province, city/municipality, and barangay).']);
+	exit;
+}
+
+$fullAddress = implode(', ', array_filter([$streetAddress, $barangay, $city, $province]));
+
 $data = [
 	'firstName' => trim($_POST['firstName'] ?? ''),
 	'middleName' => trim($_POST['middleName'] ?? ''),
@@ -35,7 +47,10 @@ $data = [
 	'birthDate' => trim($_POST['birthDate'] ?? ''),
 	'gender' => ucfirst(strtolower(trim($_POST['gender'] ?? ''))),
 	'phone' => trim($_POST['phone'] ?? ''),
-	'address' => trim($_POST['address'] ?? ''),
+	'address' => $fullAddress,
+	'province' => $province,
+	'city' => $city,
+	'barangay' => $barangay,
 	'allergies' => trim($_POST['allergies'] ?? ''),
 	'password' => $_POST['password'] ?? '',
 	'patientType' => $patientType
@@ -43,6 +58,11 @@ $data = [
 
 if ($data['firstName'] === '' || $data['lastName'] === '' || $data['birthDate'] === '' || $data['password'] === '') {
 	echo json_encode(['status' => 'error', 'message' => 'First name, last name, date of birth, and password are required.']);
+	exit;
+}
+
+if ($province === '' || $city === '' || $barangay === '') {
+	echo json_encode(['status' => 'error', 'message' => 'Please select a complete address (province, city/municipality, and barangay).']);
 	exit;
 }
 

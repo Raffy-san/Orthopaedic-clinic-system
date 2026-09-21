@@ -18,6 +18,10 @@ $upcomingAppointments = $dashboardData['upcomingAppointments'];
 $pastConsultations = $dashboardData['pastConsultations'];
 $recentVisits = $dashboardData['recentVisits'];
 $nextAppointment = $dashboardData['nextAppointment'];
+$notifications = $dashboardData['notifications'];
+$unreadNotifications = $dashboardData['unreadNotifications'];
+$followups = $dashboardData['followups'];
+$totalFollowups = $dashboardData['totalFollowups'];
 
 ?>
 <!DOCTYPE html>
@@ -79,8 +83,8 @@ $nextAppointment = $dashboardData['nextAppointment'];
                             <i class="fas fa-user-injured text-purple-600"></i>
                         </div>
                     </div>
-                    <p class="text-gray-800 text-3xl font-extrabold">—</p>
-                    <p class="text-gray-500 text-sm font-medium">Follow-up data unavailable</p>
+                    <p class="text-gray-800 text-3xl font-extrabold"><?= $totalFollowups ?></p>
+                    <p class="text-gray-500 text-sm font-medium">Upcoming follow-ups <?= htmlspecialchars(formatDashboardDate($followups[0]['FollowUpDate'] ?? null)) ?></p>
                 </div>
             </div>
 
@@ -130,6 +134,40 @@ $nextAppointment = $dashboardData['nextAppointment'];
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </div>
+                </div>
+            </div>
+
+            <div class="flex w-full gap-4 mt-6">
+                <div class="bg-white p-6 rounded-xl shadow-md flex-1">
+                    <div class="flex items-center justify-between mb-4">
+                        <h1 class="font-semibold">Notifications</h1>
+                        <?php if ($unreadNotifications > 0): ?>
+                            <span class="rounded-full px-3 py-1 text-xs font-semibold text-white bg-red-600">
+                                <?= $unreadNotifications ?> new
+                            </span>
+                        <?php endif; ?>
+                    </div>
+                    <?php if (empty($notifications)): ?>
+                        <p class="text-sm text-gray-500">No notifications yet.</p>
+                    <?php else: ?>
+                        <div class="divide-y divide-gray-200">
+                            <?php foreach ($notifications as $notification): ?>
+                                <div class="py-3 <?= !$notification['IsRead'] ? 'bg-green-50 px-3 rounded-md' : '' ?>">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <h3 class="font-semibold text-sm text-gray-800">
+                                            <?= htmlspecialchars($notification['Title']) ?>
+                                        </h3>
+                                        <span class="text-xs text-gray-400 whitespace-nowrap">
+                                            <?= htmlspecialchars(date('M j, Y', strtotime($notification['CreatedAt']))) ?>
+                                        </span>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mt-1">
+                                        <?= htmlspecialchars($notification['Message']) ?>
+                                    </p>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
 

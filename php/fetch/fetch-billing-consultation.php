@@ -72,27 +72,39 @@ $billing = fetchOneData(
 // If no billing record exists, create one
 if (!$billing) {
     $originalAmount = $consultation['ConsultationFee'] ?? 1200.00;
+    $patientType = trim((string) ($patient['PatientType'] ?? 'Regular'));
+    $discountType = match (strtolower($patientType)) {
+        'senior citizen' => 'Senior Citizen',
+        'pwd' => 'PWD',
+        default => 'None',
+    };
+    $discountPercent = $discountType === 'None' ? 0 : 20;
+    $discountAmount = round($originalAmount * $discountPercent / 100, 2);
+    $finalAmount = $originalAmount - $discountAmount;
+
     try {
         $stmt = $pdo->prepare(
-            'INSERT INTO billing (ConsultationID, PatientID, OriginalAmount, DiscountType, FinalAmount, Status)
-             VALUES (?, ?, ?, ?, ?, ?)'
+            'INSERT INTO billing (ConsultationID, PatientID, OriginalAmount, DiscountType, DiscountPercent, DiscountAmount, FinalAmount, Status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $consultation['ConsultationID'],
             $patient['PatientID'],
             $originalAmount,
-            'None',
-            $originalAmount,
+            $discountType,
+            $discountPercent,
+            $discountAmount,
+            $finalAmount,
             'Unpaid'
         ]);
         
         $billing = [
             'BillingID' => $pdo->lastInsertId(),
             'OriginalAmount' => $originalAmount,
-            'DiscountType' => 'None',
-            'DiscountPercent' => 0.00,
-            'DiscountAmount' => 0.00,
-            'FinalAmount' => $originalAmount,
+            'DiscountType' => $discountType,
+            'DiscountPercent' => $discountPercent,
+            'DiscountAmount' => $discountAmount,
+            'FinalAmount' => $finalAmount,
             'Status' => 'Unpaid'
         ];
     } catch (Exception $e) {
@@ -100,6 +112,15 @@ if (!$billing) {
         exit;
     }
 }
+
+$paymentSummary = fetchOneData(
+    $pdo,
+    'SELECT COALESCE(SUM(AmountPaid), 0) AS TotalPaid
+     FROM payments WHERE BillingID = ?',
+    [$billing['BillingID']]
+);
+$billing['TotalPaid'] = (float) ($paymentSummary['TotalPaid'] ?? 0);
+$billing['AmountDue'] = max(0, (float) $billing['FinalAmount'] - $billing['TotalPaid']);
 
 echo json_encode([
     'status' => 'success',
