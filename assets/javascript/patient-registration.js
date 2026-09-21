@@ -14,6 +14,101 @@ const progressEnd = document.getElementById('progressEnd');
 
 let currentPatientType = '';
 let currentPatientName = '';
+let psgcData = [];
+let psgcLoadPromise = null;
+
+function loadPsgcData() {
+    if (!psgcLoadPromise) {
+        psgcLoadPromise = fetch('../psgc.json')
+            .then(res => res.json())
+            .then(data => { psgcData = data; });
+    }
+    return psgcLoadPromise;
+}
+
+function wireAddressDropdowns() {
+    const provinceSelect = document.getElementById('provinceSelect');
+    const citySelect = document.getElementById('citySelect');
+    const barangaySelect = document.getElementById('barangaySelect');
+
+    loadPsgcData().then(() => {
+        provinceSelect.innerHTML = '<option value="">Select province...</option>' +
+            psgcData.map(p => `<option value="${p.name}" data-code="${p.code}">${p.name}</option>`).join('');
+    });
+
+    provinceSelect.addEventListener('change', () => {
+        const province = psgcData.find(p => p.name === provinceSelect.value);
+        citySelect.disabled = !province;
+        barangaySelect.disabled = true;
+        barangaySelect.innerHTML = '<option value="">Select city/municipality first</option>';
+
+        citySelect.innerHTML = province
+            ? '<option value="">Select city/municipality...</option>' + province.cities.map(c => `<option value="${c.name}" data-code="${c.code}">${c.name}</option>`).join('')
+            : '<option value="">Select province first</option>';
+    });
+
+    citySelect.addEventListener('change', () => {
+        const province = psgcData.find(p => p.name === provinceSelect.value);
+        const city = province?.cities.find(c => c.name === citySelect.value);
+        barangaySelect.disabled = !city;
+
+        barangaySelect.innerHTML = city
+            ? '<option value="">Select barangay...</option>' + city.barangays.map(b => `<option value="${b.name}">${b.name}</option>`).join('')
+            : '<option value="">Select city/municipality first</option>';
+    });
+}
+
+function wireEditAddressDropdowns(savedAddress) {
+    const provinceSelect = document.getElementById('editProvinceSelect');
+    const citySelect = document.getElementById('editCitySelect');
+    const barangaySelect = document.getElementById('editBarangaySelect');
+
+    // Saved format is "Barangay, City, Province" — split and trim
+    const parts = (savedAddress || '').split(',').map(s => s.trim()).filter(Boolean);
+    const savedBarangay = parts[0] || '';
+    const savedCity = parts[1] || '';
+    const savedProvince = parts[2] || '';
+
+    loadPsgcData().then(() => {
+        provinceSelect.innerHTML = '<option value="">Select province...</option>' +
+            psgcData.map(p => `<option value="${p.name}" ${p.name === savedProvince ? 'selected' : ''}>${p.name}</option>`).join('');
+
+        const province = psgcData.find(p => p.name === savedProvince);
+        if (province) {
+            citySelect.disabled = false;
+            citySelect.innerHTML = '<option value="">Select city/municipality...</option>' +
+                province.cities.map(c => `<option value="${c.name}" ${c.name === savedCity ? 'selected' : ''}>${c.name}</option>`).join('');
+
+            const city = province.cities.find(c => c.name === savedCity);
+            if (city) {
+                barangaySelect.disabled = false;
+                barangaySelect.innerHTML = '<option value="">Select barangay...</option>' +
+                    city.barangays.map(b => `<option value="${b.name}" ${b.name === savedBarangay ? 'selected' : ''}>${b.name}</option>`).join('');
+            }
+        }
+    });
+
+    provinceSelect.addEventListener('change', () => {
+        const province = psgcData.find(p => p.name === provinceSelect.value);
+        citySelect.disabled = !province;
+        barangaySelect.disabled = true;
+        barangaySelect.innerHTML = '<option value="">Select city/municipality first</option>';
+
+        citySelect.innerHTML = province
+            ? '<option value="">Select city/municipality...</option>' + province.cities.map(c => `<option value="${c.name}">${c.name}</option>`).join('')
+            : '<option value="">Select province first</option>';
+    });
+
+    citySelect.addEventListener('change', () => {
+        const province = psgcData.find(p => p.name === provinceSelect.value);
+        const city = province?.cities.find(c => c.name === citySelect.value);
+        barangaySelect.disabled = !city;
+
+        barangaySelect.innerHTML = city
+            ? '<option value="">Select barangay...</option>' + city.barangays.map(b => `<option value="${b.name}">${b.name}</option>`).join('')
+            : '<option value="">Select city/municipality first</option>';
+    });
+}
 
 function setProgressActive(element) {
     element.classList.remove('bg-slate-200', 'text-slate-500');
@@ -133,8 +228,22 @@ function setActivePatientType(type) {
                             <input name="phone" type="tel" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter phone number">
                         </div>
                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
-                            <label class="text-[11px] text-slate-600">Address</label>
-                            <input name="address" type="text" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter address">
+                            <label class="text-[11px] text-slate-600">Province</label>
+                            <select id="provinceSelect" name="province" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
+                                <option value="">Loading...</option>
+                            </select>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+                            <label class="text-[11px] text-slate-600">City/Municipality</label>
+                            <select id="citySelect" name="city" required disabled class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
+                                <option value="">Select province first</option>
+                            </select>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+                            <label class="text-[11px] text-slate-600">Barangay</label>
+                            <select id="barangaySelect" name="barangay" required disabled class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
+                                <option value="">Select city/municipality first</option>
+                            </select>
                         </div>
                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
                             <label class="text-[11px] text-slate-600">Initial Password</label>
@@ -164,6 +273,7 @@ function setActivePatientType(type) {
                     </form>
                 `;
         saveRecordBtn.disabled = false;
+        wireAddressDropdowns();
     } else {
         existingPatientBtn.classList.add('border-blue-500', 'bg-blue-50', 'text-blue-700');
         newPatientBtn.classList.remove('border-blue-500', 'bg-blue-50', 'text-blue-700');
@@ -182,11 +292,12 @@ function setActivePatientType(type) {
                     <button class="col-span-1 mt-2 w-full rounded-2xl bg-sky-400 px-3 py-2 text-xs text-white font-semibold hover:bg-sky-500 md:col-span-2" type="button">Validate & Load Profile</button>
                     </div>
                 `;
-        saveRecordBtn.disabled = true;
+        saveRecordBtn.disabled = true;s
     }
 
     bindNameInputs();
     activateEnterInfoStep();
+    wireEditAddressDropdowns(patient.Address);
 }
 
 newPatientBtn.addEventListener('click', () => setActivePatientType('new'));
@@ -351,8 +462,22 @@ function validateExistingPatient() {
                     </div>
                     
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
-                        <label class="text-[11px] text-slate-600">Address</label>
-                        <input name="address" type="text" value="${patient.Address || ''}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
+                        <label class="text-[11px] text-slate-600">Province</label>
+                        <select id="editProvinceSelect" name="province" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+                        <label class="text-[11px] text-slate-600">City/Municipality</label>
+                        <select id="editCitySelect" name="city" required disabled class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
+                            <option value="">Select province first</option>
+                        </select>
+                    </div>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+                        <label class="text-[11px] text-slate-600">Barangay</label>
+                        <select id="editBarangaySelect" name="barangay" required disabled class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
+                            <option value="">Select city/municipality first</option>
+                        </select>
                     </div>
 
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">

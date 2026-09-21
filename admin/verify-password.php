@@ -12,6 +12,7 @@ const PASSWORD_COLUMN = 'PasswordHash';
 $input = json_decode(file_get_contents('php://input'), true) ?? [];
 $csrf = $input['csrf_token'] ?? '';
 $password = $input['password'] ?? '';
+$purpose = $input['purpose'] ?? '';
 
 if (!hash_equals($_SESSION['csrf_token'] ?? '', $csrf)) {
     http_response_code(403);
@@ -57,4 +58,14 @@ if (!$row || !password_verify($password, $row['pw_hash'])) {
 }
 
 $_SESSION['pw_attempts'] = ['count' => 0, 'last' => 0];
-echo json_encode(['success' => true]);
+
+if ($purpose === 'financial_report') {
+    $_SESSION['financial_report_unlock_token'] = bin2hex(random_bytes(32));
+}
+
+$response = ['success' => true];
+if ($purpose === 'financial_report') {
+    $response['unlock_token'] = $_SESSION['financial_report_unlock_token'];
+}
+
+echo json_encode($response);

@@ -13,6 +13,14 @@ if (!$admin) {
 }
 
 $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
+$unlockToken = $_GET['financial_unlock'] ?? '';
+$financialReportUnlocked = !empty($unlockToken)
+    && !empty($_SESSION['financial_report_unlock_token'])
+    && hash_equals((string) $_SESSION['financial_report_unlock_token'], (string) $unlockToken);
+
+if ($financialReportUnlocked) {
+    unset($_SESSION['financial_report_unlock_token']);
+}
 
 $reportTypes = [
     'patients' => 'Patient Records Report',
@@ -42,6 +50,10 @@ $reportError = null;
 try {
     switch ($reportType) {
         case 'financial':
+            if (!$financialReportUnlocked) {
+                break;
+            }
+
             $reportSummary = fetchOneData($pdo, '
                   SELECT COUNT(*) AS bills,
                       COALESCE(SUM(FinalAmount), 0) AS billed,
@@ -232,6 +244,17 @@ function reportMoney(mixed $value): string
                 <?php if ($reportError): ?>
                     <p class="text-sm text-red-600"><?= reportValue($reportError) ?></p>
                 <?php elseif ($reportType === 'financial'): ?>
+                    <?php if (!$financialReportUnlocked): ?>
+                        <div class="rounded-lg border border-amber-200 bg-amber-50 p-6 text-center">
+                            <i class="fa-solid fa-lock text-amber-600 text-2xl mb-3"></i>
+                            <h3 class="font-semibold text-gray-800">Financial summary is protected</h3>
+                            <p class="text-sm text-gray-600 mt-1">Enter your password to view billed and collected amounts and payment details.</p>
+                            <button type="button" id="unlockFinancialReportBtn"
+                                class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700">
+                                <i class="fa-solid fa-key"></i> Unlock Financial Summary
+                            </button>
+                        </div>
+                    <?php else: ?>
                     <div class="grid grid-cols-3 gap-3 mb-6">
                         <div class="rounded-lg bg-slate-50 p-4">
                             <p class="text-xs text-gray-500">Bills</p>
@@ -276,6 +299,7 @@ function reportMoney(mixed $value): string
                                 </tbody>
                             </table>
                         </div>
+                    <?php endif; ?>
                     <?php endif; ?>
                 <?php else: ?>
                     <?php if (empty($reportRows)): ?>
@@ -365,22 +389,21 @@ function reportMoney(mixed $value): string
         }
     </style>
 
-    <div id="printPasswordModal"
+    <div id="financialPasswordModal"
         class="modal hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-[9999] px-2 sm:px-0"
-        style="background-color: rgba(0,0,0,0.4); print-hidden">
+        style="background-color: rgba(0,0,0,0.4);">
         <div class="bg-white rounded-lg shadow-lg w-full max-w-sm p-5">
-            <h3 class="text-base font-bold text-gray-800 mb-1">Confirm your password</h3>
-            <p class="text-xs text-gray-500 mb-3">Printing financial reports requires re-entering your password.</p>
-            <input type="password" id="printPasswordInput" autocomplete="current-password"
+            <h3 class="text-base font-bold text-gray-800 mb-1">Unlock financial summary</h3>
+            <p class="text-xs text-gray-500 mb-3">Re-enter your password to view billing and collection details.</p>
+            <input type="password" id="financialPasswordInput" autocomplete="current-password"
                 class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Password">
-            <p id="printPasswordError" class="text-xs text-red-600 mt-1 hidden"></p>
+            <p id="financialPasswordError" class="text-xs text-red-600 mt-1 hidden"></p>
             <div class="flex justify-end gap-2 mt-4">
-                <button type="button" id="printPasswordCancel"
+                <button type="button" id="financialPasswordCancel"
                     class="px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
-                <button type="button" id="printPasswordConfirm"
-                    class="px-3 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg">Confirm
-                    & Print</button>
+                <button type="button" id="financialPasswordConfirm"
+                    class="px-3 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg">Unlock</button>
             </div>
         </div>
     </div>

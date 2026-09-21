@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/notifications.php';
 function addPatient(PDO $pdo, array $data): array
 {
     try {
@@ -25,13 +26,10 @@ function addPatient(PDO $pdo, array $data): array
         ]);
         $userId = $pdo->lastInsertId();
 
-        // Geocode the address if one was provided — fails gracefully to null/null
-        $coords = geocodeAddress($data['address'] ?? '');
-
         $stmt = $pdo->prepare(
             'INSERT INTO patients
-             (PatientCode, UserID, FirstName, MiddleName, LastName, BirthDate, Gender, Phone, PatientType, Address, Allergies, Latitude, Longitude)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+     (PatientCode, UserID, FirstName, MiddleName, LastName, BirthDate, Gender, Phone, PatientType, Address, Province, City, Barangay, Allergies)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $patientCode,
@@ -44,9 +42,10 @@ function addPatient(PDO $pdo, array $data): array
             $data['phone'] ?: null,
             $data['patientType'] ?: 'Regular',
             $data['address'] ?: null,
-            $data['allergies'] ?: null,
-            $coords['lat'] ?? null,
-            $coords['lng'] ?? null
+            $data['province'] ?: null,
+            $data['city'] ?: null,
+            $data['barangay'] ?: null,
+            $data['allergies'] ?: null
         ]);
 
         $pdo->commit();
@@ -65,41 +64,61 @@ function addPatient(PDO $pdo, array $data): array
         return ['status' => 'error', 'message' => 'Unable to register the patient. Please try again.'];
     }
 }
-
 function geocodeAddress(string $address): ?array
 {
     if (empty($address)) {
         return null;
     }
 
-    $url = 'https://nominatim.openstreetmap.org/search?' . http_build_query([
-        'q' => $address,
-        'format' => 'json',
-        'limit' => 1
-    ]);
-
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => ['User-Agent: OrthopeadicClinic/1.0 (rafaelsanoria506@gmail.com)'],
-        CURLOPT_TIMEOUT => 5
-    ]);
-    $response = curl_exec($ch);
-    curl_close($ch);
-
-    if (!$response) {
-        return null;
+    $parts = array_map('trim', explode(',', $address));
+    $attempts = [];
+    for ($i = 0; $i < count($parts); $i++) {
+        $attempts[] = implode(', ', array_slice($parts, $i));
     }
 
-    $results = json_decode($response, true);
-    if (empty($results[0]['lat']) || empty($results[0]['lon'])) {
-        return null; // address not found — fail gracefully, don't block registration
+    foreach ($attempts as $index => $query) {
+        $cleanQuery = preg_replace('/\s*\(Pob\.?\)\s*/i', ' ', $query);
+        $cleanQuery = preg_replace('/^City of\s+/i', '', $cleanQuery);
+
+        $url = 'https://nominatim.openstreetmap.org/search?' . http_build_query([
+            'q' => $cleanQuery,
+            'format' => 'json',
+            'limit' => 5,
+            'countrycodes' => 'ph'
+        ]);
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ['User-Agent: OrthopeadicClinic/1.0 (rafaelsanoria506@gmail.com)'],
+            CURLOPT_TIMEOUT => 5
+        ]);
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        if ($response) {
+            $results = json_decode($response, true);
+            if (is_array($results)) {
+                foreach ($results as $result) {
+                    if (
+                        !empty($result['lat']) && !empty($result['lon'])
+                        && in_array($result['class'], ['place', 'boundary'], true)
+                    ) {
+                        return [
+                            'lat' => (float) $result['lat'],
+                            'lng' => (float) $result['lon']
+                        ];
+                    }
+                }
+            }
+        }
+
+        if ($index < count($attempts) - 1) {
+            usleep(1100000); // respect Nominatim's 1 req/sec limit before the next attempt
+        }
     }
 
-    return [
-        'lat' => (float) $results[0]['lat'],
-        'lng' => (float) $results[0]['lon']
-    ];
+    return null;
 }
 
 function addUser(PDO $pdo, array $data): array
@@ -306,6 +325,53 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
                 throw new PDOException('Follow-up date cannot be in the past.');
             }
 
+            $availabilityStmt = $pdo->prepare(
+                "SELECT COUNT(*) FROM appointments
+                 WHERE DoctorID = ? AND AppointmentDate = ? AND Status <> 'Cancelled'
+                 UNION ALL
+                 SELECT COUNT(*) FROM followups
+                 WHERE DoctorID = ? AND FollowUpDate = ? AND Status = 'Scheduled'"
+            );
+            $availabilityStmt->execute([$doctorID, $followupDate, $doctorID, $followupDate]);
+            $availabilityCounts = $availabilityStmt->fetchAll(PDO::FETCH_COLUMN);
+
+            if (array_sum(array_map('intval', $availabilityCounts)) > 0) {
+                $availableDates = [];
+                $candidateDate = clone $dateObj;
+
+                for ($offset = 0; $offset < 30 && count($availableDates) < 5; $offset++) {
+                    if ($offset > 0) {
+                        $candidateDate->modify('+1 day');
+                    }
+
+                    if ((int) $candidateDate->format('N') >= 6) {
+                        continue;
+                    }
+
+                    $candidate = $candidateDate->format('Y-m-d');
+                    $candidateStmt = $pdo->prepare(
+                        "SELECT
+                            (SELECT COUNT(*) FROM appointments WHERE DoctorID = ? AND AppointmentDate = ? AND Status <> 'Cancelled')
+                            + (SELECT COUNT(*) FROM followups WHERE DoctorID = ? AND FollowUpDate = ? AND Status = 'Scheduled')"
+                    );
+                    $candidateStmt->execute([$doctorID, $candidate, $doctorID, $candidate]);
+
+                    if ((int) $candidateStmt->fetchColumn() === 0) {
+                        $availableDates[] = $candidate;
+                    }
+                }
+
+                $pdo->rollBack();
+                return [
+                    'status' => 'error',
+                    'code' => 'followup_date_unavailable',
+                    'message' => 'The doctor is unavailable on ' . $dateObj->format('F j, Y') . '.',
+                    'requested_date' => $followupDate,
+                    'available_dates' => $availableDates,
+                    'patient_id' => intval($data['patient_id'] ?? 0)
+                ];
+            }
+
             $stmt = $pdo->prepare("
                 INSERT INTO followups (PatientID, DoctorID, AppointmentID, FollowUpDate, Status, Remarks)
                 VALUES (:patient_id, :doctor_id, :appointment_id, :followup_date, 'Scheduled', :remarks)
@@ -318,6 +384,15 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
                 ':remarks' => $data['followup']['remarks'] ?? null
             ]);
             $followupID = $pdo->lastInsertId();
+
+            createPatientNotification(
+                $pdo,
+                intval($data['patient_id'] ?? 0),
+                'Follow-up check-up scheduled',
+                'Your follow-up check-up is scheduled for ' . date('F j, Y', strtotime($followupDate)) . '.',
+                'followup',
+                (int) $followupID
+            );
         }
 
         $pdo->commit();
@@ -368,12 +443,10 @@ function updatePatient(PDO $pdo, array $data): array
             $userID
         ]);
 
-        $coords = geocodeAddress($data['address'] ?? '');
-
         $stmt = $pdo->prepare(
             'UPDATE patients 
-             SET FirstName = ?, MiddleName = ?, LastName = ?, BirthDate = ?, Gender = ?, Phone = ?, PatientType = ?, Address = ?, Allergies = ?, Latitude = ?, Longitude = ?
-             WHERE PatientCode = ?'
+     SET FirstName = ?, MiddleName = ?, LastName = ?, BirthDate = ?, Gender = ?, Phone = ?, PatientType = ?, Address = ?, Province = ?, City = ?, Barangay = ?, Allergies = ?
+     WHERE PatientCode = ?'
         );
         $stmt->execute([
             $data['firstName'] ?? '',
@@ -384,9 +457,10 @@ function updatePatient(PDO $pdo, array $data): array
             $data['phone'] ?? null,
             $data['patientType'] ?? 'Regular',
             $data['address'] ?? null,
+            $data['province'] ?? null,
+            $data['city'] ?? null,
+            $data['barangay'] ?? null,
             $data['allergies'] ?? null,
-            $coords['lat'] ?? null,
-            $coords['lng'] ?? null,
             $data['patient_code']
         ]);
 

@@ -116,19 +116,44 @@
             document.getElementById('consult-fee').innerText = '₱' + consultFee.toFixed(2);
             document.getElementById('total-due').innerText = '₱' + parseFloat(data.billing.FinalAmount).toFixed(2);
             document.getElementById('or-number').innerText = 'OR-2026-' + String(data.billing.BillingID).padStart(5, '0');
-            document.getElementById('amount-paid').value = parseFloat(data.billing.FinalAmount).toFixed(2);
+
+            const balanceRow = document.getElementById('balance-remaining-row');
+            if (data.billing.Status === 'Partially Paid') {
+                document.getElementById('balance-remaining').innerText = '₱' + parseFloat(data.billing.AmountDue).toFixed(2);
+                balanceRow.classList.remove('hidden');
+            } else {
+                balanceRow.classList.add('hidden');
+            }
 
             // Show cards
             consultationCard.classList.remove('hidden');
             receiptCard.classList.remove('hidden');
-            printBtn.classList.add('hidden');
-            document.getElementById('paid-amount').classList.add('hidden');
+
+            if (data.billing.Status === 'Paid') {
+                // Already paid — read-only view, print only
+                document.getElementById('amount-paid-field').classList.add('hidden');
+                recordBtn.classList.add('hidden');
+                printBtn.classList.remove('hidden');
+
+                document.querySelector('#paid-amount span:last-child').innerText =
+                    '₱' + parseFloat(data.billing.AmountPaid ?? data.billing.FinalAmount).toFixed(2);
+                document.getElementById('paid-amount').classList.remove('hidden');
+
+                document.getElementById('amount-paid').value = '';
+            } else {
+                // Unpaid / partially paid — normal editable flow
+                document.getElementById('amount-paid-field').classList.remove('hidden');
+                recordBtn.classList.remove('hidden');
+                printBtn.classList.add('hidden');
+                document.getElementById('paid-amount').classList.add('hidden');
+
+                // Pre-fill with remaining balance, not the full total
+                document.getElementById('amount-paid').value = parseFloat(data.billing.AmountDue).toFixed(2);
+                document.getElementById('amount-paid').focus();
+            }
 
             // Configure discount buttons based on patient eligibility
-            setupDiscountEligibility(data.patient.PatientType);
-
-            // Optionally focus the amount paid field
-            document.getElementById('amount-paid').focus();
+            setupDiscountEligibility(data.patient.PatientType, data.billing.Status === 'Paid');
         } catch (error) {
             console.error('Error:', error);
             showMessage('Error', 'Error loading consultation data. Please try again.', 'error');
@@ -138,20 +163,24 @@
         }
     });
 
-    // Setup discount eligibility - all options available for staff selection
-    function setupDiscountEligibility(patientType) {
+    // Preselect the discount that matches the patient's registered type.
+    function setupDiscountEligibility(patientType, isPaid = false) {
         const discountBtns = document.querySelectorAll('.discount-btn');
-
-        // All discount buttons are enabled for staff to select
         discountBtns.forEach(btn => {
-            btn.disabled = false;
-            btn.style.opacity = '1';
-            btn.style.cursor = 'pointer';
-            btn.title = 'Click to apply this discount';
+            btn.disabled = isPaid;
+            btn.style.opacity = isPaid ? '0.6' : '1';
+            btn.style.cursor = isPaid ? 'not-allowed' : 'pointer';
         });
 
-        // Select "None" by default
-        applyDiscount(document.querySelector('[data-discount="None"]'));
+        const normalizedPatientType = (patientType || 'Regular').trim().toLowerCase();
+        const discountType = normalizedPatientType === 'senior citizen'
+            ? 'Senior Citizen'
+            : normalizedPatientType === 'pwd' ? 'PWD' : 'None';
+        const matchingButton = document.querySelector(`[data-discount="${discountType}"]`);
+
+        if (matchingButton) {
+            applyDiscount(matchingButton);
+        }
     }
 
     // Discount button handlers - staff selects appropriate discount
@@ -165,32 +194,39 @@
         const discountType = btn.dataset.discount;
         const discountPercent = parseFloat(btn.dataset.percent) || 0;
 
-        // Update UI - highlight selected button
         document.querySelectorAll('.discount-btn').forEach(b => {
             b.classList.remove('bg-blue-100', 'border-blue-500', 'text-blue-700');
             b.classList.add('border-slate-200', 'text-slate-600');
         });
         btn.classList.add('bg-blue-100', 'border-blue-500', 'text-blue-700');
 
-        // Calculate final amount with discount
         const originalAmount = parseFloat(currentBillingData.OriginalAmount) || 0;
         const discountAmount = (originalAmount * discountPercent) / 100;
         const finalAmount = originalAmount - discountAmount;
+        const totalPaidSoFar = parseFloat(currentBillingData.TotalPaid) || 0;
+        const remainingBalance = Math.max(0, finalAmount - totalPaidSoFar);
 
-        // Update billing data
         currentBillingData.DiscountType = discountType;
         currentBillingData.DiscountPercent = discountPercent;
         currentBillingData.DiscountAmount = discountAmount;
         currentBillingData.FinalAmount = finalAmount;
 
-        // Update receipt display
         document.getElementById('consult-fee').innerText = '₱' + originalAmount.toFixed(2);
         if (discountPercent > 0) {
-            const feeDisplay = `₱${originalAmount.toFixed(2)} - ₱${discountAmount.toFixed(2)} (${discountPercent}%)`;
-            document.getElementById('consult-fee').innerText = feeDisplay;
+            document.getElementById('consult-fee').innerText =
+                `₱${originalAmount.toFixed(2)} - ₱${discountAmount.toFixed(2)} (${discountPercent}%)`;
         }
         document.getElementById('total-due').innerText = '₱' + finalAmount.toFixed(2);
-        document.getElementById('amount-paid').value = finalAmount.toFixed(2);
+
+        const balanceRow = document.getElementById('balance-remaining-row');
+        if (totalPaidSoFar > 0) {
+            document.getElementById('balance-remaining').innerText = '₱' + remainingBalance.toFixed(2);
+            balanceRow.classList.remove('hidden');
+        } else {
+            balanceRow.classList.add('hidden');
+        }
+
+        document.getElementById('amount-paid').value = remainingBalance.toFixed(2);
     }
 
     // Record payment handler
@@ -243,14 +279,35 @@
                     // Update billing data with new status
                     currentBillingData.Status = result.billing_status;
                     document.getElementById('or-number').innerText = result.receipt_no;
-                    document.querySelector('#paid-amount span:last-child').innerText = '₱' + amountPaid.toFixed(2);
+                    document.querySelector('#paid-amount span:last-child').innerText = '₱' + parseFloat(result.total_paid).toFixed(2);
                     document.getElementById('paid-amount').classList.remove('hidden');
                     printBtn.classList.remove('hidden');
 
+                    const balanceRow = document.getElementById('balance-remaining-row');
+                    if (result.billing_status === 'Partially Paid') {
+                        document.getElementById('balance-remaining').innerText = '₱' + parseFloat(result.amount_due).toFixed(2);
+                        balanceRow.classList.remove('hidden');
+                    } else {
+                        balanceRow.classList.add('hidden');
+                    }
+
+                    if (result.billing_status === 'Paid') {
+                        // Fully paid bills are read-only, but partial bills remain open for another payment.
+                        document.getElementById('amount-paid-field').classList.add('hidden');
+                        recordBtn.classList.add('hidden');
+                    } else {
+                        document.getElementById('amount-paid-field').classList.remove('hidden');
+                        recordBtn.classList.remove('hidden');
+                        document.getElementById('amount-paid').value = parseFloat(result.amount_due).toFixed(2);
+                        document.getElementById('amount-paid').focus();
+                    }
+
                     // Reset form
-                    patientLookupInput.value = '';
-                    document.getElementById('amount-paid').value = '';
-                    consultationCard.classList.add('hidden');
+                    if (result.billing_status === 'Paid') {
+                        patientLookupInput.value = '';
+                        document.getElementById('amount-paid').value = '';
+                        consultationCard.classList.add('hidden');
+                    }
                 }
             );
         } catch (error) {
