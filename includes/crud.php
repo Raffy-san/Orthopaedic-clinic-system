@@ -216,6 +216,7 @@ function bookAppointment(PDO $pdo, array $data): array
         return ['status' => 'error', 'message' => 'Unable to book the appointment. Please try again.'];
     }
 }
+
 function saveConsultation(PDO $pdo, array $data, int $doctorID): array
 {
     try {
