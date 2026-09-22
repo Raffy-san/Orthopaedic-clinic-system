@@ -2,6 +2,7 @@
 include_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../php/fetch/fetch.php';
+require_once __DIR__ . '/../includes/functions.php';
 
 SessionManager::requireLogin();
 SessionManager::requireAnyRole(['admin', 'doctor', 'staff']);
@@ -130,10 +131,10 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
             </div>
 
 
-            <div class="grid grid-cols-2 gap-6 mt-8 mb-8">
+            <div class="grid grid-cols-3 gap-6 mt-8 mb-8">
 
                 <!-- Completed -->
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 col-span-1">
 
                     <div class="px-6 py-5 border-b border-gray-100">
                         <h2 class="text-lg font-semibold text-gray-800">
@@ -174,11 +175,10 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
                         }
                         ?>
                     </div>
-
                 </div>
 
                 <!-- Waiting Queue -->
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 col-span-2">
 
                     <div class="px-6 py-5 border-b border-gray-100">
                         <h2 class="text-lg font-semibold text-gray-800">
@@ -186,72 +186,102 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
                         </h2>
                     </div>
 
-                    <div class="p-5 space-y-3 max-h-96 overflow-y-auto">
-                        <?php
-                        // Patients truly in progress (consultation started, not yet completed)
-                        $inProgress = fetchAllData($pdo, "
-            SELECT c.ConsultationID, c.StartTime, c.Meridiem, p.FirstName, p.LastName
-            FROM consultations c
-            JOIN patients p ON p.PatientID = c.PatientID
-            WHERE c.IsCompleted = 0 AND c.StartTime IS NOT NULL AND DATE(c.ConsultationDate) = CURDATE()
-            ORDER BY c.StartTime ASC
-        ");
+                    <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                        <table class="w-full">
+                            <thead class="text-left text-sm text-gray-500 bg-emerald-50 sticky top-0">
+                                <tr class="border-b border-gray-100">
+                                    <th class="px-6 py-4 font-medium">Name</th>
+                                    <th class="px-6 py-4 font-medium">Waiting Time</th>
+                                    <th class="px-6 py-4 font-medium">Minutes (with Doctor)</th>
+                                    <th class="px-6 py-4 font-medium">Status</th>
+                                </tr>
+                            </thead>
 
-                        // Confirmed appointments today that haven't started a consultation yet
-                        $stillWaiting = fetchAllData($pdo, "
-            SELECT a.AppointmentID, a.AppointmentTime, a.meridiem, p.FirstName, p.LastName
-            FROM appointments a
-            JOIN patients p ON p.PatientID = a.PatientID
-            WHERE a.Status = 'Confirmed' AND DATE(a.AppointmentDate) = CURDATE()
-            AND a.AppointmentID NOT IN (
-                SELECT AppointmentID FROM consultations WHERE IsCompleted = 0
-            )
-            ORDER BY a.AppointmentTime ASC
-        ");
-
-                        if (empty($inProgress) && empty($stillWaiting)) {
-                            echo '<p class="text-sm text-gray-500">No patients in the queue.</p>';
-                        } else {
-                            // In-progress patients first — ALL of them, not just the first row
-                            foreach ($inProgress as $w) {
-                                $patientName = trim($w['FirstName'] . ' ' . $w['LastName']);
-                                $time = date('g:i', strtotime($w['StartTime']));
-                                ?>
-                                <div
-                                    class="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-                                    <div>
-                                        <h3 class="font-semibold text-sm"><?= htmlspecialchars($patientName) ?></h3>
-                                        <p class="text-xs text-gray-500">
-                                            <?= htmlspecialchars($time) ?>         <?= strtoupper(htmlspecialchars($w['Meridiem'])) ?>
-                                        </p>
-                                    </div>
-                                    <span class="text-xs px-3 py-1 rounded-full font-semibold bg-emerald-100 text-emerald-700">
-                                        In Progress
-                                    </span>
-                                </div>
+                            <tbody class="text-sm">
                                 <?php
-                            }
+                                $inProgress = fetchAllData($pdo, "
+                                        SELECT c.ConsultationID, c.StartTime, c.Meridiem, p.FirstName, p.LastName
+                                        FROM consultations c
+                                        JOIN patients p ON p.PatientID = c.PatientID
+                                        WHERE c.IsCompleted = 0 AND c.StartTime IS NOT NULL AND DATE(c.ConsultationDate) = CURDATE()
+                                        ORDER BY c.StartTime ASC
+                                    ");
 
-                            // Then everyone still waiting
-                            foreach ($stillWaiting as $w) {
-                                $patientName = trim($w['FirstName'] . ' ' . $w['LastName']);
-                                $time = date('g:i', strtotime($w['AppointmentTime']));
+                                $stillWaiting = fetchAllData($pdo, "
+                                        SELECT a.AppointmentID, a.AppointmentTime, a.meridiem, p.FirstName, p.LastName
+                                        FROM appointments a
+                                        JOIN patients p ON p.PatientID = a.PatientID
+                                        WHERE a.Status = 'Confirmed' AND DATE(a.AppointmentDate) = CURDATE()
+                                        AND a.AppointmentID NOT IN (
+                                            SELECT AppointmentID FROM consultations WHERE IsCompleted = 0
+                                        )
+                                        ORDER BY a.AppointmentTime ASC
+                                    ");
+
+                                if (empty($inProgress) && empty($stillWaiting)) {
+                                    echo '<tr><td colspan="4" class="px-6 py-6 text-center text-gray-500">No patients in the queue.</td></tr>';
+                                } else {
+                                    // In-progress patients first
+                                    foreach ($inProgress as $w) {
+                                        $patientName = trim($w['FirstName'] . ' ' . $w['LastName']);
+                                        $startDisplay = date('g:i', strtotime($w['StartTime']));
+                                        $minutesWithDoctor = elapsedTime(date('Y-m-d') . ' ' . $w['StartTime']);
+                                        ?>
+                                        <tr class="border-b border-gray-100 hover:bg-gray-50">
+                                            <td class="px-6 py-4">
+                                                <h3 class="font-medium"><?= htmlspecialchars($patientName) ?></h3>
+                                                <p class="text-xs text-gray-500">
+                                                    <?= htmlspecialchars($startDisplay) ?>
+                                                    <?= strtoupper(htmlspecialchars($w['Meridiem'])) ?>
+                                                </p>
+                                            </td>
+                                            <td class="px-6 py-4 text-gray-400">-</td>
+                                            <td class="px-6 py-4 font-semibold text-emerald-600">
+                                                <?= htmlspecialchars($minutesWithDoctor) ?></td>
+                                            <td class="px-6 py-4">
+                                                <span
+                                                    class="text-xs px-3 py-1 rounded-full font-semibold bg-emerald-100 text-emerald-700">
+                                                    In Progress
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <?php
+                                    }
+
+                                    // Then everyone still waiting
+                                    foreach ($stillWaiting as $w) {
+                                        $patientName = trim($w['FirstName'] . ' ' . $w['LastName']);
+                                        $appointmentDisplay = date('g:i', strtotime($w['AppointmentTime']));
+                                        $waitingTime = elapsedTime(date('Y-m-d') . ' ' . $w['AppointmentTime']);
+                                        ?>
+                                        <tr class="border-b border-gray-100 hover:bg-gray-50">
+                                            <td class="px-6 py-4">
+                                                <h3 class="font-medium"><?= htmlspecialchars($patientName) ?></h3>
+                                                <p class="text-xs text-gray-500">
+                                                    <?= htmlspecialchars($appointmentDisplay) ?>
+                                                    <?= strtoupper(htmlspecialchars($w['meridiem'])) ?>
+                                                </p>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <span
+                                                    class="text-xs px-2 py-1 rounded-full font-semibold bg-blue-100 text-blue-600">
+                                                    <i class="fas fa-clock mr-1"></i><?= htmlspecialchars($waitingTime) ?>
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-gray-400">-</td>
+                                            <td class="px-6 py-4">
+                                                <span
+                                                    class="text-xs px-3 py-1 rounded-full font-semibold bg-gray-100 text-gray-500">
+                                                    Waiting
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <?php
+                                    }
+                                }
                                 ?>
-                                <div class="flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3">
-                                    <div>
-                                        <h3 class="font-semibold text-sm"><?= htmlspecialchars($patientName) ?></h3>
-                                        <p class="text-xs text-gray-500">
-                                            <?= htmlspecialchars($time) ?>         <?= strtoupper(htmlspecialchars($w['meridiem'])) ?>
-                                        </p>
-                                    </div>
-                                    <span class="text-xs px-3 py-1 rounded-full font-semibold bg-gray-100 text-gray-500">
-                                        Waiting
-                                    </span>
-                                </div>
-                                <?php
-                            }
-                        }
-                        ?>
+                            </tbody>
+                        </table>
                     </div>
 
                 </div>
