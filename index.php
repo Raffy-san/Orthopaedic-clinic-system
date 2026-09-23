@@ -88,13 +88,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             Leyte<br>Orthopaedic Clinic</h1>
                     </div>
                     <p class="text-blue-100 text-base leading-relaxed mb-8">
-                        Integrated clinic management — patients can book appointments online while staff manage
+                        Integrated clinic management — patients can book appointments  while staff manage
                         consultations, billing, and reports.
                     </p>
                     <div class="space-y-4">
                         <div class="flex items-start gap-3">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
-                            <span class="text-blue-100 text-sm">Online Appointment Booking</span>
+                            <span class="text-blue-100 text-sm"> Appointment Booking</span>
                         </div>
                         <div class="flex items-start gap-3">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
@@ -197,13 +197,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             Leyte<br>Orthopaedic Clinic</h1>
                     </div>
                     <p class="text-green-100 text-base leading-relaxed mb-8">
-                        Integrated clinic management — patients can book appointments online while staff manage
+                        Integrated clinic management — patients can book appointments  while staff manage
                         consultations, billing, and reports.
                     </p>
                     <div class="space-y-4">
                         <div class="flex items-start gap-3">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
-                            <span class="text-blue-100 text-sm">Online Appointment Booking</span>
+                            <span class="text-blue-100 text-sm"> Appointment Booking</span>
                         </div>
                         <div class="flex items-start gap-3">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
@@ -289,13 +289,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             Leyte<br>Orthopaedic Clinic</h1>
                     </div>
                     <p class="text-green-100 text-base leading-relaxed mb-8">
-                        Integrated clinic management — patients can book appointments online while staff manage
+                        Integrated clinic management — patients can book appointments  while staff manage
                         consultations, billing, and reports.
                     </p>
                     <div class="space-y-4">
                         <div class="flex items-start gap-3">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
-                            <span class="text-green-100 text-sm">Online Appointment Booking</span>
+                            <span class="text-green-100 text-sm"> Appointment Booking</span>
                         </div>
                         <div class="flex items-start gap-3">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
@@ -381,13 +381,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             Leyte<br>Orthopaedic Clinic</h1>
                     </div>
                     <p class="text-green-100 text-base leading-relaxed mb-8">
-                        Integrated clinic management — patients can book appointments online while staff manage
+                        Integrated clinic management — patients can book appointments  while staff manage
                         consultations, billing, and reports.
                     </p>
                     <div class="space-y-4">
                         <div class="flex items-start gap-3">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
-                            <span class="text-green-100 text-sm">Online Appointment Booking</span>
+                            <span class="text-green-100 text-sm"> Appointment Booking</span>
                         </div>
                         <div class="flex items-start gap-3">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>

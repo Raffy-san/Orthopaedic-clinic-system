@@ -283,8 +283,12 @@ function setActivePatientType(type) {
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
                         <label class="text-[11px] text-slate-600">Patient ID</label>
-                        <input id="existingPatientIdInput" type="text" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="PT-YYYY-XXXX">
+                         <select id="existingPatientIdInput" required
+                            class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
+                            <option value="">Loading...</option>
+                        </select>
                     </div>
+
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
                         <label class="text-[11px] text-slate-600">Patient Name</label>
                         <input id="existingNameInput" type="text" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Type existing patient name">
@@ -292,12 +296,26 @@ function setActivePatientType(type) {
                     <button class="col-span-1 mt-2 w-full rounded-2xl bg-sky-400 px-3 py-2 text-xs text-white font-semibold hover:bg-sky-500 md:col-span-2" type="button">Validate & Load Profile</button>
                     </div>
                 `;
-        saveRecordBtn.disabled = true;s
+
+        fetch('../php/fetch/get-patients-list.php', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(res => res.json())
+            .then(data => {
+                const select = document.getElementById('existingPatientIdInput');
+                if (data.status === 'success') {
+                    select.innerHTML = '<option value="">Please Select Patient ID</option>' +
+                        data.patients.map(p =>
+                            `<option value="${p.PatientCode}">${p.PatientCode}</option>`
+                        ).join('');
+                } else {
+                    select.innerHTML = '<option value="">Error fetching patients</option>';
+                }
+            });
+
+        saveRecordBtn.disabled = true;
     }
 
     bindNameInputs();
     activateEnterInfoStep();
-    wireEditAddressDropdowns(patient.Address);
 }
 
 newPatientBtn.addEventListener('click', () => setActivePatientType('new'));
@@ -509,6 +527,7 @@ function validateExistingPatient() {
             saveRecordBtn.disabled = false;
             saveRecordBtn.textContent = 'Save & Update Record';
 
+            wireEditAddressDropdowns(patient.Address);
             bindNameInputs();
             activateEnterInfoStep();
         })
