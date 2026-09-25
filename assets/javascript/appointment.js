@@ -27,44 +27,67 @@ const closeModal = (modal) => {
 
 function showMessage(title, message, type = "success", callback = null) {
     const modal = document.getElementById("messageModal");
+    if (!modal) {
+        // Fallback so pages without the message modal markup don't lose the message entirely.
+        console.warn("messageModal not found on this page:", title, message);
+        if (callback) callback();
+        return;
+    }
+
     const titleElement = document.getElementById("messageTitle");
     const textElement = document.getElementById("messageText");
+    const closeBtn = document.getElementById("closeMessageBtn");
 
-    titleElement.textContent = title;
-    textElement.textContent = message;
-
-    titleElement.classList.toggle("text-green-600", type === "success");
-    titleElement.classList.toggle("text-red-600", type !== "success");
+    if (titleElement) {
+        titleElement.textContent = title;
+        titleElement.classList.toggle("text-green-600", type === "success");
+        titleElement.classList.toggle("text-red-600", type !== "success");
+    }
+    if (textElement) {
+        textElement.textContent = message;
+    }
 
     openModal(modal);
-    modal.classList.add('flex');
 
-    document.getElementById("closeMessageBtn").onclick = () => {
-        closeModal(modal);
-        if (callback) callback();
-    };
+    if (closeBtn) {
+        closeBtn.onclick = () => {
+            closeModal(modal);
+            if (callback) callback();
+        };
+    }
 }
 
 function showConfirm(title, message, onConfirm) {
     const modal = document.getElementById("confirmModal");
+    if (!modal) {
+        // No confirm modal on this page — fall back to a native confirm so the action still works.
+        console.warn("confirmModal not found on this page:", title, message);
+        if (window.confirm(message) && onConfirm) onConfirm();
+        return;
+    }
+
     const titleElement = document.getElementById("confirmTitle");
     const textElement = document.getElementById("confirmText");
     const okBtn = document.getElementById("confirmOkBtn");
     const cancelBtn = document.getElementById("confirmCancelBtn");
 
-    titleElement.textContent = title;
-    textElement.textContent = message;
+    if (titleElement) titleElement.textContent = title;
+    if (textElement) textElement.textContent = message;
 
     openModal(modal);
 
-    okBtn.onclick = () => {
-        closeModal(modal);
-        if (onConfirm) onConfirm();
-    };
+    if (okBtn) {
+        okBtn.onclick = () => {
+            closeModal(modal);
+            if (onConfirm) onConfirm();
+        };
+    }
 
-    cancelBtn.onclick = () => {
-        closeModal(modal);
-    };
+    if (cancelBtn) {
+        cancelBtn.onclick = () => {
+            closeModal(modal);
+        };
+    }
 }
 
 document.querySelectorAll('.open-modal').forEach((trigger) => {
@@ -73,6 +96,10 @@ document.querySelectorAll('.open-modal').forEach((trigger) => {
     });
 });
 
+// --- Booking modal / time-slot picker ---
+// These elements only exist on pages that render the "Book Appointment" form
+// (e.g. an appointments page). On pages like dashboard.php they won't be present,
+// so every reference below is guarded.
 const selectedAppointmentTime = document.getElementById('selectedAppointmentTime');
 const appointmentDate = document.getElementById('appointmentDate');
 const selectedAppointmentDate = document.getElementById('selectedAppointmentDate');
@@ -80,7 +107,7 @@ const appointmentTimeCalendar = document.getElementById('appointmentTimeCalendar
 const appointmentDateMessage = document.getElementById('appointmentDateMessage');
 const availableSlotCount = document.getElementById('availableSlotCount');
 const bookingModal = document.getElementById('bookAppointmentModal');
-
+const addAppointmentForm = document.getElementById('addAppointmentForm');
 
 const resetTimeSlots = () => {
     document.querySelectorAll('.time-slot').forEach((slot) => {
@@ -88,14 +115,26 @@ const resetTimeSlots = () => {
         slot.classList.remove('bg-red-100', 'text-red-700', 'bg-sky-600', 'text-white');
         slot.classList.add('bg-slate-100', 'text-slate-700');
     });
-    selectedAppointmentTime.value = '';
+    if (selectedAppointmentTime) {
+        selectedAppointmentTime.value = '';
+    }
 };
 
 const loadTimeSlots = async () => {
     resetTimeSlots();
-    selectedAppointmentDate.value = appointmentDate.value;
+
+    if (!appointmentDate) {
+        return;
+    }
+
+    if (selectedAppointmentDate) {
+        selectedAppointmentDate.value = appointmentDate.value;
+    }
+
     if (!appointmentDate.value) {
-        appointmentTimeCalendar.classList.add('hidden');
+        if (appointmentTimeCalendar) {
+            appointmentTimeCalendar.classList.add('hidden');
+        }
         return;
     }
 
@@ -116,16 +155,26 @@ const loadTimeSlots = async () => {
         });
 
         const availableCount = document.querySelectorAll('.time-slot:not(:disabled)').length;
-        appointmentDateMessage.textContent = `Available appointments for ${new Date(`${appointmentDate.value}T00:00:00`).toLocaleDateString()}.`;
-        availableSlotCount.textContent = `${availableCount} available`;
-        appointmentTimeCalendar.classList.remove('hidden');
+        if (appointmentDateMessage) {
+            appointmentDateMessage.textContent = `Available appointments for ${new Date(`${appointmentDate.value}T00:00:00`).toLocaleDateString()}.`;
+        }
+        if (availableSlotCount) {
+            availableSlotCount.textContent = `${availableCount} available`;
+        }
+        if (appointmentTimeCalendar) {
+            appointmentTimeCalendar.classList.remove('hidden');
+        }
     } catch (error) {
-        appointmentTimeCalendar.classList.add('hidden');
+        if (appointmentTimeCalendar) {
+            appointmentTimeCalendar.classList.add('hidden');
+        }
         showMessage('Error', error.message, 'error');
     }
 };
 
-appointmentDate.addEventListener('change', loadTimeSlots);
+if (appointmentDate) {
+    appointmentDate.addEventListener('change', loadTimeSlots);
+}
 
 document.querySelectorAll('.time-slot').forEach((slot) => {
     slot.addEventListener('click', () => {
@@ -143,7 +192,9 @@ document.querySelectorAll('.time-slot').forEach((slot) => {
 
         // Convert 24-hour format to 12-hour format
         const { time12, meridiem } = convertTo12HourFormat(slot.dataset.time);
-        selectedAppointmentTime.value = time12;
+        if (selectedAppointmentTime) {
+            selectedAppointmentTime.value = time12;
+        }
 
         // Set meridiem field if it exists
         const meridiem_field = document.getElementById('meridiem') || document.querySelector('[name="meridiem"]');
@@ -173,38 +224,43 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
-document.getElementById("addAppointmentForm").addEventListener("submit", (event) => {
-    event.preventDefault();
+if (addAppointmentForm) {
+    addAppointmentForm.addEventListener("submit", (event) => {
+        event.preventDefault();
 
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    formData.set("csrf_token", csrfToken);
+        const form = event.currentTarget;
+        const formData = new FormData(form);
+        formData.set("csrf_token", csrfToken);
 
-    fetch("../php/add/book-appointment.php", {
-        method: "POST",
-        body: formData
-    })
-        .then(response => response.json())
-        .then(data => {
-            if (data.csrf_token) {
-                csrfToken = data.csrf_token;
-                form.querySelector('[name="csrf_token"]').value = csrfToken;
-            }
-            if (data.status === "success") {
-                showMessage('Success', data.message, 'success', () => {
-                    location.reload();
-                });
-            } else {
-                showMessage('Error', data.message, 'error');
-            }
+        fetch("../php/add/book-appointment.php", {
+            method: "POST",
+            body: formData
         })
-        .catch(error => {
-            console.error("Error:", error);
-            showMessage('Error', 'An error occurred while booking the appointment. Please try again.', 'error');
-        });
-});
+            .then(response => response.json())
+            .then(data => {
+                if (data.csrf_token) {
+                    csrfToken = data.csrf_token;
+                    const csrfField = form.querySelector('[name="csrf_token"]');
+                    if (csrfField) {
+                        csrfField.value = csrfToken;
+                    }
+                }
+                if (data.status === "success") {
+                    showMessage('Success', data.message, 'success', () => {
+                        location.reload();
+                    });
+                } else {
+                    showMessage('Error', data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                showMessage('Error', 'An error occurred while booking the appointment. Please try again.', 'error');
+            });
+    });
+}
 
-// Handle Confirm button clicks
+// --- Pending appointment approve/decline buttons (used on dashboard.php) ---
 document.querySelectorAll('.confirm-btn').forEach(btn => {
     btn.addEventListener('click', async function () {
         const appointmentId = this.getAttribute('data-appointment-id');
@@ -212,7 +268,6 @@ document.querySelectorAll('.confirm-btn').forEach(btn => {
     });
 });
 
-// Handle Decline button clicks
 document.querySelectorAll('.decline-btn').forEach(btn => {
     btn.addEventListener('click', async function () {
         const appointmentId = this.getAttribute('data-appointment-id');

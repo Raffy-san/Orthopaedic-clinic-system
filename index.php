@@ -98,10 +98,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         <div class="flex items-start gap-3">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
-                            <span class="text-blue-100 text-sm">Patient Self-Service Portal</span>
-                        </div>
-                        <div class="flex items-start gap-3">
-                            <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
                             <span class="text-blue-100 text-sm">Consultation & Billing</span>
                         </div>
                         <div class="flex items-start gap-3">
@@ -115,12 +111,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <!-- Right Section -->
             <div class="w-full lg:w-3/5 flex flex-col justify-center items-center px-6 py-8">
                 <div class="w-full max-w-md">
-                    <!-- Header -->
-                    <div class="mb-6 text-center">
-                        <h2 class="text-gray-800 font-semibold text-lg">SLOC System</h2>
-                        <p class="text-gray-500 text-sm">Orthopaedic Clinic</p>
-                    </div>
-
                     <!-- Role Selection -->
                     <div class="space-y-4">
                         <div class="text-center mb-8">
@@ -204,10 +194,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="flex items-start gap-3">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
                             <span class="text-blue-100 text-sm"> Appointment Booking</span>
-                        </div>
-                        <div class="flex items-start gap-3">
-                            <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
-                            <span class="text-blue-100 text-sm">Patient Self-Service Portal</span>
                         </div>
                         <div class="flex items-start gap-3">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
@@ -299,10 +285,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         <div class="flex items-start gap-3">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
-                            <span class="text-green-100 text-sm">Patient Self-Service Portal</span>
-                        </div>
-                        <div class="flex items-start gap-3">
-                            <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
                             <span class="text-green-100 text-sm">Consultation & Billing</span>
                         </div>
                         <div class="flex items-start gap-3">
@@ -388,10 +370,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="flex items-start gap-3">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
                             <span class="text-green-100 text-sm"> Appointment Booking</span>
-                        </div>
-                        <div class="flex items-start gap-3">
-                            <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
-                            <span class="text-green-100 text-sm">Patient Self-Service Portal</span>
                         </div>
                         <div class="flex items-start gap-3">
                             <span class="w-1.5 h-1.5 bg-teal-400 rounded-full mt-2 flex-shrink-0"></span>
