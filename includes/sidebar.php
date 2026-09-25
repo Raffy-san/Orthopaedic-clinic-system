@@ -12,14 +12,14 @@ $navItems = [
         'icon' => 'fa-user-plus',
         'file' => 'patient-registration.php',
         'href' => '../admin/patient-registration.php',
-        'roles' => ['admin', 'staff'],
+        'roles' => ['staff'],
     ],
     [
         'label' => 'Appointments',
         'icon' => 'fa-calendar',
         'file' => 'appointments.php',
         'href' => '../admin/appointments.php',
-        'roles' => ['admin', 'staff'],
+        'roles' => ['staff'],
     ],
     [
         'label' => 'Consultations',
@@ -29,11 +29,18 @@ $navItems = [
         'roles' => ['admin'],
     ],
     [
+        'label' => 'Medical Records',
+        'icon' => 'fa-file-medical',
+        'file' => 'medical-records.php',
+        'href' => '../admin/medical-records.php',
+        'roles' => ['admin'],
+    ],
+    [
         'label' => 'Billing and Payment',
         'icon' => 'fa-credit-card',
         'file' => 'billing-payment.php',
         'href' => '../admin/billing-payment.php',
-        'roles' => ['admin', 'staff'],
+        'roles' => ['admin',],
     ],
     [
         'label' => 'Follow-up Check-ups',

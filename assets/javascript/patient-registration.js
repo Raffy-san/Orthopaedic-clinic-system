@@ -377,9 +377,11 @@ step2Content.addEventListener('submit', (event) => {
             firstName: formData.get('firstName'),
             middleName: formData.get('middleName'),
             lastName: formData.get('lastName'),
-            birthDate: formData.get('birthDate'),
+            birthDate: formData.get('birthDate'),   
             phone: formData.get('phone'),
-            address: formData.get('address'),
+            province: formData.get('province'),
+            city: formData.get('city'),
+            barangay: formData.get('barangay'),
             gender: formData.get('gender'),
             allergies: formData.get('allergies'),
             patientType: formData.get('patientType')

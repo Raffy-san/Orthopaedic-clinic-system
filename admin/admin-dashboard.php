@@ -1,13 +1,17 @@
 <?php
 include_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/crud.php';
 require_once __DIR__ . '/../php/fetch/fetch.php';
 require_once __DIR__ . '/../includes/functions.php';
 
 SessionManager::requireLogin();
 SessionManager::requireAnyRole(['admin', 'doctor', 'staff']);
-
+$csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
+$currentRole = strtolower((string) (SessionManager::getCurrentRole() ?? ''));
+$canApprove = in_array($currentRole, ['admin', 'doctor'], true);
 $admin = SessionManager::getUser($pdo);
+expirePendingAppointments($pdo);
 
 if (!$admin) {
     SessionManager::logout('../index.php');
@@ -58,6 +62,14 @@ if ($consultDiff > 0) {
     $consultChangeText = "No change from yesterday";
     $consultChangeColor = "text-gray-500";
 }
+
+$pendingappointments = fetchAllData($pdo, "
+    SELECT a.AppointmentID, a.AppointmentDate, a.AppointmentTime, a.Purpose, a.Status,
+           p.PatientCode, p.FirstName AS patient_first_name, p.LastName AS patient_last_name
+    FROM appointments a
+    INNER JOIN patients p ON a.PatientID = p.PatientID
+    ORDER BY a.AppointmentDate DESC, a.AppointmentTime DESC
+");
 
 $patients = fetchAllData($pdo, "SELECT * FROM patients ORDER BY userID DESC LIMIT 5");
 $appointments = fetchAllData($pdo, "SELECT * FROM appointments");
@@ -130,9 +142,78 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
                 </div>
             </div>
 
+            <div class="rounded-3xl bg-white p-6 shadow-sm border border-slate-100 mt-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-lg font-semibold text-slate-900">Pending Requests</h2>
+                    <span
+                        class="inline-flex items-center justify-center rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">
+                        <?php
+                        $pendingCount = count(array_filter($appointments, fn($a) => $a['Status'] === 'Pending'));
+                        echo $pendingCount;
+                        ?>
+                    </span>
+                </div>
+
+                <div class="space-y-3">
+                    <?php
+                    $pendingAppointments = array_filter($pendingappointments, fn($a) => $a['Status'] === 'Pending');
+
+                    if ($pendingAppointments) {
+                        foreach ($pendingAppointments as $appointment) {
+                            $appointmentDate = new DateTime($appointment['AppointmentDate']);
+                            $formattedDate = $appointmentDate->format('M d');
+                            $formattedTime = (new DateTime($appointment['AppointmentTime']))->format('g:i A');
+                            ?>
+
+                            <div class="rounded-lg bg-amber-50 p-4 border border-amber-100">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <p class="text-sm font-semibold text-slate-900">
+                                            <?= htmlspecialchars($appointment['patient_first_name'], ENT_QUOTES, 'UTF-8') ?>
+                                            <?= htmlspecialchars($appointment['patient_last_name'], ENT_QUOTES, 'UTF-8') ?>
+                                            <span class="text-slate-400 font-normal">
+                                                · <?= htmlspecialchars($appointment['PatientCode'], ENT_QUOTES, 'UTF-8') ?>
+                                            </span>
+                                        </p>
+                                        <p class="text-xs text-slate-500 mt-1">
+                                            <?= $formattedDate ?> at <?= $formattedTime ?> ·
+                                            <?= htmlspecialchars($appointment['Purpose'], ENT_QUOTES, 'UTF-8') ?>
+                                        </p>
+                                    </div>
+
+                                    <div class="flex gap-2 ml-4 items-center">
+                                        <?php if ($canApprove): ?>
+                                            <button
+                                                class="confirm-btn inline-flex items-center justify-center rounded-full bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 transition"
+                                                data-appointment-id="<?= htmlspecialchars($appointment['AppointmentID'], ENT_QUOTES, 'UTF-8') ?>"
+                                                title="Confirm">
+                                                ✓ Confirm
+                                            </button>
+                                            <button
+                                                class="decline-btn inline-flex items-center justify-center rounded-full bg-red-500 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700 transition"
+                                                data-appointment-id="<?= htmlspecialchars($appointment['AppointmentID'], ENT_QUOTES, 'UTF-8') ?>"
+                                                title="Decline">
+                                                ✕ Decline
+                                            </button>
+                                        <?php else: ?>
+                                            <span
+                                                class="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-full whitespace-nowrap">
+                                                Admin/Doctor Approval Required
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php
+                        }
+                    } else {
+                        echo '<p class="text-sm text-slate-500">No pending requests.</p>';
+                    }
+                    ?>
+                </div>
+            </div>
 
             <div class="grid grid-cols-3 gap-6 mt-8 mb-8">
-
                 <!-- Completed -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 col-span-1">
 
@@ -237,7 +318,8 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
                                             </td>
                                             <td class="px-6 py-4 text-gray-400">-</td>
                                             <td class="px-6 py-4 font-semibold text-emerald-600">
-                                                <?= htmlspecialchars($minutesWithDoctor) ?></td>
+                                                <?= htmlspecialchars($minutesWithDoctor) ?>
+                                            </td>
                                             <td class="px-6 py-4">
                                                 <span
                                                     class="text-xs px-3 py-1 rounded-full font-semibold bg-emerald-100 text-emerald-700">
@@ -339,6 +421,8 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
         </div>
 
     </section>
+    <script>window.csrfToken = <?= json_encode($csrfToken, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;</script>
+    <script src="../assets/javascript/appointment.js"></script>
 </body>
 
 </html>
