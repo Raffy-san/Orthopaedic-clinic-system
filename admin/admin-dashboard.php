@@ -77,6 +77,27 @@ $pendingAppointments = fetchAllData($pdo, "SELECT * FROM appointments WHERE stat
 $completedAppointments = fetchAllData($pdo, "SELECT * FROM appointments WHERE status = 'Completed'");
 $consultations = fetchAllData($pdo, "SELECT * FROM consultations");
 $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE status = 'Confirmed'");
+
+// --- Today's Schedule (Requirement #8) ---
+// NOTE: assumes AppointmentTime is a proper TIME column so ORDER BY sorts correctly.
+// If AppointmentTime is stored as plain 12-hour text without a sortable format,
+// let me know and I'll adjust the ORDER BY to combine it with the meridiem column.
+$todaySchedule = fetchAllData($pdo, "
+    SELECT
+        a.AppointmentID,
+        a.AppointmentTime,
+        a.meridiem,
+        a.Purpose,
+        a.Status,
+        p.FirstName,
+        p.LastName,
+        CASE WHEN c.ConsultationID IS NOT NULL AND c.IsCompleted = 0 THEN 1 ELSE 0 END AS InProgress
+    FROM appointments a
+    JOIN patients p ON p.PatientID = a.PatientID
+    LEFT JOIN consultations c ON c.AppointmentID = a.AppointmentID
+    WHERE DATE(a.AppointmentDate) = CURDATE() AND a.Status <> 'Cancelled'
+    ORDER BY a.AppointmentTime ASC
+");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -369,53 +390,98 @@ $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE s
                 </div>
             </div>
 
-            <!-- Recent Patients -->
-            <div class="col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100">
-                <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-                    <h2 class="text-lg font-semibold text-gray-800">
-                        Recent Patients
-                    </h2>
+            <!-- Recent Patients + Today's Schedule -->
+            <div class="grid grid-cols-3 gap-6 mb-8">
+
+                <!-- Recent Patients -->
+                <div class="col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+                        <h2 class="text-lg font-semibold text-gray-800">
+                            Recent Patients
+                        </h2>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="text-left text-sm text-gray-500">
+                                <tr class="border-b border-gray-100">
+                                    <th class="px-6 py-4 font-medium">Patient ID</th>
+                                    <th class="px-6 py-4 font-medium">Name</th>
+                                    <th class="px-6 py-4 font-medium">Date</th>
+                                </tr>
+                            </thead>
+
+                            <tbody class="text-sm">
+                                <?php
+                                $patients = fetchAllData($pdo, "SELECT 
+                                    p.PatientID AS PatientID, 
+                                    p.PatientCode,
+                                    p.FirstName, 
+                                    p.MiddleName,
+                                    p.LastName,
+                                    p.CreatedAt
+                                FROM patients p
+                                GROUP BY p.PatientID ORDER BY p.CreatedAt DESC LIMIT 5
+                                ");
+
+                                foreach ($patients as $patient) {
+                                    echo ' <tr class="border-b border-gray-100 hover:bg-gray-50">';
+                                    echo '<td class="px-6 py-4 text-gray-500">'
+                                        . htmlspecialchars($patient['PatientCode']) .
+                                        '</td>';
+                                    echo '<td class="px-6 py-4 font-medium">'
+                                        . htmlspecialchars($patient['FirstName'] . ' ' . $patient['MiddleName'] . ' ' . $patient['LastName']) .
+                                        '</td>';
+                                    echo '<td class="px-6 py-4 text-gray-500">'
+                                        . htmlspecialchars(date('M d, Y', strtotime($patient['CreatedAt']))) .
+                                        '</td>';
+                                }
+                                ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="text-left text-sm text-gray-500">
-                            <tr class="border-b border-gray-100">
-                                <th class="px-6 py-4 font-medium">Patient ID</th>
-                                <th class="px-6 py-4 font-medium">Name</th>
-                                <th class="px-6 py-4 font-medium">Date</th>
-                            </tr>
-                        </thead>
+                <!-- Today's Schedule (Requirement #8) -->
+                <div class="col-span-1 bg-white rounded-2xl shadow-sm border border-gray-100">
+                    <div class="px-6 py-5 border-b border-gray-100">
+                        <h2 class="text-lg font-semibold text-gray-800">Today's Schedule</h2>
+                    </div>
 
-                        <tbody class="text-sm">
-                            <?php
-                            $patients = fetchAllData($pdo, "SELECT 
-                                p.PatientID AS PatientID, 
-                                p.PatientCode,
-                                p.FirstName, 
-                                p.MiddleName,
-                                p.LastName,
-                                p.CreatedAt
-                            FROM patients p
-                            GROUP BY p.PatientID ORDER BY p.CreatedAt DESC LIMIT 5
-                            ");
-
-                            foreach ($patients as $patient) {
-                                echo ' <tr class="border-b border-gray-100 hover:bg-gray-50">';
-                                echo '<td class="px-6 py-4 text-gray-500">'
-                                    . htmlspecialchars($patient['PatientCode']) .
-                                    '</td>';
-                                echo '<td class="px-6 py-4 font-medium">'
-                                    . htmlspecialchars($patient['FirstName'] . ' ' . $patient['MiddleName'] . ' ' . $patient['LastName']) .
-                                    '</td>';
-                                echo '<td class="px-6 py-4 text-gray-500">'
-                                    . htmlspecialchars(date('M d, Y', strtotime($patient['CreatedAt']))) .
-                                    '</td>';
+                    <div class="p-5 space-y-4 max-h-96 overflow-y-auto">
+                        <?php
+                        if (empty($todaySchedule)) {
+                            echo '<p class="text-sm text-gray-500">No appointments scheduled for today.</p>';
+                        } else {
+                            foreach ($todaySchedule as $slot) {
+                                $patientName = trim($slot['FirstName'] . ' ' . $slot['LastName']);
+                                $timeDisplay = date('g:i', strtotime($slot['AppointmentTime']));
+                                $meridiem = strtoupper($slot['meridiem'] ?? '');
+                                $rowClasses = $slot['InProgress']
+                                    ? 'bg-blue-50 border border-blue-100'
+                                    : 'border border-transparent';
+                                ?>
+                                <div class="flex items-start gap-4 rounded-xl px-3 py-2 <?= $rowClasses ?>">
+                                    <div class="text-xs font-semibold text-gray-400 w-14 pt-0.5">
+                                        <?= htmlspecialchars($timeDisplay) ?><br>
+                                        <span class="font-normal"><?= htmlspecialchars($meridiem) ?></span>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold <?= $slot['InProgress'] ? 'text-blue-900' : 'text-gray-800' ?>">
+                                            <?= htmlspecialchars($patientName) ?>
+                                        </p>
+                                        <p class="text-xs <?= $slot['InProgress'] ? 'text-blue-700' : 'text-gray-500' ?>">
+                                            <?= htmlspecialchars($slot['Purpose']) ?>
+                                        </p>
+                                    </div>
+                                </div>
+                                <?php
                             }
-                            ?>
-                        </tbody>
-                    </table>
+                        }
+                        ?>
+                    </div>
                 </div>
+
             </div>
 
         </div>

@@ -9,6 +9,7 @@ SessionManager::requireAnyRole(['admin', 'doctor', 'staff']);
 $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
 $currentRole = strtolower((string) (SessionManager::getCurrentRole() ?? ''));
 $canApprove = in_array($currentRole, ['admin', 'doctor'], true);
+$canUpdateAppointment = in_array($currentRole, ['staff'], true);
 
 $admin = SessionManager::getUser($pdo);
 expirePendingAppointments($pdo);
@@ -99,7 +100,7 @@ foreach ($patientsRaw as $row) {
 }
 
 $appointments = fetchAllData($pdo, "
-    SELECT a.AppointmentID, a.AppointmentDate, a.AppointmentTime, a.Purpose, a.Status,
+    SELECT a.AppointmentID, a.AppointmentDate, a.AppointmentTime, a.Meridiem, a.Purpose, a.Status,
            p.PatientCode, p.FirstName AS patient_first_name, p.LastName AS patient_last_name
     FROM appointments a
     INNER JOIN patients p ON a.PatientID = p.PatientID
@@ -366,7 +367,7 @@ if (!$admin) {
                         foreach ($confirmedAppointments as $appointment) {
                             $appointmentDate = new DateTime($appointment['AppointmentDate']);
                             $formattedDate = $appointmentDate->format('M d, Y');
-                            $formattedTime = (new DateTime($appointment['AppointmentTime']))->format('h:i A');
+                            $formattedTime = (new DateTime($appointment['AppointmentTime']))->format('h:i');
                             $statusStyle = $status[$appointment['Status']] ?? ['bgColor' => '#4FFFB0', 'textColor' => '#3CB371'];
 
                             ?>
@@ -376,7 +377,7 @@ if (!$admin) {
                                 <div class="flex items-start gap-4">
                                     <div
                                         class="min-w-[90px] rounded-3xl bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm">
-                                        <?= htmlspecialchars($formattedTime, ENT_QUOTES, 'UTF-8') ?>
+                                        <?= htmlspecialchars($formattedTime, ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($appointment['Meridiem'], ENT_QUOTES, 'UTF-8') ?>
                                     </div>
                                     <div>
                                         <p class="font-semibold text-slate-900">
@@ -394,7 +395,16 @@ if (!$admin) {
                                         style="background-color: <?= htmlspecialchars($statusStyle['bgColor'], ENT_QUOTES, 'UTF-8') ?>; color: <?= htmlspecialchars($statusStyle['textColor'], ENT_QUOTES, 'UTF-8') ?>;">
                                         <?= htmlspecialchars($appointment['Status'], ENT_QUOTES, 'UTF-8') ?>
                                     </span>
-                                    <?php if ($canApprove): ?>
+                                    <?php if ($canUpdateAppointment): ?>
+                                        <button
+                                            class="reschedule-btn inline-flex items-center justify-center rounded-full bg-sky-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-sky-700"
+                                            data-appointment-id="<?= htmlspecialchars($appointment['AppointmentID'], ENT_QUOTES, 'UTF-8') ?>"
+                                            data-current-date="<?= htmlspecialchars($appointment['AppointmentDate'], ENT_QUOTES, 'UTF-8') ?>"
+                                            data-current-time="<?= htmlspecialchars($formattedTime, ENT_QUOTES, 'UTF-8') ?>"
+                                            data-patient-name="<?= htmlspecialchars($appointment['patient_first_name'] . ' ' . $appointment['patient_last_name'], ENT_QUOTES, 'UTF-8') ?>"
+                                            type="button" title="Reschedule appointment">
+                                            Reschedule
+                                        </button>
                                         <button
                                             class="cancel-confirmed-btn inline-flex items-center justify-center rounded-full bg-red-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700"
                                             data-appointment-id="<?= htmlspecialchars($appointment['AppointmentID'], ENT_QUOTES, 'UTF-8') ?>"
@@ -480,6 +490,108 @@ if (!$admin) {
             </div>
         </div>
 
+        <!-- Reschedule Appointment Modal -->
+        <div id="rescheduleAppointmentModal"
+            class="modal fixed inset-0 bg-black bg-opacity-40 items-center justify-center z-50 hidden"
+            style="background-color: rgba(0,0,0,0.4);">
+            <div class="bg-white rounded-2xl shadow-lg w-full max-w-md p-6 relative max-h-[90vh] overflow-y-auto">
+                <div class="flex items-center justify-between mb-1">
+                    <h3 class="text-lg font-semibold text-slate-900">Reschedule Appointment</h3>
+                </div>
+                <p class="text-sm text-slate-500 mb-4">
+                    Moving <span id="rescheduleModalPatientName" class="font-semibold text-slate-700"></span>'s
+                    appointment — currently
+                    <span id="rescheduleModalCurrentSlot" class="font-semibold text-slate-700"></span>.
+                </p>
+
+                <form id="rescheduleAppointmentForm" class="flex flex-col">
+                    <input type="hidden" name="csrf_token"
+                        value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="appointment_id" id="rescheduleAppointmentId">
+
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-1 text-sm">New Date</label>
+                        <input type="date" name="new_appointment_date" id="rescheduleDate" required
+                            class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="block text-gray-700 mb-2 text-sm">New Time</label>
+                        <p id="rescheduleTimeMessage" class="text-xs text-slate-500 mb-3">Choose a date first to see
+                            available slots.</p>
+
+                        <div id="rescheduleTimeCalendar" class="hidden">
+                            <div class="mb-2 flex items-center justify-between">
+                                <h4 class="text-xs font-bold uppercase tracking-wide text-slate-500">Morning</h4>
+                                <span class="text-xs text-slate-400">8:00 AM - 12:00 PM</span>
+                            </div>
+                            <div class="mb-4 grid grid-cols-3 gap-2" id="rescheduleMorningSlots">
+                                <button type="button" data-time="08:00 AM"
+                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">08:00
+                                    AM</button>
+                                <button type="button" data-time="08:30 AM"
+                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">08:30
+                                    AM</button>
+                                <button type="button" data-time="09:00 AM"
+                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">09:00
+                                    AM</button>
+                                <button type="button" data-time="09:30 AM"
+                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">09:30
+                                    AM</button>
+                                <button type="button" data-time="10:00 AM"
+                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">10:00
+                                    AM</button>
+                                <button type="button" data-time="10:30 AM"
+                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">10:30
+                                    AM</button>
+                                <button type="button" data-time="11:00 AM"
+                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">11:00
+                                    AM</button>
+                                <button type="button" data-time="11:30 AM"
+                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">11:30
+                                    AM</button>
+                            </div>
+
+                            <div class="mb-2 flex items-center justify-between">
+                                <h4 class="text-xs font-bold uppercase tracking-wide text-slate-500">Afternoon</h4>
+                                <span class="text-xs text-slate-400">2:00 PM - 5:00 PM</span>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2" id="rescheduleAfternoonSlots">
+                                <button type="button" data-time="02:00 PM"
+                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">02:00
+                                    PM</button>
+                                <button type="button" data-time="02:30 PM"
+                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">02:30
+                                    PM</button>
+                                <button type="button" data-time="03:00 PM"
+                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">03:00
+                                    PM</button>
+                                <button type="button" data-time="03:30 PM"
+                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">03:30
+                                    PM</button>
+                                <button type="button" data-time="04:00 PM"
+                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">04:00
+                                    PM</button>
+                                <button type="button" data-time="04:30 PM"
+                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">04:30
+                                    PM</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="new_appointment_time" id="rescheduleSelectedTime" required>
+
+                    <div class="flex w-full mt-4">
+                        <button type="button" class="close w-full cursor-pointer mr-2 px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 text-sm">Cancel</button>
+                        <button type="submit" id="confirmReschedule"
+                            class="cursor-pointer w-full px-4 py-2 bg-sky-600 text-white rounded hover:bg-sky-800 text-sm">
+                            Confirm New Schedule
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <?php include '../includes/message-modal.php' ?>
     </section>
 
@@ -491,6 +603,7 @@ if (!$admin) {
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="../assets/javascript/mapping.js"></script>
     <script src="../assets/javascript/appointment.js"></script>
+    <script src="../assets/javascript/reschedule.js"></script>
 </body>
 
 </html>

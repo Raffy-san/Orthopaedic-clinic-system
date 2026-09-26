@@ -58,6 +58,7 @@ if (!in_array($data['role'], ['Admin', 'Doctor', 'Staff', 'Patient'], true)) {
     exit;
 }
 
-$result = updateUser($pdo, $data);
+$actorUserId = SessionManager::getUser($pdo)['user_id'] ?? null;
+$result = updateUser($pdo, $data, $actorUserId);
 $result['csrf_token'] = SessionManager::regenerateCsrfToken();
 echo json_encode($result);

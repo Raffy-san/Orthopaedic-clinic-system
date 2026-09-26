@@ -28,8 +28,10 @@ if ($doctorID < 1) {
     exit;
 }
 
+$actorUserId = SessionManager::getUser($pdo)['user_id'] ?? null;
+
 // Call the saveConsultation function from crud.php
-$result = saveConsultation($pdo, $requestData, $doctorID);
+$result = saveConsultation($pdo, $requestData, $doctorID, $actorUserId);
 
 if (($result['code'] ?? '') === 'followup_date_unavailable' && !empty($result['patient_id'])) {
     createPatientNotification(

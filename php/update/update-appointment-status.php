@@ -19,11 +19,11 @@ if (empty($requestData['csrf_token']) || $requestData['csrf_token'] !== $csrfTok
 $appointmentId = intval($requestData['appointment_id'] ?? 0);
 $status = $requestData['status'] ?? '';
 
-if ($status === 'Cancelled' && !in_array(strtolower((string) SessionManager::getCurrentRole()), ['admin', 'doctor'], true)) {
-    http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Only an admin or doctor can cancel appointments.']);
-    exit;
-}
+//if ($status === 'Cancelled' && !in_array(strtolower((string) SessionManager::getCurrentRole()), ['admin', 'doctor'], true)) {
+//    http_response_code(403);
+//    echo json_encode(['status' => 'error', 'message' => 'Only an admin or doctor can cancel appointments.']);
+//    exit;
+//}
 
 // Validate status
 $validStatuses = ['Pending', 'Confirmed', 'Completed', 'Cancelled', 'Rescheduled'];

@@ -31,8 +31,9 @@ if ($province === '' || $city === '' || $barangay === '') {
 
 $requestData['address'] = implode(', ', array_filter([$streetAddress, $barangay, $city, $province]));
 
+$actorUserId = SessionManager::getUser($pdo)['user_id'] ?? null;
 // Call the updatePatient function from crud.php
-$result = updatePatient($pdo, $requestData);
+$result = updatePatient($pdo, $requestData, $actorUserId);
 
 // Regenerate CSRF token
 SessionManager::regenerateCsrfToken();

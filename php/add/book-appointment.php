@@ -73,6 +73,8 @@ $data['doctorId'] = $userId;
 $data['meridiem'] = $appointmentTime->format('A');
 $data['appointmentTime'] = $appointmentTime->format('H:i:s');
 
-$result = bookAppointment($pdo, $data);
+$actorUserId = SessionManager::getUser($pdo)['user_id'] ?? null;
+
+$result = bookAppointment($pdo, $data, $actorUserId);
 $result['csrf_token'] = SessionManager::regenerateCsrfToken();
 echo json_encode($result);
