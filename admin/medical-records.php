@@ -42,11 +42,65 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
         <div class="grid grid-cols-12 gap-6 min-h-0 overflow-auto p-6 space-y-4">
             <div class="col-span-12 md:col-span-5">
                 <div class="bg-white rounded-3xl shadow-sm p-6 border border-slate-100">
-                    <div class="mb-4">
+
+                    <!-- Basic search -->
+                    <div class="mb-3">
                         <input type="search" id="recordSearchInput"
                             class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                             placeholder="Search by patient name or ID">
                     </div>
+
+                    <!-- Advanced search toggle -->
+                    <button type="button" id="toggleAdvancedSearch"
+                        class="text-xs font-semibold text-green-700 hover:text-green-800 mb-3 flex items-center gap-1">
+                        <i class="fa-solid fa-sliders"></i>
+                        Advanced Search
+                        <i class="fa-solid fa-chevron-down text-[10px]" id="advancedSearchChevron"></i>
+                    </button>
+
+                    <!-- Advanced search panel -->
+                    <div id="advancedSearchPanel"
+                        class="hidden mb-4 space-y-3 bg-slate-50 rounded-xl p-4 border border-slate-200">
+                        <div>
+                            <label class="text-xs font-medium text-slate-500 mb-1 block">Diagnosis</label>
+                            <input type="text" id="filterDiagnosis"
+                                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                                placeholder="e.g. fracture, sprain">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs font-medium text-slate-500 mb-1 block">Date From</label>
+                                <input type="date" id="filterDateFrom"
+                                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium text-slate-500 mb-1 block">Date To</label>
+                                <input type="date" id="filterDateTo"
+                                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-medium text-slate-500 mb-1 block">Doctor</label>
+                            <select id="filterDoctor"
+                                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                                <option value="">All Doctors</option>
+                            </select>
+                        </div>
+
+                        <div class="flex gap-2 pt-1">
+                            <button type="button" id="applyFiltersBtn"
+                                class="flex-1 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold rounded-lg px-3 py-2 transition">
+                                Apply Filters
+                            </button>
+                            <button type="button" id="clearFiltersBtn"
+                                class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-semibold rounded-lg px-3 py-2 transition">
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+
                     <div id="recordListContainer" class="space-y-3">
                         <div class="text-center py-8">
                             <p class="text-sm text-slate-500">Loading patient records...</p>

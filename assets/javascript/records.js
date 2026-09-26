@@ -13,10 +13,33 @@ function statusBadge(isCompleted) {
         : '<span class="text-xs font-semibold px-3 py-1 rounded-full bg-amber-100 text-amber-700">Ongoing</span>';
 }
 
-async function loadRecordsList(search = '') {
+/**
+ * Collects both the basic search box and every advanced filter field
+ * into one query string for fetch-consultation-list.php
+ */
+function getSearchParams() {
+    const params = new URLSearchParams();
+
+    const search = document.getElementById('recordSearchInput').value.trim();
+    const diagnosis = document.getElementById('filterDiagnosis').value.trim();
+    const dateFrom = document.getElementById('filterDateFrom').value;
+    const dateTo = document.getElementById('filterDateTo').value;
+    const doctorId = document.getElementById('filterDoctor').value;
+
+    if (search) params.set('search', search);
+    if (diagnosis) params.set('diagnosis', diagnosis);
+    if (dateFrom) params.set('date_from', dateFrom);
+    if (dateTo) params.set('date_to', dateTo);
+    if (doctorId) params.set('doctor_id', doctorId);
+
+    return params;
+}
+
+async function loadRecordsList() {
     const container = document.getElementById('recordListContainer');
     try {
-        const res = await fetch(`../php/fetch/fetch-consultation-list.php?search=${encodeURIComponent(search)}`);
+        const params = getSearchParams();
+        const res = await fetch(`../php/fetch/fetch-consultation-list.php?${params.toString()}`);
         const data = await res.json();
 
         if (data.status !== 'success') {
@@ -40,6 +63,7 @@ async function loadRecordsList(search = '') {
                         <div class="font-semibold text-slate-900">${r.FirstName} ${r.LastName}</div>
                         <div class="text-xs text-slate-400 mt-0.5">${r.PatientCode}</div>
                         <div class="text-xs text-slate-400 mt-1">${formatDate(r.ConsultationDate)}</div>
+                        ${r.DoctorFirstName ? `<div class="text-xs text-slate-400">Dr. ${r.DoctorFirstName} ${r.DoctorLastName}</div>` : ''}
                     </div>
                     ${statusBadge(r.IsCompleted)}
                 </div>
@@ -53,6 +77,25 @@ async function loadRecordsList(search = '') {
     } catch (err) {
         console.error(err);
         container.innerHTML = '<p class="text-sm text-red-600">Failed to load records.</p>';
+    }
+}
+
+async function loadDoctorOptions() {
+    const select = document.getElementById('filterDoctor');
+    try {
+        const res = await fetch('../php/fetch/fetch-doctors.php');
+        const data = await res.json();
+
+        if (data.status === 'success') {
+            data.data.forEach(doc => {
+                const opt = document.createElement('option');
+                opt.value = doc.UserID;
+                opt.textContent = `${doc.FirstName} ${doc.LastName}`;
+                select.appendChild(opt);
+            });
+        }
+    } catch (err) {
+        console.error('Failed to load doctors:', err);
     }
 }
 
@@ -139,9 +182,32 @@ function loadPatientRecords(consultationHistory, currentConsultationId, recordSu
 
 document.addEventListener('DOMContentLoaded', () => {
     loadRecordsList();
+    loadDoctorOptions();
 
-    document.getElementById('recordSearchInput').addEventListener('input', (e) => {
+    // Basic search box — debounced as before
+    document.getElementById('recordSearchInput').addEventListener('input', () => {
         clearTimeout(searchDebounce);
-        searchDebounce = setTimeout(() => loadRecordsList(e.target.value.trim()), 300);
+        searchDebounce = setTimeout(loadRecordsList, 300);
+    });
+
+    // Advanced search panel toggle
+    const panel = document.getElementById('advancedSearchPanel');
+    const chevron = document.getElementById('advancedSearchChevron');
+    document.getElementById('toggleAdvancedSearch').addEventListener('click', () => {
+        panel.classList.toggle('hidden');
+        chevron.classList.toggle('fa-chevron-down');
+        chevron.classList.toggle('fa-chevron-up');
+    });
+
+    // Apply filters button
+    document.getElementById('applyFiltersBtn').addEventListener('click', loadRecordsList);
+
+    // Clear filters button
+    document.getElementById('clearFiltersBtn').addEventListener('click', () => {
+        document.getElementById('filterDiagnosis').value = '';
+        document.getElementById('filterDateFrom').value = '';
+        document.getElementById('filterDateTo').value = '';
+        document.getElementById('filterDoctor').value = '';
+        loadRecordsList();
     });
 });

@@ -1,6 +1,11 @@
 <?php
 require_once __DIR__ . '/notifications.php';
-function addPatient(PDO $pdo, array $data): array
+require_once __DIR__ . '/audit.php';
+
+/**
+ * @param int|null $actorUserId The staff user performing this action (e.g. $_SESSION['user_id']).
+ */
+function addPatient(PDO $pdo, array $data, ?int $actorUserId = null): array
 {
     try {
         $pdo->beginTransaction();
@@ -47,6 +52,27 @@ function addPatient(PDO $pdo, array $data): array
             $data['barangay'] ?: null,
             $data['allergies'] ?: null
         ]);
+        $patientId = (int) $pdo->lastInsertId();
+
+        // AUDIT: patient created
+        logAudit(
+            $pdo,
+            $actorUserId,
+            'CREATE',
+            'patients',
+            $patientId,
+            null,
+            null,
+            json_encode([
+                'PatientCode' => $patientCode,
+                'FirstName' => $data['firstName'],
+                'MiddleName' => $data['middleName'] ?? null,
+                'LastName' => $data['lastName'],
+                'BirthDate' => $data['birthDate'],
+                'Gender' => $data['gender'],
+                'PatientType' => $data['patientType'] ?: 'Regular',
+            ])
+        );
 
         $pdo->commit();
         return [
@@ -64,6 +90,7 @@ function addPatient(PDO $pdo, array $data): array
         return ['status' => 'error', 'message' => 'Unable to register the patient. Please try again.'];
     }
 }
+
 function geocodeAddress(string $address): ?array
 {
     if (empty($address)) {
@@ -121,7 +148,10 @@ function geocodeAddress(string $address): ?array
     return null;
 }
 
-function addUser(PDO $pdo, array $data): array
+/**
+ * @param int|null $actorUserId The staff user performing this action.
+ */
+function addUser(PDO $pdo, array $data, ?int $actorUserId = null): array
 {
     try {
         $pdo->beginTransaction();
@@ -140,6 +170,26 @@ function addUser(PDO $pdo, array $data): array
             $data['email'] ?: null,
             $data['phone'] ?: null
         ]);
+        $newUserId = (int) $pdo->lastInsertId();
+
+        // AUDIT: user account created (never log the password itself)
+        logAudit(
+            $pdo,
+            $actorUserId,
+            'CREATE',
+            'users',
+            $newUserId,
+            null,
+            null,
+            json_encode([
+                'Username' => $data['username'],
+                'FirstName' => $data['firstName'],
+                'LastName' => $data['lastName'],
+                'Role' => $data['role'],
+                'IsDoctor' => $data['isDoctor'],
+                'Email' => $data['email'] ?: null,
+            ])
+        );
 
         $pdo->commit();
         return ['status' => 'success', 'message' => 'User account created successfully.'];
@@ -159,14 +209,38 @@ function addUser(PDO $pdo, array $data): array
 
 function expirePendingAppointments(PDO $pdo): void
 {
+    // AUDIT: capture which appointments are about to be auto-cancelled, before we lose that info
+    $stmt = $pdo->query(
+        "SELECT AppointmentID FROM appointments
+         WHERE Status = 'Pending' AND CreatedAt < (NOW() - INTERVAL 24 HOUR)"
+    );
+    $expiringIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
     $pdo->exec(
         "UPDATE appointments
          SET Status = 'Cancelled'
          WHERE Status = 'Pending' AND CreatedAt < (NOW() - INTERVAL 24 HOUR)"
     );
+
+    // Logged with no actor since this is an automatic system action, not a person.
+    foreach ($expiringIds as $appointmentId) {
+        logAudit(
+            $pdo,
+            null,
+            'UPDATE',
+            'appointments',
+            (int) $appointmentId,
+            'Status',
+            'Pending',
+            'Cancelled'
+        );
+    }
 }
 
-function bookAppointment(PDO $pdo, array $data): array
+/**
+ * @param int|null $actorUserId The staff/patient user creating this appointment.
+ */
+function bookAppointment(PDO $pdo, array $data, ?int $actorUserId = null): array
 {
     try {
         expirePendingAppointments($pdo);
@@ -209,6 +283,26 @@ function bookAppointment(PDO $pdo, array $data): array
             $data['chiefComplaint'],
             'Pending'
         ]);
+        $appointmentId = (int) $pdo->lastInsertId();
+
+        // AUDIT: appointment created
+        logAudit(
+            $pdo,
+            $actorUserId,
+            'CREATE',
+            'appointments',
+            $appointmentId,
+            null,
+            null,
+            json_encode([
+                'PatientID' => $data['patientId'],
+                'DoctorID' => $data['doctorId'],
+                'AppointmentDate' => $data['appointmentDate'],
+                'AppointmentTime' => $data['appointmentTime'],
+                'meridiem' => $data['meridiem'],
+                'Purpose' => $data['purpose'],
+            ])
+        );
 
         return ['status' => 'success', 'message' => 'Appointment booked successfully.'];
     } catch (PDOException $e) {
@@ -280,6 +374,10 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
             ':consultation_id' => $consultationID
         ]);
 
+        // AUDIT: diagnosis/treatment recorded for this consultation
+        logAudit($pdo, $doctorID, 'UPDATE', 'consultations', $consultationID, 'Diagnosis', null, $data['diagnosis'] ?? '');
+        logAudit($pdo, $doctorID, 'UPDATE', 'consultations', $consultationID, 'Treatment', null, $data['treatment'] ?? '');
+
         if (($data['has_prescription'] ?? false) && !empty($data['prescriptions']) && is_array($data['prescriptions'])) {
             $rxStmt = $pdo->prepare("
                 INSERT INTO prescriptions (ConsultationID, Medicine, Dosage, Frequency, Duration, Instructions)
@@ -294,6 +392,18 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
                     ':duration' => $rx['duration'] ?? '',
                     ':instructions' => $rx['instructions'] ?? ''
                 ]);
+
+                // AUDIT: each prescribed medicine
+                logAudit(
+                    $pdo,
+                    $doctorID,
+                    'CREATE',
+                    'prescriptions',
+                    (int) $pdo->lastInsertId(),
+                    null,
+                    null,
+                    json_encode($rx)
+                );
             }
         }
 
@@ -307,12 +417,31 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
             ':original_amount' => floatval($data['consultation_fee'] ?? 0)
         ]);
 
+        // AUDIT: billing record created
+        logAudit(
+            $pdo,
+            $doctorID,
+            'CREATE',
+            'billing',
+            (int) $pdo->lastInsertId(),
+            null,
+            null,
+            json_encode([
+                'ConsultationID' => $consultationID,
+                'PatientID' => intval($data['patient_id'] ?? 0),
+                'OriginalAmount' => floatval($data['consultation_fee'] ?? 0),
+            ])
+        );
+
         $stmt = $pdo->prepare("
             UPDATE appointments 
             SET Status = 'Completed' 
             WHERE AppointmentID = :appointment_id
         ");
         $stmt->execute([':appointment_id' => $appointmentID]);
+
+        // AUDIT: appointment marked completed
+        logAudit($pdo, $doctorID, 'UPDATE', 'appointments', $appointmentID, 'Status', $appointment['Status'], 'Completed');
 
         $followupID = null;
         if (($data['has_followup'] ?? false) && !empty($data['followup']['date'])) {
@@ -386,6 +515,23 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
             ]);
             $followupID = $pdo->lastInsertId();
 
+            // AUDIT: follow-up scheduled
+            logAudit(
+                $pdo,
+                $doctorID,
+                'CREATE',
+                'followups',
+                (int) $followupID,
+                null,
+                null,
+                json_encode([
+                    'PatientID' => intval($data['patient_id'] ?? 0),
+                    'DoctorID' => $doctorID,
+                    'AppointmentID' => $appointmentID,
+                    'FollowUpDate' => $followupDate,
+                ])
+            );
+
             createPatientNotification(
                 $pdo,
                 intval($data['patient_id'] ?? 0),
@@ -413,7 +559,11 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
         return ['status' => 'error', 'message' => 'Unable to save the consultation. Please try again.'];
     }
 }
-function updatePatient(PDO $pdo, array $data): array
+
+/**
+ * @param int|null $actorUserId The staff user performing this action.
+ */
+function updatePatient(PDO $pdo, array $data, ?int $actorUserId = null): array
 {
     try {
         $pdo->beginTransaction();
@@ -422,15 +572,22 @@ function updatePatient(PDO $pdo, array $data): array
             return ['status' => 'error', 'message' => 'Patient code is required.'];
         }
 
-        $stmt = $pdo->prepare('SELECT UserID FROM patients WHERE PatientCode = ?');
+        // Fetch full old rows BEFORE updating, so we can diff afterwards
+        $stmt = $pdo->prepare('SELECT * FROM patients WHERE PatientCode = ?');
         $stmt->execute([$data['patient_code']]);
-        $patient = $stmt->fetch(PDO::FETCH_ASSOC);
+        $oldPatientRow = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$patient) {
+        if (!$oldPatientRow) {
+            $pdo->rollBack();
             return ['status' => 'error', 'message' => 'Patient not found.'];
         }
 
-        $userID = $patient['UserID'];
+        $userID = $oldPatientRow['UserID'];
+        $patientId = (int) $oldPatientRow['PatientID'];
+
+        $stmt = $pdo->prepare('SELECT * FROM users WHERE UserID = ?');
+        $stmt->execute([$userID]);
+        $oldUserRow = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
         $stmt = $pdo->prepare(
             'UPDATE users 
@@ -465,6 +622,19 @@ function updatePatient(PDO $pdo, array $data): array
             $data['patient_code']
         ]);
 
+        // AUDIT: fetch the new rows and log per-field differences
+        $stmt = $pdo->prepare('SELECT * FROM patients WHERE PatientCode = ?');
+        $stmt->execute([$data['patient_code']]);
+        $newPatientRow = $stmt->fetch(PDO::FETCH_ASSOC);
+        logFieldChanges($pdo, $actorUserId, 'patients', $patientId, $oldPatientRow, $newPatientRow);
+
+        if (!empty($oldUserRow)) {
+            $stmt = $pdo->prepare('SELECT * FROM users WHERE UserID = ?');
+            $stmt->execute([$userID]);
+            $newUserRow = $stmt->fetch(PDO::FETCH_ASSOC);
+            logFieldChanges($pdo, $actorUserId, 'users', (int) $userID, $oldUserRow, $newUserRow);
+        }
+
         $pdo->commit();
         return ['status' => 'success', 'message' => 'Patient information updated successfully.'];
 
@@ -477,14 +647,19 @@ function updatePatient(PDO $pdo, array $data): array
     }
 }
 
-function updateUser(PDO $pdo, array $data): array
+/**
+ * @param int|null $actorUserId The staff user performing this action.
+ */
+function updateUser(PDO $pdo, array $data, ?int $actorUserId = null): array
 {
     try {
         $pdo->beginTransaction();
 
-        $stmt = $pdo->prepare('SELECT UserID FROM users WHERE UserID = ?');
+        $stmt = $pdo->prepare('SELECT * FROM users WHERE UserID = ?');
         $stmt->execute([$data['userId']]);
-        if (!$stmt->fetch()) {
+        $oldUserRow = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$oldUserRow) {
             $pdo->rollBack();
             return ['status' => 'error', 'message' => 'That account no longer exists.'];
         }
@@ -522,6 +697,17 @@ function updateUser(PDO $pdo, array $data): array
                 $data['phone'] ?: null,
                 $data['userId']
             ]);
+        }
+
+        // AUDIT: fetch new row and log per-field differences (PasswordHash auto-excluded)
+        $stmt = $pdo->prepare('SELECT * FROM users WHERE UserID = ?');
+        $stmt->execute([$data['userId']]);
+        $newUserRow = $stmt->fetch(PDO::FETCH_ASSOC);
+        logFieldChanges($pdo, $actorUserId, 'users', (int) $data['userId'], $oldUserRow, $newUserRow);
+
+        // Separately log that a password reset occurred, without storing any hash value
+        if ($data['password'] !== '') {
+            logAudit($pdo, $actorUserId, 'UPDATE', 'users', (int) $data['userId'], 'PasswordHash', '(hidden)', '(hidden)');
         }
 
         $pdo->commit();

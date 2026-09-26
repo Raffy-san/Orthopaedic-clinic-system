@@ -81,6 +81,8 @@ if (!in_array($data['patientType'], $allowedPatientTypes, true)) {
 	exit;
 }
 
-$result = addPatient($pdo, $data);
+$actorUserId = SessionManager::getUser($pdo)['user_id'] ?? null;
+
+$result = addPatient($pdo, $data, $actorUserId);
 $result['csrf_token'] = SessionManager::regenerateCsrfToken();
 echo json_encode($result);
