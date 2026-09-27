@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.1
+-- version 5.2.3
 -- https://www.phpmyadmin.net/
 --
--- Host: 127.0.0.1
--- Generation Time: Aug 27, 2026 at 04:28 AM
--- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- Host: localhost:3306
+-- Generation Time: Sep 27, 2026 at 02:23 PM
+-- Server version: 8.4.3
+-- PHP Version: 8.3.33
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -28,16 +28,17 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `appointments` (
-  `AppointmentID` int(10) UNSIGNED NOT NULL,
-  `PatientID` int(10) UNSIGNED NOT NULL,
-  `DoctorID` int(10) UNSIGNED NOT NULL,
+  `AppointmentID` int UNSIGNED NOT NULL,
+  `PatientID` int UNSIGNED NOT NULL,
+  `DoctorID` int UNSIGNED NOT NULL,
   `AppointmentDate` date NOT NULL,
   `AppointmentTime` time NOT NULL,
-  `meridiem` enum('AM','PM') DEFAULT NULL,
-  `Purpose` varchar(255) NOT NULL,
-  `Status` enum('Pending','Confirmed','Completed','Cancelled','Rescheduled') NOT NULL DEFAULT 'Pending',
-  `Remarks` text DEFAULT NULL,
-  `CreatedAt` timestamp NOT NULL DEFAULT current_timestamp()
+  `meridiem` enum('AM','PM') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `Purpose` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ChiefComplaint` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `Status` enum('Pending','Confirmed','Completed','Cancelled','Rescheduled') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Pending',
+  `Remarks` text COLLATE utf8mb4_unicode_ci,
+  `CreatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -47,13 +48,16 @@ CREATE TABLE `appointments` (
 --
 
 CREATE TABLE `auditlogs` (
-  `LogID` int(10) UNSIGNED NOT NULL,
-  `UserID` int(10) UNSIGNED DEFAULT NULL,
-  `Action` varchar(255) NOT NULL,
-  `TableAffected` varchar(100) DEFAULT NULL,
-  `RecordID` int(10) UNSIGNED DEFAULT NULL,
-  `LogDate` datetime NOT NULL DEFAULT current_timestamp(),
-  `IPAddress` varchar(45) DEFAULT NULL
+  `LogID` int UNSIGNED NOT NULL,
+  `UserID` int UNSIGNED DEFAULT NULL,
+  `Action` enum('CREATE','UPDATE','DELETE') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `TableAffected` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `RecordID` int UNSIGNED NOT NULL,
+  `FieldChanged` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `OldValue` text COLLATE utf8mb4_unicode_ci,
+  `NewValue` text COLLATE utf8mb4_unicode_ci,
+  `LogDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `IPAddress` varchar(45) COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -63,16 +67,16 @@ CREATE TABLE `auditlogs` (
 --
 
 CREATE TABLE `billing` (
-  `BillingID` int(10) UNSIGNED NOT NULL,
-  `ConsultationID` int(10) UNSIGNED NOT NULL,
-  `PatientID` int(10) UNSIGNED NOT NULL,
-  `OriginalAmount` decimal(10,2) NOT NULL DEFAULT 0.00,
-  `DiscountType` enum('None','Senior Citizen','PWD') NOT NULL DEFAULT 'None',
-  `DiscountPercent` decimal(5,2) NOT NULL DEFAULT 0.00,
-  `DiscountAmount` decimal(10,2) NOT NULL DEFAULT 0.00,
-  `FinalAmount` decimal(10,2) NOT NULL DEFAULT 0.00,
-  `BillingDate` datetime NOT NULL DEFAULT current_timestamp(),
-  `Status` enum('Unpaid','Partially Paid','Paid','Cancelled') NOT NULL DEFAULT 'Unpaid'
+  `BillingID` int UNSIGNED NOT NULL,
+  `ConsultationID` int UNSIGNED NOT NULL,
+  `PatientID` int UNSIGNED NOT NULL,
+  `OriginalAmount` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `DiscountType` enum('None','Senior Citizen','PWD') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'None',
+  `DiscountPercent` decimal(5,2) NOT NULL DEFAULT '0.00',
+  `DiscountAmount` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `FinalAmount` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `BillingDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `Status` enum('Unpaid','Partially Paid','Paid','Cancelled') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Unpaid'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -82,16 +86,19 @@ CREATE TABLE `billing` (
 --
 
 CREATE TABLE `consultations` (
-  `ConsultationID` int(10) UNSIGNED NOT NULL,
-  `AppointmentID` int(10) UNSIGNED NOT NULL,
-  `PatientID` int(10) UNSIGNED NOT NULL,
-  `DoctorID` int(10) UNSIGNED NOT NULL,
-  `Diagnosis` text NOT NULL,
-  `Treatment` text DEFAULT NULL,
-  `Notes` text DEFAULT NULL,
-  `ConsultationFee` decimal(10,2) NOT NULL DEFAULT 0.00,
-  `ConsultationDate` datetime NOT NULL DEFAULT current_timestamp(),
-  `IsCompleted` TINYINT(1) NOT NULL DEFAULT 0
+  `ConsultationID` int UNSIGNED NOT NULL,
+  `AppointmentID` int UNSIGNED NOT NULL,
+  `PatientID` int UNSIGNED NOT NULL,
+  `DoctorID` int UNSIGNED NOT NULL,
+  `Diagnosis` text COLLATE utf8mb4_unicode_ci,
+  `Treatment` text COLLATE utf8mb4_unicode_ci,
+  `Notes` text COLLATE utf8mb4_unicode_ci,
+  `ConsultationFee` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `StartTime` time DEFAULT NULL,
+  `Meridiem` enum('AM','PM') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `EndTime` time DEFAULT NULL,
+  `ConsultationDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `IsCompleted` tinyint(1) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -101,13 +108,30 @@ CREATE TABLE `consultations` (
 --
 
 CREATE TABLE `followups` (
-  `FollowUpID` int(10) UNSIGNED NOT NULL,
-  `PatientID` int(10) UNSIGNED NOT NULL,
-  `DoctorID` int(10) UNSIGNED NOT NULL,
-  `AppointmentID` int(10) UNSIGNED DEFAULT NULL,
+  `FollowUpID` int UNSIGNED NOT NULL,
+  `PatientID` int UNSIGNED NOT NULL,
+  `DoctorID` int UNSIGNED NOT NULL,
+  `AppointmentID` int UNSIGNED DEFAULT NULL,
   `FollowUpDate` date NOT NULL,
-  `Status` enum('Scheduled','Completed','Cancelled') NOT NULL DEFAULT 'Scheduled',
-  `Remarks` text DEFAULT NULL
+  `Status` enum('Scheduled','Completed','Cancelled') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Scheduled',
+  `Remarks` text COLLATE utf8mb4_unicode_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `notifications`
+--
+
+CREATE TABLE `notifications` (
+  `NotificationID` int UNSIGNED NOT NULL,
+  `UserID` int UNSIGNED NOT NULL,
+  `Title` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `Message` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `Type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'general',
+  `ReferenceID` int UNSIGNED DEFAULT NULL,
+  `IsRead` tinyint(1) NOT NULL DEFAULT '0',
+  `CreatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -117,25 +141,29 @@ CREATE TABLE `followups` (
 --
 
 CREATE TABLE `patients` (
-  `PatientID` int(10) UNSIGNED NOT NULL,
-  `PatientCode` varchar(20) NOT NULL,
-  `UserID` int(10) UNSIGNED DEFAULT NULL,
-  `FirstName` varchar(100) NOT NULL,
-  `MiddleName` varchar(100) DEFAULT NULL,
-  `LastName` varchar(100) NOT NULL,
+  `PatientID` int UNSIGNED NOT NULL,
+  `PatientCode` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `UserID` int UNSIGNED DEFAULT NULL,
+  `FirstName` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `MiddleName` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `LastName` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
   `BirthDate` date NOT NULL,
-  `Gender` enum('Male','Female','Other') NOT NULL,
-  `CivilStatus` enum('Single','Married','Widowed','Separated') DEFAULT NULL,
-  `Address` varchar(255) DEFAULT NULL,
+  `Gender` enum('Male','Female','Other') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `CivilStatus` enum('Single','Married','Widowed','Separated') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `Address` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `Province` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `City` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `Barangay` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `Allergies` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `Latitude` decimal(10,7) DEFAULT NULL,
   `Longitude` decimal(10,7) DEFAULT NULL,
-  `Phone` varchar(30) DEFAULT NULL,
-  `Email` varchar(150) DEFAULT NULL,
-  `BloodType` varchar(5) DEFAULT NULL,
-  `EmergencyContact` varchar(150) DEFAULT NULL,
-  `EmergencyPhone` varchar(30) DEFAULT NULL,
-  `PatientType` enum('Regular','Senior Citizen','PWD') NOT NULL DEFAULT 'Regular',
-  `CreatedAt` timestamp NOT NULL DEFAULT current_timestamp()
+  `Phone` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `Email` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `BloodType` varchar(5) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `EmergencyContact` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `EmergencyPhone` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `PatientType` enum('Regular','Senior Citizen','PWD') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Regular',
+  `CreatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -145,13 +173,13 @@ CREATE TABLE `patients` (
 --
 
 CREATE TABLE `payments` (
-  `PaymentID` int(10) UNSIGNED NOT NULL,
-  `BillingID` int(10) UNSIGNED NOT NULL,
+  `PaymentID` int UNSIGNED NOT NULL,
+  `BillingID` int UNSIGNED NOT NULL,
   `AmountPaid` decimal(10,2) NOT NULL,
-  `PaymentMethod` enum('Cash','GCash','Credit Card','Debit Card') NOT NULL,
-  `ReferenceNo` varchar(100) DEFAULT NULL,
-  `PaymentDate` datetime NOT NULL DEFAULT current_timestamp(),
-  `ReceivedBy` int(10) UNSIGNED DEFAULT NULL
+  `PaymentMethod` enum('Cash','GCash','Credit Card','Debit Card') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `ReferenceNo` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `PaymentDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `ReceivedBy` int UNSIGNED DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -161,13 +189,13 @@ CREATE TABLE `payments` (
 --
 
 CREATE TABLE `prescriptions` (
-  `PrescriptionID` int(10) UNSIGNED NOT NULL,
-  `ConsultationID` int(10) UNSIGNED NOT NULL,
-  `Medicine` varchar(150) NOT NULL,
-  `Dosage` varchar(100) NOT NULL,
-  `Frequency` varchar(100) NOT NULL,
-  `Duration` varchar(100) DEFAULT NULL,
-  `Instructions` text DEFAULT NULL
+  `PrescriptionID` int UNSIGNED NOT NULL,
+  `ConsultationID` int UNSIGNED NOT NULL,
+  `Medicine` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `Dosage` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `Frequency` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `Duration` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `Instructions` text COLLATE utf8mb4_unicode_ci
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -177,17 +205,17 @@ CREATE TABLE `prescriptions` (
 --
 
 CREATE TABLE `users` (
-  `UserID` int(10) UNSIGNED NOT NULL,
-  `Username` varchar(50) NOT NULL,
-  `PasswordHash` varchar(255) NOT NULL,
-  `FirstName` varchar(100) NOT NULL,
-  `LastName` varchar(100) NOT NULL,
-  `Role` enum('Admin','Doctor','Receptionist','Staff','Patient') NOT NULL DEFAULT 'Receptionist',
-  `IsDoctor` tinyint(1) NOT NULL DEFAULT 0,
-  `Email` varchar(150) DEFAULT NULL,
-  `Phone` varchar(30) DEFAULT NULL,
-  `Status` enum('Active','Inactive') NOT NULL DEFAULT 'Active',
-  `CreatedAt` timestamp NOT NULL DEFAULT current_timestamp()
+  `UserID` int UNSIGNED NOT NULL,
+  `Username` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `PasswordHash` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `FirstName` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `LastName` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `Role` enum('Admin','Doctor','Receptionist','Staff','Patient') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Receptionist',
+  `IsDoctor` tinyint(1) NOT NULL DEFAULT '0',
+  `Email` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `Phone` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `Status` enum('Active','Inactive') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Active',
+  `CreatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -246,6 +274,13 @@ ALTER TABLE `followups`
   ADD KEY `fk_followups_appointment` (`AppointmentID`);
 
 --
+-- Indexes for table `notifications`
+--
+ALTER TABLE `notifications`
+  ADD PRIMARY KEY (`NotificationID`),
+  ADD KEY `idx_notifications_user_read` (`UserID`,`IsRead`,`CreatedAt`);
+
+--
 -- Indexes for table `patients`
 --
 ALTER TABLE `patients`
@@ -286,55 +321,61 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `appointments`
 --
 ALTER TABLE `appointments`
-  MODIFY `AppointmentID` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `AppointmentID` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59;
 
 --
 -- AUTO_INCREMENT for table `auditlogs`
 --
 ALTER TABLE `auditlogs`
-  MODIFY `LogID` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `LogID` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT for table `billing`
 --
 ALTER TABLE `billing`
-  MODIFY `BillingID` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `BillingID` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT for table `consultations`
 --
 ALTER TABLE `consultations`
-  MODIFY `ConsultationID` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `ConsultationID` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
 
 --
 -- AUTO_INCREMENT for table `followups`
 --
 ALTER TABLE `followups`
-  MODIFY `FollowUpID` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `FollowUpID` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
+-- AUTO_INCREMENT for table `notifications`
+--
+ALTER TABLE `notifications`
+  MODIFY `NotificationID` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `patients`
 --
 ALTER TABLE `patients`
-  MODIFY `PatientID` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `PatientID` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT for table `payments`
 --
 ALTER TABLE `payments`
-  MODIFY `PaymentID` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `PaymentID` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
 
 --
 -- AUTO_INCREMENT for table `prescriptions`
 --
 ALTER TABLE `prescriptions`
-  MODIFY `PrescriptionID` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `PrescriptionID` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `UserID` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `UserID` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- Constraints for dumped tables
@@ -375,6 +416,12 @@ ALTER TABLE `followups`
   ADD CONSTRAINT `fk_followups_appointment` FOREIGN KEY (`AppointmentID`) REFERENCES `appointments` (`AppointmentID`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_followups_doctor` FOREIGN KEY (`DoctorID`) REFERENCES `users` (`UserID`) ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_followups_patient` FOREIGN KEY (`PatientID`) REFERENCES `patients` (`PatientID`) ON UPDATE CASCADE;
+
+--
+-- Constraints for table `notifications`
+--
+ALTER TABLE `notifications`
+  ADD CONSTRAINT `fk_notifications_user` FOREIGN KEY (`UserID`) REFERENCES `users` (`UserID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `patients`

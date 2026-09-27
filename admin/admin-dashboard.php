@@ -95,7 +95,7 @@ $todaySchedule = fetchAllData($pdo, "
     FROM appointments a
     JOIN patients p ON p.PatientID = a.PatientID
     LEFT JOIN consultations c ON c.AppointmentID = a.AppointmentID
-    WHERE DATE(a.AppointmentDate) = CURDATE() AND a.Status <> 'Cancelled'
+    WHERE DATE(a.AppointmentDate) = CURDATE() AND a.Status <> 'Cancelled' AND a.Status <> 'Pending'
     ORDER BY a.AppointmentTime ASC
 ");
 ?>

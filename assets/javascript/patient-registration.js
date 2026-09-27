@@ -246,10 +246,6 @@ function setActivePatientType(type) {
                             </select>
                         </div>
                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
-                            <label class="text-[11px] text-slate-600">Initial Password</label>
-                            <input name="password" type="password" minlength="8" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="At least 8 characters">
-                        </div>
-                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
                             <label class="text-[11px] text-slate-600">Gender</label>
                             <select name="gender" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
                                 <option value="">Select...</option>
@@ -257,11 +253,7 @@ function setActivePatientType(type) {
                                 <option value="Female">Female</option>
                                 <option value="Other">Other</option>
                             </select>
-                        </div>
-                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
-                            <label class="text-[11px] text-slate-600">Allergies</label>
-                            <input name="allergies" type="text" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter allergies">
-                        </div>
+                        </div>     
                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
                             <label class="text-[11px] text-slate-600">Patient Type</label>
                             <select name="patientType" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
@@ -383,7 +375,6 @@ step2Content.addEventListener('submit', (event) => {
             city: formData.get('city'),
             barangay: formData.get('barangay'),
             gender: formData.get('gender'),
-            allergies: formData.get('allergies'),
             patientType: formData.get('patientType')
         };
 
@@ -509,12 +500,6 @@ function validateExistingPatient() {
                             <option value="Other" ${patient.Gender === 'Other' ? 'selected' : ''}>Other</option>
                         </select>
                     </div>
-
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
-                        <label class="text-[11px] text-slate-600">Allergies</label>
-                        <input name="allergies" type="text" value="${patient.Allergies || ''}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
-                    </div>
-                    
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
                         <label class="text-[11px] text-slate-600">Patient Type</label>
                         <select name="patientType" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">

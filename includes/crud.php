@@ -18,27 +18,12 @@ function addPatient(PDO $pdo, array $data, ?int $actorUserId = null): array
         } while ($check->fetchColumn() > 0);
 
         $stmt = $pdo->prepare(
-            'INSERT INTO users (Username, PasswordHash, FirstName, LastName, Role, Phone)
-             VALUES (?, ?, ?, ?, ?, ?)'
-        );
-        $stmt->execute([
-            $patientCode,
-            password_hash($data['password'], PASSWORD_DEFAULT),
-            $data['firstName'],
-            $data['lastName'],
-            'Patient',
-            $data['phone'] ?: null
-        ]);
-        $userId = $pdo->lastInsertId();
-
-        $stmt = $pdo->prepare(
             'INSERT INTO patients
-     (PatientCode, UserID, FirstName, MiddleName, LastName, BirthDate, Gender, Phone, PatientType, Address, Province, City, Barangay, Allergies)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+     (PatientCode, FirstName, MiddleName, LastName, BirthDate, Gender, Phone, PatientType, Address, Province, City, Barangay, Allergies)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $patientCode,
-            $userId,
             $data['firstName'],
             $data['middleName'] ?? null,
             $data['lastName'],
@@ -90,64 +75,6 @@ function addPatient(PDO $pdo, array $data, ?int $actorUserId = null): array
         return ['status' => 'error', 'message' => 'Unable to register the patient. Please try again.'];
     }
 }
-
-function geocodeAddress(string $address): ?array
-{
-    if (empty($address)) {
-        return null;
-    }
-
-    $parts = array_map('trim', explode(',', $address));
-    $attempts = [];
-    for ($i = 0; $i < count($parts); $i++) {
-        $attempts[] = implode(', ', array_slice($parts, $i));
-    }
-
-    foreach ($attempts as $index => $query) {
-        $cleanQuery = preg_replace('/\s*\(Pob\.?\)\s*/i', ' ', $query);
-        $cleanQuery = preg_replace('/^City of\s+/i', '', $cleanQuery);
-
-        $url = 'https://nominatim.openstreetmap.org/search?' . http_build_query([
-            'q' => $cleanQuery,
-            'format' => 'json',
-            'limit' => 5,
-            'countrycodes' => 'ph'
-        ]);
-
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER => ['User-Agent: OrthopeadicClinic/1.0 (rafaelsanoria506@gmail.com)'],
-            CURLOPT_TIMEOUT => 5
-        ]);
-        $response = curl_exec($ch);
-        curl_close($ch);
-
-        if ($response) {
-            $results = json_decode($response, true);
-            if (is_array($results)) {
-                foreach ($results as $result) {
-                    if (
-                        !empty($result['lat']) && !empty($result['lon'])
-                        && in_array($result['class'], ['place', 'boundary'], true)
-                    ) {
-                        return [
-                            'lat' => (float) $result['lat'],
-                            'lng' => (float) $result['lon']
-                        ];
-                    }
-                }
-            }
-        }
-
-        if ($index < count($attempts) - 1) {
-            usleep(1100000); // respect Nominatim's 1 req/sec limit before the next attempt
-        }
-    }
-
-    return null;
-}
-
 /**
  * @param int|null $actorUserId The staff user performing this action.
  */

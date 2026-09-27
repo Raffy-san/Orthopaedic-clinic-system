@@ -52,22 +52,16 @@ $data = [
 	'city' => $city,
 	'barangay' => $barangay,
 	'allergies' => trim($_POST['allergies'] ?? ''),
-	'password' => $_POST['password'] ?? '',
 	'patientType' => $patientType
 ];
 
-if ($data['firstName'] === '' || $data['lastName'] === '' || $data['birthDate'] === '' || $data['password'] === '') {
-	echo json_encode(['status' => 'error', 'message' => 'First name, last name, date of birth, and password are required.']);
+if ($data['firstName'] === '' || $data['lastName'] === '' || $data['birthDate'] === '') {
+	echo json_encode(['status' => 'error', 'message' => 'First name, last name, and date of birth are required.']);
 	exit;
 }
 
 if ($province === '' || $city === '' || $barangay === '') {
 	echo json_encode(['status' => 'error', 'message' => 'Please select a complete address (province, city/municipality, and barangay).']);
-	exit;
-}
-
-if (strlen($data['password']) < 8) {
-	echo json_encode(['status' => 'error', 'message' => 'Password must contain at least 8 characters.']);
 	exit;
 }
 

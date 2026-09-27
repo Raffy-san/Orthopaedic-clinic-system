@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             Leyte<br>Orthopaedic Clinic</h1>
                     </div>
                     <p class="text-blue-100 text-base leading-relaxed mb-8">
-                        Integrated clinic management — patients can book appointments  while staff manage
+                        Integrated clinic management — patients can book appointments while staff manage
                         consultations, billing, and reports.
                     </p>
                     <div class="space-y-4">
@@ -152,24 +152,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     class="fa-solid fa-arrow-right text-violet-600 ml-auto opacity-0 group-hover:opacity-100 transition"></i>
                             </div>
                         </button>
-
-                        <!-- Patient Button -->
-                        <button onclick="selectRole('patient')"
-                            class="w-full p-4 border-2 border-gray-300 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition group">
-                            <div class="flex items-center gap-4">
-                                <div
-                                    class="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center group-hover:bg-teal-200 transition">
-                                    <i class="fa-solid fa-user text-teal-600 text-xl"></i>
-                                </div>
-                                <div class="text-left">
-                                    <h3 class="font-bold text-gray-800 text-lg">Patient</h3>
-                                    <p class="text-gray-500 text-sm">Book appointments and manage your health records
-                                    </p>
-                                </div>
-                                <i
-                                    class="fa-solid fa-arrow-right text-teal-600 ml-auto opacity-0 group-hover:opacity-100 transition"></i>
-                            </div>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -187,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             Leyte<br>Orthopaedic Clinic</h1>
                     </div>
                     <p class="text-green-100 text-base leading-relaxed mb-8">
-                        Integrated clinic management — patients can book appointments  while staff manage
+                        Integrated clinic management — patients can book appointments while staff manage
                         consultations, billing, and reports.
                     </p>
                     <div class="space-y-4">
@@ -275,7 +257,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             Leyte<br>Orthopaedic Clinic</h1>
                     </div>
                     <p class="text-green-100 text-base leading-relaxed mb-8">
-                        Integrated clinic management — patients can book appointments  while staff manage
+                        Integrated clinic management — patients can book appointments while staff manage
                         consultations, billing, and reports.
                     </p>
                     <div class="space-y-4">
@@ -363,7 +345,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             Leyte<br>Orthopaedic Clinic</h1>
                     </div>
                     <p class="text-green-100 text-base leading-relaxed mb-8">
-                        Integrated clinic management — patients can book appointments  while staff manage
+                        Integrated clinic management — patients can book appointments while staff manage
                         consultations, billing, and reports.
                     </p>
                     <div class="space-y-4">
