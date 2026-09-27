@@ -2,6 +2,7 @@
 require_once '../../config/config.php';
 require_once '../../includes/auth.php';
 require_once '../../php/fetch/fetch.php';
+require_once '../../includes/audit.php';
 
 SessionManager::requireLogin();
 SessionManager::requireAnyRole(['admin', 'doctor', 'staff']);
@@ -23,6 +24,11 @@ $billingID = intval($input['billing_id']);
 $amountPaid = floatval($input['amount_paid']);
 $discountType = $input['discount_type'] ?? 'None';
 
+// AUDIT: who is performing this action.
+// NOTE: SessionManager::getUser() returns 'user_id' (lowercase), not 'UserID' —
+// this was previously read with the wrong key on the ReceivedBy field below too.
+$actorUserId = SessionManager::getUser($pdo)['user_id'] ?? null;
+
 // Server-side rate lookup — never trust a client-supplied percent
 $discountRates = [
     'None' => 0,
@@ -31,9 +37,10 @@ $discountRates = [
 ];
 $discountPercent = $discountRates[$discountType] ?? 0;
 
+// Fetch the FULL old billing row (not just a few columns) so we can audit-diff every field later
 $billing = fetchOneData(
     $pdo,
-    'SELECT BillingID, ConsultationID, PatientID, OriginalAmount, Status FROM billing WHERE BillingID = ?',
+    'SELECT * FROM billing WHERE BillingID = ?',
     [$billingID]
 );
 
@@ -89,7 +96,11 @@ try {
     );
     $updateBilling->execute([$discountType, $discountPercent, $discountAmount, $finalAmount, $billingID]);
 
-    // Record the payment (unchanged)
+    // AUDIT: log any changed billing fields (discount type/percent/amount, final amount)
+    $updatedBillingRow = fetchOneData($pdo, 'SELECT * FROM billing WHERE BillingID = ?', [$billingID]);
+    logFieldChanges($pdo, $actorUserId, 'billing', $billingID, $billing, $updatedBillingRow);
+
+    // Record the payment
     $stmt = $pdo->prepare(
         'INSERT INTO payments (BillingID, AmountPaid, ReferenceNo, PaymentDate, ReceivedBy)
          VALUES (?, ?, ?, NOW(), ?)'
@@ -98,10 +109,26 @@ try {
         $billingID,
         $amountPaid,
         null,
-        SessionManager::getUser($pdo)['UserID'] ?? null
+        $actorUserId
     ]);
 
     $paymentID = $pdo->lastInsertId();
+
+    // AUDIT: payment recorded
+    logAudit(
+        $pdo,
+        $actorUserId,
+        'CREATE',
+        'payments',
+        (int) $paymentID,
+        null,
+        null,
+        json_encode([
+            'BillingID' => $billingID,
+            'AmountPaid' => $amountPaid,
+            'ReceivedBy' => $actorUserId,
+        ])
+    );
 
     $totalAmountPaid = $amountPaid;
     $previousPayments = fetchAllData(
@@ -116,8 +143,15 @@ try {
     // Now compares against the freshly recalculated $finalAmount, not the stale 500
     $newStatus = ($totalAmountPaid >= $finalAmount) ? 'Paid' : 'Partially Paid';
 
+    $previousStatus = $billing['Status'];
+
     $updateStmt = $pdo->prepare('UPDATE billing SET Status = ? WHERE BillingID = ?');
     $updateStmt->execute([$newStatus, $billingID]);
+
+    // AUDIT: billing status change (Unpaid -> Partially Paid -> Paid)
+    if ($previousStatus !== $newStatus) {
+        logAudit($pdo, $actorUserId, 'UPDATE', 'billing', $billingID, 'Status', $previousStatus, $newStatus);
+    }
 
     // Count payments on this bill (including the one we just inserted) to build a sequence number
     $paymentCount = fetchOneData(
