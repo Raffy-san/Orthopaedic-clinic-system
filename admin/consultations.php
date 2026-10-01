@@ -88,10 +88,6 @@ $defaultConsultationFee = 500; // PHP
                                     <div class="text-xs text-slate-500 font-semibold">Last Visit</div>
                                     <div id="lastVisit" class="text-sm text-slate-900 font-medium mt-1">-</div>
                                 </div>
-                                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                                    <div class="text-xs text-slate-500 font-semibold">Allergies</div>
-                                    <div id="allergies" class="text-sm text-slate-900 font-medium mt-1">-</div>
-                                </div>
                             </div>
                         </div>
 

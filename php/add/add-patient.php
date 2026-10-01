@@ -51,7 +51,6 @@ $data = [
 	'province' => $province,
 	'city' => $city,
 	'barangay' => $barangay,
-	'allergies' => trim($_POST['allergies'] ?? ''),
 	'patientType' => $patientType
 ];
 
