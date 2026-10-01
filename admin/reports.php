@@ -248,58 +248,59 @@ function reportMoney(mixed $value): string
                         <div class="rounded-lg border border-amber-200 bg-amber-50 p-6 text-center">
                             <i class="fa-solid fa-lock text-amber-600 text-2xl mb-3"></i>
                             <h3 class="font-semibold text-gray-800">Financial summary is protected</h3>
-                            <p class="text-sm text-gray-600 mt-1">Enter your password to view billed and collected amounts and payment details.</p>
+                            <p class="text-sm text-gray-600 mt-1">Enter your password to view billed and collected amounts and
+                                payment details.</p>
                             <button type="button" id="unlockFinancialReportBtn"
                                 class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700">
                                 <i class="fa-solid fa-key"></i> Unlock Financial Summary
                             </button>
                         </div>
                     <?php else: ?>
-                    <div class="grid grid-cols-3 gap-3 mb-6">
-                        <div class="rounded-lg bg-slate-50 p-4">
-                            <p class="text-xs text-gray-500">Bills</p>
-                            <p class="text-xl font-bold text-gray-800 mt-1"><?= reportValue($reportSummary['bills'] ?? 0) ?>
-                            </p>
+                        <div class="grid grid-cols-3 gap-3 mb-6">
+                            <div class="rounded-lg bg-slate-50 p-4">
+                                <p class="text-xs text-gray-500">Bills</p>
+                                <p class="text-xl font-bold text-gray-800 mt-1"><?= reportValue($reportSummary['bills'] ?? 0) ?>
+                                </p>
+                            </div>
+                            <div class="rounded-lg bg-slate-50 p-4">
+                                <p class="text-xs text-gray-500">Billed</p>
+                                <p class="text-xl font-bold text-gray-800 mt-1">
+                                    <?= reportMoney($reportSummary['billed'] ?? 0) ?>
+                                </p>
+                            </div>
+                            <div class="rounded-lg bg-slate-50 p-4">
+                                <p class="text-xs text-gray-500">Collected</p>
+                                <p class="text-xl font-bold text-emerald-700 mt-1">
+                                    <?= reportMoney($reportSummary['collected'] ?? 0) ?>
+                                </p>
+                            </div>
                         </div>
-                        <div class="rounded-lg bg-slate-50 p-4">
-                            <p class="text-xs text-gray-500">Billed</p>
-                            <p class="text-xl font-bold text-gray-800 mt-1">
-                                <?= reportMoney($reportSummary['billed'] ?? 0) ?>
-                            </p>
-                        </div>
-                        <div class="rounded-lg bg-slate-50 p-4">
-                            <p class="text-xs text-gray-500">Collected</p>
-                            <p class="text-xl font-bold text-emerald-700 mt-1">
-                                <?= reportMoney($reportSummary['collected'] ?? 0) ?>
-                            </p>
-                        </div>
-                    </div>
-                    <?php if (empty($reportRows)): ?>
-                        <p class="text-sm text-gray-500">No payments found for this date range.</p>
-                    <?php else: ?>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-left">
-                                <thead class="text-xs uppercase text-gray-500 border-b">
-                                    <tr>
-                                        <th class="py-3">Date</th>
-                                        <th>Patient</th>
-                                        <th>Reference</th>
-                                        <th>Status</th>
-                                        <th class="text-right">Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody><?php foreach ($reportRows as $row): ?>
-                                        <tr class="border-b last:border-0">
-                                            <td class="py-3"><?= reportValue($row['PaymentDate']) ?></td>
-                                            <td><?= reportValue($row['PatientName']) ?></td>
-                                            <td><?= reportValue($row['ReferenceNo']) ?></td>
-                                            <td><?= reportValue($row['Status']) ?></td>
-                                            <td class="text-right"><?= reportMoney($row['AmountPaid']) ?></td>
-                                        </tr><?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    <?php endif; ?>
+                        <?php if (empty($reportRows)): ?>
+                            <p class="text-sm text-gray-500">No payments found for this date range.</p>
+                        <?php else: ?>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left">
+                                    <thead class="text-xs uppercase text-gray-500 border-b">
+                                        <tr>
+                                            <th class="py-3">Date</th>
+                                            <th>Patient</th>
+                                            <th>Reference</th>
+                                            <th>Status</th>
+                                            <th class="text-right">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody><?php foreach ($reportRows as $row): ?>
+                                            <tr class="border-b last:border-0">
+                                                <td class="py-3"><?= reportValue($row['PaymentDate']) ?></td>
+                                                <td><?= reportValue($row['PatientName']) ?></td>
+                                                <td><?= reportValue($row['ReferenceNo']) ?></td>
+                                                <td><?= reportValue($row['Status']) ?></td>
+                                                <td class="text-right"><?= reportMoney($row['AmountPaid']) ?></td>
+                                            </tr><?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <?php endif; ?>
                     <?php endif; ?>
                 <?php else: ?>
                     <?php if (empty($reportRows)): ?>
@@ -312,10 +313,7 @@ function reportMoney(mixed $value): string
                                         <?php if ($reportType === 'patients'): ?>
                                             <th class="py-3">Patient ID</th>
                                             <th>Name</th>
-                                            <th>Birth Date</th>
-                                            <th>Gender</th>
-                                            <th>Type</th>
-                                            <th>Phone</th>
+                                            <th>Action</th>
                                         <?php elseif ($reportType === 'appointments'): ?>
                                             <th class="py-3">Date</th>
                                             <th>Patient</th>
@@ -336,10 +334,13 @@ function reportMoney(mixed $value): string
                                             <?php if ($reportType === 'patients'): ?>
                                                 <td class="py-3"><?= reportValue($row['PatientCode']) ?></td>
                                                 <td><?= reportValue($row['PatientName']) ?></td>
-                                                <td><?= reportValue($row['BirthDate']) ?></td>
-                                                <td><?= reportValue($row['Gender']) ?></td>
-                                                <td><?= reportValue($row['PatientType']) ?></td>
-                                                <td><?= reportValue($row['Phone']) ?></td>
+                                                <td>
+                                                    <button type="button"
+                                                        class="view-patient-report-btn bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800"
+                                                        data-patient-code="<?= reportValue($row['PatientCode']) ?>">
+                                                        View Report
+                                                    </button>
+                                                </td>
                                             <?php elseif ($reportType === 'appointments'): ?>
                                                 <td class="py-3">
                                                     <?= reportValue($row['AppointmentDate'] . ' ' . $row['AppointmentTime']) ?>
@@ -386,6 +387,33 @@ function reportMoney(mixed $value): string
             .print-hidden {
                 display: none !important;
             }
+
+            body.printing-patient-report * {
+                visibility: hidden !important;
+            }
+
+            body.printing-patient-report #patientRecordModal,
+            body.printing-patient-report #patientRecordModal * {
+                visibility: visible !important;
+            }
+
+            body.printing-patient-report #patientRecordModal {
+                display: block !important;
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                padding: 0;
+                background: #fff !important;
+            }
+
+            body.printing-patient-report #patientReportPrintArea {
+                width: 100%;
+                max-width: none;
+                max-height: none;
+                overflow: visible;
+                padding: 0;
+                box-shadow: none;
+            }
         }
     </style>
 
@@ -406,6 +434,12 @@ function reportMoney(mixed $value): string
                     class="px-3 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg">Unlock</button>
             </div>
         </div>
+    </div>
+
+    <div id="patientRecordModal"
+        class="modal hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-[9999] px-2 sm:px-0"
+        style="background-color: rgba(0,0,0,0.4);">
+
     </div>
 
     <script>

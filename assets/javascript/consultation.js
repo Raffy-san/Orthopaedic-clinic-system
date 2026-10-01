@@ -108,7 +108,6 @@ async function loadPatientData(appointmentData) {
     document.getElementById('patientInfo').textContent = appointmentData.PatientCode + ' - ' + (appointmentData.PatientID ? 'Existing Patient' : 'New Patient');
     document.getElementById('chiefComplaint').textContent = appointmentData.ChiefComplaint || 'Not recorded';
     document.getElementById('lastVisit').textContent = appointmentData.LastVisitDate ? new Date(appointmentData.LastVisitDate).toLocaleDateString() : 'First visit';
-    document.getElementById('allergies').textContent = appointmentData.Allergies || 'None recorded';
 
     document.getElementById('appointmentID').value = appointmentData.AppointmentID;
     document.getElementById('patientID').value = appointmentData.PatientID;
