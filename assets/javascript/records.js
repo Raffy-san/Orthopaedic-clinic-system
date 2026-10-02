@@ -166,19 +166,120 @@ function loadPatientRecords(consultationHistory, currentConsultationId, recordSu
     historyList.innerHTML = consultationHistory.map(c => `
         <div class="flex gap-3">
             <span class="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full ${c.ConsultationID == currentConsultationId ? 'bg-blue-600' : 'bg-slate-300'}"></span>
-            <div>
+            <div class="flex-1">
                 <p class="text-xs text-slate-400">${formatDate(c.ConsultationDate)} · Dr. ${c.DoctorName ?? ''}</p>
                 <p class="font-medium text-slate-800">${c.Diagnosis}</p>
-                ${c.ConsultationID == currentConsultationId ? '<a href="#" class="text-xs text-blue-600">← Current visit</a>' : ''}
+                <div class="flex items-center gap-3 mt-1">
+                    ${c.ConsultationID == currentConsultationId ? '<a href="#" class="text-xs text-blue-600">← Current visit</a>' : ''}
+                    <button type="button" class="issue-cert-btn text-xs font-semibold text-emerald-700 hover:text-emerald-800"
+                        data-consultation-id="${c.ConsultationID}" data-diagnosis="${escapeAttr(c.Diagnosis)}">
+                        <i class="fa-solid fa-file-medical"></i> Issue Certificate
+                    </button>
+                </div>
             </div>
         </div>
     `).join('');
+
+    document.querySelectorAll('.issue-cert-btn').forEach(btn => {
+        btn.addEventListener('click', () => openCertificateModal({
+            patientCode: document.getElementById('patientCode').textContent,
+            consultationId: btn.dataset.consultationId,
+            diagnosis: btn.dataset.diagnosis,
+        }));
+    });
 
     document.getElementById('patientRecordsContainer').classList.remove('hidden');
     document.getElementById('prescribedMedicinesContainer').classList.remove('hidden');
     document.getElementById('diagnosisHistoryContainer').classList.remove('hidden');
     document.getElementById('noRecordsContainer').classList.add('hidden');
 }
+
+function escapeAttr(value) {
+    const div = document.createElement('div');
+    div.textContent = value ?? '';
+    return div.innerHTML.replace(/"/g, '&quot;');
+}
+
+// --- Issue Medical Certificate modal (shared logic, also usable from the Consultation page) ---
+function openCertificateModal({ patientCode, consultationId, diagnosis }) {
+    const modal = document.getElementById('certificateModal');
+    if (!modal) {
+        console.warn('certificateModal not found on this page.');
+        return;
+    }
+
+    document.getElementById('certPatientCode').value = patientCode;
+    document.getElementById('certConsultationId').value = consultationId || '';
+    document.getElementById('certDiagnosis').value = diagnosis || '';
+    document.getElementById('certRemarks').value = '';
+    document.getElementById('certModalError')?.classList.add('hidden');
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeCertificateModal() {
+    const modal = document.getElementById('certificateModal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const closeBtn = document.getElementById('closeCertModalBtn');
+    const confirmBtn = document.getElementById('confirmGenerateCertBtn');
+    const errorEl = document.getElementById('certModalError');
+
+    if (closeBtn) closeBtn.addEventListener('click', closeCertificateModal);
+
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', async () => {
+            const patientCode = document.getElementById('certPatientCode').value;
+            const consultationId = document.getElementById('certConsultationId').value;
+            const diagnosis = document.getElementById('certDiagnosis').value.trim();
+            const remarks = document.getElementById('certRemarks').value.trim();
+
+            if (!diagnosis) {
+                errorEl.textContent = 'Diagnosis is required.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Generating...';
+
+            try {
+                const res = await fetch('../php/add/generate-medical-certificate.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        patient_code: patientCode,
+                        consultation_id: consultationId || null,
+                        diagnosis,
+                        remarks,
+                        csrf_token: window.csrfToken
+                    })
+                });
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    if (data.csrf_token) window.csrfToken = data.csrf_token;
+                    closeCertificateModal();
+                    window.open('../php/fetch/' + data.download_url, '_blank');
+                } else {
+                    errorEl.textContent = data.message || 'Unable to generate the certificate.';
+                    errorEl.classList.remove('hidden');
+                }
+            } catch (err) {
+                errorEl.textContent = 'Something went wrong. Please try again.';
+                errorEl.classList.remove('hidden');
+            } finally {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Generate & Print';
+            }
+        });
+    }
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     loadRecordsList();

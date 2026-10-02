@@ -167,6 +167,45 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
             </div>
         </div>
     </section>
+
+    <!-- Issue Medical Certificate modal (shared markup — records.js wires this up) -->
+    <div id="certificateModal"
+        class="modal hidden fixed inset-0 bg-black bg-opacity-40 items-center justify-center z-50"
+        style="background-color: rgba(0,0,0,0.4);">
+        <div class="bg-white rounded-2xl shadow-lg w-full max-w-md p-6">
+            <h3 class="text-lg font-semibold text-slate-900 mb-1">Issue Medical Certificate</h3>
+            <p class="text-sm text-slate-500 mb-4">Confirm the details below before generating the PDF.</p>
+
+            <input type="hidden" id="certPatientCode">
+            <input type="hidden" id="certConsultationId">
+
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-1 text-sm">Diagnosis</label>
+                <textarea id="certDiagnosis" rows="2"
+                    class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-1 text-sm">Remarks (optional)</label>
+                <textarea id="certRemarks" rows="2" placeholder="e.g. advised 3 days rest"
+                    class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+            </div>
+
+            <p id="certModalError" class="text-xs text-red-600 mb-3 hidden"></p>
+
+            <div class="flex w-full gap-2">
+                <button type="button" id="closeCertModalBtn"
+                    class="w-full px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 text-sm">Cancel</button>
+                <button type="button" id="confirmGenerateCertBtn"
+                    class="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-semibold">
+                    Generate & Print
+                </button>
+            </div>
+        </div>
+    </div>
+    <script>
+        window.csrfToken = <?= json_encode($csrfToken, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+    </script>
     <script src="../assets/javascript/records.js"></script>
 </body>
 
