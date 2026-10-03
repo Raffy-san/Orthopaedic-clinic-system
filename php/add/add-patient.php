@@ -51,7 +51,8 @@ $data = [
 	'province' => $province,
 	'city' => $city,
 	'barangay' => $barangay,
-	'patientType' => $patientType
+	'patientType' => $patientType,
+	'idNumber' => trim($_POST['id_number'] ?? '')
 ];
 
 if ($data['firstName'] === '' || $data['lastName'] === '' || $data['birthDate'] === '') {

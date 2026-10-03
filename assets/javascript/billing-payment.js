@@ -152,8 +152,8 @@
                 document.getElementById('amount-paid').focus();
             }
 
-            // Configure discount buttons based on patient eligibility
-            setupDiscountEligibility(data.patient.PatientType, data.billing.Status === 'Paid');
+            // The registered patient type determines the discount; no billing-page selection is needed.
+            applyRegisteredDiscount(data.patient.PatientType);
         } catch (error) {
             console.error('Error:', error);
             showMessage('Error', 'Error loading consultation data. Please try again.', 'error');
@@ -163,45 +163,15 @@
         }
     });
 
-    // Preselect the discount that matches the patient's registered type.
-    function setupDiscountEligibility(patientType, isPaid = false) {
-        const discountBtns = document.querySelectorAll('.discount-btn');
-        discountBtns.forEach(btn => {
-            btn.disabled = isPaid;
-            btn.style.opacity = isPaid ? '0.6' : '1';
-            btn.style.cursor = isPaid ? 'not-allowed' : 'pointer';
-        });
-
+    function applyRegisteredDiscount(patientType) {
         const normalizedPatientType = (patientType || 'Regular').trim().toLowerCase();
         const discountType = normalizedPatientType === 'senior citizen'
             ? 'Senior Citizen'
             : normalizedPatientType === 'pwd' ? 'PWD' : 'None';
-        const matchingButton = document.querySelector(`[data-discount="${discountType}"]`);
-
-        if (matchingButton) {
-            applyDiscount(matchingButton);
-        }
-    }
-
-    // Discount button handlers - staff selects appropriate discount
-    document.querySelectorAll('.discount-btn').forEach(btn => {
-        btn.addEventListener('click', function () {
-            applyDiscount(this);
-        });
-    });
-
-    function applyDiscount(btn) {
-        const discountType = btn.dataset.discount;
-        const discountPercent = parseFloat(btn.dataset.percent) || 0;
-
-        document.querySelectorAll('.discount-btn').forEach(b => {
-            b.classList.remove('bg-blue-100', 'border-blue-500', 'text-blue-700');
-            b.classList.add('border-slate-200', 'text-slate-600');
-        });
-        btn.classList.add('bg-blue-100', 'border-blue-500', 'text-blue-700');
+        const discountPercent = discountType === 'None' ? 0 : 20;
 
         const originalAmount = parseFloat(currentBillingData.OriginalAmount) || 0;
-        const discountAmount = (originalAmount * discountPercent) / 100;
+        const discountAmount = Math.round((originalAmount * discountPercent / 100) * 100) / 100;
         const finalAmount = originalAmount - discountAmount;
         const totalPaidSoFar = parseFloat(currentBillingData.TotalPaid) || 0;
         const remainingBalance = Math.max(0, finalAmount - totalPaidSoFar);
@@ -219,14 +189,16 @@
         document.getElementById('total-due').innerText = '₱' + finalAmount.toFixed(2);
 
         const balanceRow = document.getElementById('balance-remaining-row');
-        if (totalPaidSoFar > 0) {
+        if (currentBillingData.Status === 'Partially Paid') {
             document.getElementById('balance-remaining').innerText = '₱' + remainingBalance.toFixed(2);
             balanceRow.classList.remove('hidden');
         } else {
             balanceRow.classList.add('hidden');
         }
 
-        document.getElementById('amount-paid').value = remainingBalance.toFixed(2);
+        if (currentBillingData.Status !== 'Paid') {
+            document.getElementById('amount-paid').value = remainingBalance.toFixed(2);
+        }
     }
 
     // Record payment handler
@@ -251,7 +223,6 @@
                 body: JSON.stringify({
                     billing_id: currentBillingData.BillingID,
                     amount_paid: amountPaid,
-                    discount_type: currentBillingData.DiscountType,
                     csrf_token: csrfToken
                 })
             });

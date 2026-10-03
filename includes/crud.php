@@ -19,8 +19,8 @@ function addPatient(PDO $pdo, array $data, ?int $actorUserId = null): array
 
         $stmt = $pdo->prepare(
             'INSERT INTO patients
-     (PatientCode, FirstName, MiddleName, LastName, BirthDate, Gender, Phone, PatientType, Address, Province, City, Barangay)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+     (PatientCode, FirstName, MiddleName, LastName, BirthDate, Gender, Phone, PatientType, IdNumber, Address, Province, City, Barangay)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $patientCode,
@@ -31,6 +31,7 @@ function addPatient(PDO $pdo, array $data, ?int $actorUserId = null): array
             $data['gender'],
             $data['phone'] ?: null,
             $data['patientType'] ?: 'Regular',
+            $data['idNumber'] ?: null,
             $data['address'] ?: null,
             $data['province'] ?: null,
             $data['city'] ?: null,
@@ -55,6 +56,7 @@ function addPatient(PDO $pdo, array $data, ?int $actorUserId = null): array
                 'BirthDate' => $data['birthDate'],
                 'Gender' => $data['gender'],
                 'PatientType' => $data['patientType'] ?: 'Regular',
+                'IdNumber' => $data['idNumber'] ?: null
             ])
         );
 
