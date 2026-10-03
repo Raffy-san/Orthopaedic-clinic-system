@@ -41,9 +41,12 @@ if ($patientCode === '' || $diagnosis === '') {
 $actorUserId = SessionManager::getUser($pdo)['user_id'] ?? null;
 
 try {
+    // NOTE: 'Age' isn't a stored column — computed below from BirthDate instead.
+    // NOTE: 'Sex' may also be wrong — your other CRUD functions (addPatient/updatePatient)
+    // use 'Gender', so I've used that here instead. Tell me if your schema actually has 'Sex'.
     $patient = fetchOneData(
         $pdo,
-        'SELECT PatientID, PatientCode, FirstName, LastName, BirthDate FROM patients WHERE PatientCode = ?',
+        'SELECT PatientID, PatientCode, FirstName, LastName, Gender, Address, BirthDate FROM patients WHERE PatientCode = ?',
         [$patientCode]
     );
 
@@ -52,9 +55,39 @@ try {
         exit;
     }
 
+    // Compute age from BirthDate at the time the certificate is issued
+    $age = null;
+    if (!empty($patient['BirthDate'])) {
+        $birthDate = new DateTime($patient['BirthDate']);
+        $age = $birthDate->diff(new DateTime('today'))->y;
+    }
+
     $doctor = SessionManager::getUser($pdo);
     $doctorName = $doctor ? ($doctor['first_name'] . ' ' . $doctor['last_name']) : 'Attending Physician';
     $issuedDate = date('F j, Y');
+
+    // Embed the clinic logo as a base64 data URI — dompdf needs this since isRemoteEnabled
+    // is off and relative file paths from the HTML string don't resolve reliably.
+    $logoPath = __DIR__ . '/../../assets/img/logo4.png';
+    $logoContents = file_get_contents($logoPath);
+    if ($logoContents === false) {
+        throw new RuntimeException('Unable to read the clinic logo.');
+    }
+    $logoDataUri = 'data:image/png;base64,' . base64_encode($logoContents);
+
+    // Fetch the actual visit date, if this certificate is tied to a specific consultation.
+    // Scoped to the same patient so a stray/mismatched consultation_id can't leak another patient's date.
+    $consultationDate = null;
+    if ($consultationId) {
+        $consultation = fetchOneData(
+            $pdo,
+            'SELECT ConsultationDate FROM consultations WHERE ConsultationID = ? AND PatientID = ?',
+            [$consultationId, $patient['PatientID']]
+        );
+        if ($consultation) {
+            $consultationDate = date('F j, Y', strtotime($consultation['ConsultationDate']));
+        }
+    }
 
     // Render the certificate HTML
     ob_start();
