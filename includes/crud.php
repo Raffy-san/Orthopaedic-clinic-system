@@ -493,14 +493,14 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
  */
 function updatePatient(PDO $pdo, array $data, ?int $actorUserId = null): array
 {
+    if (empty($data['patient_code'] ?? '')) {
+        return ['status' => 'error', 'message' => 'Patient code is required.'];
+    }
+
     try {
         $pdo->beginTransaction();
 
-        if (empty($data['patient_code'] ?? '')) {
-            return ['status' => 'error', 'message' => 'Patient code is required.'];
-        }
-
-        // Fetch full old rows BEFORE updating, so we can diff afterwards
+        // Fetch the full old row BEFORE updating, so we can diff afterwards
         $stmt = $pdo->prepare('SELECT * FROM patients WHERE PatientCode = ?');
         $stmt->execute([$data['patient_code']]);
         $oldPatientRow = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -510,29 +510,17 @@ function updatePatient(PDO $pdo, array $data, ?int $actorUserId = null): array
             return ['status' => 'error', 'message' => 'Patient not found.'];
         }
 
-        $userID = $oldPatientRow['UserID'];
         $patientId = (int) $oldPatientRow['PatientID'];
 
-        $stmt = $pdo->prepare('SELECT * FROM users WHERE UserID = ?');
-        $stmt->execute([$userID]);
-        $oldUserRow = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        $patientType = $data['patientType'] ?? 'Regular';
+        $rawId = $data['idNumber'] ?? $data['id_number'] ?? null;
+        $idNumber = $patientType === 'Regular' ? null : ($rawId !== '' ? $rawId : null);
 
         $stmt = $pdo->prepare(
-            'UPDATE users 
-             SET FirstName = ?, LastName = ?, Phone = ?
-             WHERE UserID = ?'
-        );
-        $stmt->execute([
-            $data['firstName'] ?? '',
-            $data['lastName'] ?? '',
-            $data['phone'] ?? null,
-            $userID
-        ]);
-
-        $stmt = $pdo->prepare(
-            'UPDATE patients 
-     SET FirstName = ?, MiddleName = ?, LastName = ?, BirthDate = ?, Gender = ?, Phone = ?, PatientType = ?, Address = ?, Province = ?, City = ?, Barangay = ?, Allergies = ?
-     WHERE PatientCode = ?'
+            'UPDATE patients
+             SET FirstName = ?, MiddleName = ?, LastName = ?, BirthDate = ?, Gender = ?, Phone = ?,
+                 PatientType = ?, IdNumber = ?, Address = ?, Province = ?, City = ?, Barangay = ?
+             WHERE PatientCode = ?'
         );
         $stmt->execute([
             $data['firstName'] ?? '',
@@ -540,28 +528,21 @@ function updatePatient(PDO $pdo, array $data, ?int $actorUserId = null): array
             $data['lastName'] ?? '',
             $data['birthDate'] ?? '',
             $data['gender'] ?? '',
-            $data['phone'] ?? null,
-            $data['patientType'] ?? 'Regular',
+            $data['phone'] ?: null,
+            $patientType,
+            $idNumber ?: null,
             $data['address'] ?? null,
             $data['province'] ?? null,
             $data['city'] ?? null,
             $data['barangay'] ?? null,
-            $data['allergies'] ?? null,
             $data['patient_code']
         ]);
 
-        // AUDIT: fetch the new rows and log per-field differences
+        // AUDIT: fetch the new row and log per-field differences
         $stmt = $pdo->prepare('SELECT * FROM patients WHERE PatientCode = ?');
         $stmt->execute([$data['patient_code']]);
         $newPatientRow = $stmt->fetch(PDO::FETCH_ASSOC);
         logFieldChanges($pdo, $actorUserId, 'patients', $patientId, $oldPatientRow, $newPatientRow);
-
-        if (!empty($oldUserRow)) {
-            $stmt = $pdo->prepare('SELECT * FROM users WHERE UserID = ?');
-            $stmt->execute([$userID]);
-            $newUserRow = $stmt->fetch(PDO::FETCH_ASSOC);
-            logFieldChanges($pdo, $actorUserId, 'users', (int) $userID, $oldUserRow, $newUserRow);
-        }
 
         $pdo->commit();
         return ['status' => 'success', 'message' => 'Patient information updated successfully.'];

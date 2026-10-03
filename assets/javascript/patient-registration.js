@@ -398,7 +398,7 @@ step2Content.addEventListener('submit', (event) => {
             barangay: formData.get('barangay'),
             gender: formData.get('gender'),
             patientType: formData.get('patientType'),
-            id_number: formData.get('id_number') || null
+            idNumber: formData.get('idNumber') || null
         };
 
         fetch('../php/update/update-existing-patient.php', {
@@ -533,7 +533,7 @@ function validateExistingPatient() {
                     </div>
                     <div id="editIdNumberContainer" class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5 hidden">
                         <label class="text-[11px] text-slate-600">ID Number</label>
-                        <input id="editIdNumberInput" name="id_number" type="number" value="${patient.IdNumber || ''}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter ID number">
+                        <input id="editIdNumberInput" name="idNumber" type="number" value="${patient.IdNumber || ''}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter ID number">
                     </div>
                 </form>
             `;
