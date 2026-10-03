@@ -22,7 +22,6 @@ if (!isset($input['billing_id']) || !isset($input['amount_paid'])) {
 
 $billingID = intval($input['billing_id']);
 $amountPaid = floatval($input['amount_paid']);
-$discountType = $input['discount_type'] ?? 'None';
 
 // AUDIT: who is performing this action.
 // NOTE: SessionManager::getUser() returns 'user_id' (lowercase), not 'UserID' —
@@ -57,14 +56,7 @@ $requiredDiscountType = match (strtolower($patientType)) {
     'pwd' => 'PWD',
     default => 'None',
 };
-
-if ($discountType !== $requiredDiscountType) {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Wrong discount type. This patient is registered as ' . $patientType . ' and must use ' . $requiredDiscountType . '.'
-    ]);
-    exit;
-}
+$discountType = $requiredDiscountType;
 
 $originalAmount = floatval($billing['OriginalAmount']);
 $discountAmount = round($originalAmount * $discountPercent / 100, 2);

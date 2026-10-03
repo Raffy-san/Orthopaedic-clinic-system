@@ -127,18 +127,6 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                             <dd id="consult-prescription" class="text-xs space-y-2">—</dd>
                         </div>
                     </dl>
-
-                    <div class="mt-4">
-                        <label class="text-slate-500 text-sm">Discount Eligibility</label>
-                        <div class="mt-2 flex gap-2">
-                            <button class="discount-btn px-3 py-1 rounded-lg border text-slate-600 text-sm"
-                                data-discount="None" data-percent="0">None</button>
-                            <button class="discount-btn px-3 py-1 rounded-lg border text-slate-600 text-sm"
-                                data-discount="Senior Citizen" data-percent="20">Senior Citizen (20%)</button>
-                            <button class="discount-btn px-3 py-1 rounded-lg border text-slate-600 text-sm"
-                                data-discount="PWD" data-percent="20">PWD (20%)</button>
-                        </div>
-                    </div>
                 </div>
             </div>
 

@@ -172,7 +172,7 @@ function renderRoleButton(string $role, string $label, string $desc, string $ico
 
         /* ---------- Left: brand ---------- */
         .brand { flex: 1 1 0; max-width: 520px; text-align: center; }
-        .brand-logo { width: 190px; height: 190px; object-fit: contain; border-radius: 50%; margin: 0 auto .25rem; display: block; }
+        .brand-logo { width: 150px; height: 150px; object-fit: contain; border-radius: 50%; margin: 0 auto .25rem; display: block; }
         .brand-name {
             margin: 0 0 1.75rem;
             font-size: 1.85rem; line-height: 1.15; font-weight: 800; letter-spacing: .06em;

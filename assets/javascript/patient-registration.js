@@ -110,6 +110,23 @@ function wireEditAddressDropdowns(savedAddress) {
     });
 }
 
+function wireIdNumberToggle(typeSelectId, containerId, inputId) {
+    const typeSelect = document.getElementById(typeSelectId);
+    const container = document.getElementById(containerId);
+    const input = document.getElementById(inputId);
+    if (!typeSelect || !container || !input) return;
+
+    const sync = () => {
+        const needsId = typeSelect.value !== 'Regular';
+        container.classList.toggle('hidden', !needsId);
+        input.required = needsId;
+        if (!needsId) input.value = '';
+    };
+
+    typeSelect.addEventListener('change', sync);
+    sync();
+}
+
 function setProgressActive(element) {
     element.classList.remove('bg-slate-200', 'text-slate-500');
     element.classList.add('bg-blue-600', 'text-white');
@@ -256,16 +273,21 @@ function setActivePatientType(type) {
                         </div>     
                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
                             <label class="text-[11px] text-slate-600">Patient Type</label>
-                            <select name="patientType" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
+                            <select id="newPatientTypeSelect" name="patientType" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
                                 <option value="Regular">Regular</option>
-                                <option value="Senior Citizen">Senior Citizen</option>
-                                <option value="PWD">PWD</option>
+                                <option value="Senior Citizen" id="seniorCitizenOption">Senior Citizen</option>
+                                <option value="PWD" id="pwdOption">PWD</option>
                             </select>
+                        </div>
+                        <div id="idNumberContainer" class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5 hidden">
+                            <label class="text-[11px] text-slate-600">ID Number</label>
+                            <input id="newIdNumberInput" name="id_number" type="number" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter ID number">
                         </div>
                     </form>
                 `;
         saveRecordBtn.disabled = false;
         wireAddressDropdowns();
+        wireIdNumberToggle('newPatientTypeSelect', 'idNumberContainer', 'newIdNumberInput');
     } else {
         existingPatientBtn.classList.add('border-blue-500', 'bg-blue-50', 'text-blue-700');
         newPatientBtn.classList.remove('border-blue-500', 'bg-blue-50', 'text-blue-700');
@@ -369,13 +391,14 @@ step2Content.addEventListener('submit', (event) => {
             firstName: formData.get('firstName'),
             middleName: formData.get('middleName'),
             lastName: formData.get('lastName'),
-            birthDate: formData.get('birthDate'),   
+            birthDate: formData.get('birthDate'),
             phone: formData.get('phone'),
             province: formData.get('province'),
             city: formData.get('city'),
             barangay: formData.get('barangay'),
             gender: formData.get('gender'),
-            patientType: formData.get('patientType')
+            patientType: formData.get('patientType'),
+            id_number: formData.get('id_number') || null
         };
 
         fetch('../php/update/update-existing-patient.php', {
@@ -502,11 +525,15 @@ function validateExistingPatient() {
                     </div>
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
                         <label class="text-[11px] text-slate-600">Patient Type</label>
-                        <select name="patientType" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
+                        <select id="editPatientTypeSelect" name="patientType" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
                             <option value="Regular" ${patient.PatientType === 'Regular' ? 'selected' : ''}>Regular</option>
                             <option value="Senior Citizen" ${patient.PatientType === 'Senior Citizen' ? 'selected' : ''}>Senior Citizen</option>
                             <option value="PWD" ${patient.PatientType === 'PWD' ? 'selected' : ''}>PWD</option>
                         </select>
+                    </div>
+                    <div id="editIdNumberContainer" class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5 hidden">
+                        <label class="text-[11px] text-slate-600">ID Number</label>
+                        <input id="editIdNumberInput" name="id_number" type="number" value="${patient.IdNumber || ''}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter ID number">
                     </div>
                 </form>
             `;
@@ -515,6 +542,7 @@ function validateExistingPatient() {
             saveRecordBtn.textContent = 'Save & Update Record';
 
             wireEditAddressDropdowns(patient.Address);
+            wireIdNumberToggle('editPatientTypeSelect', 'editIdNumberContainer', 'editIdNumberInput');
             bindNameInputs();
             activateEnterInfoStep();
         })

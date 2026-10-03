@@ -170,7 +170,7 @@
 <body>
     <div class="header">
         <img src="<?= htmlspecialchars($logoDataUri, ENT_QUOTES, 'UTF-8') ?>" alt="Clinic Logo">
-        <h1>DR. THIAM TIU FOOKSON, DPBO, FPOA</h1>
+        <h1>DR. THYAM TIU FOOKSON, DPBO, FPOA</h1>
         <span>ORTHOPAEDIC SURGEON</span>
         <p>Fracture - Bone, Muscle, Joint Disease - Diabetic Limb - Sports Injuries</p>
 
