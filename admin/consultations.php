@@ -16,6 +16,7 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
 
 // Set default consultation fee
 $defaultConsultationFee = 500; // PHP
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -206,6 +207,15 @@ $defaultConsultationFee = 500; // PHP
                                     <label class="text-sm font-semibold text-slate-700">Duration</label>
                                     <div class="duration-chips flex flex-wrap gap-2 mt-2"></div>
                                     <input type="hidden" class="rx-duration">
+                                </div>
+
+
+                                <div class="mt-4">
+                                    <label class="text-xs text-slate-600">Quantity</label>
+                                    <input type="number" min="1" step="1"
+                                        class="rx-quantity mt-1 w-full rounded-xl border border-slate-200 px-2.5 py-1.5 text-xs"
+                                        placeholder="e.g. 21">
+                                    <div class="quantity-chips flex flex-wrap gap-2 mt-2"></div>
                                 </div>
 
                                 <div class="mt-4">

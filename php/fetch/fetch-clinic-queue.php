@@ -20,6 +20,7 @@ try {
             p.PatientCode,
             p.FirstName,
             p.LastName,
+            p.BirthDate,
             p.Gender,
             p.Allergies,
             p.BloodType,

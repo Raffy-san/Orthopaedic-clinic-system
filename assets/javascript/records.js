@@ -159,6 +159,7 @@ function loadPatientRecords(consultationHistory, currentConsultationId, recordSu
             <td class="py-2">${m.Dosage}</td>
             <td class="py-2">${m.Frequency}</td>
             <td class="py-2">${m.Duration}</td>
+            <td class="py-2">${m.Quantity}</td>
         </tr>
     `).join('');
 

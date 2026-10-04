@@ -308,16 +308,19 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
 
         if (($data['has_prescription'] ?? false) && !empty($data['prescriptions']) && is_array($data['prescriptions'])) {
             $rxStmt = $pdo->prepare("
-                INSERT INTO prescriptions (ConsultationID, Medicine, Dosage, Frequency, Duration, Instructions)
-                VALUES (:consultation_id, :medicine, :dosage, :frequency, :duration, :instructions)
+                INSERT INTO prescriptions (ConsultationID, Medicine, Dosage, Frequency, Duration, Quantity, Instructions)
+                VALUES (:consultation_id, :medicine, :dosage, :frequency, :duration, :quantity, :instructions)
             ");
             foreach ($data['prescriptions'] as $rx) {
+                $quantity = max(1, intval($rx['quantity'] ?? 1));
+
                 $rxStmt->execute([
                     ':consultation_id' => $consultationID,
                     ':medicine' => $rx['medicine'] ?? '',
                     ':dosage' => $rx['dosage'] ?? '',
                     ':frequency' => $rx['frequency'] ?? '',
                     ':duration' => $rx['duration'] ?? '',
+                    ':quantity' => $quantity,
                     ':instructions' => $rx['instructions'] ?? ''
                 ]);
 
