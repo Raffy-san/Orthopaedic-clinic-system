@@ -101,7 +101,7 @@
                 data.prescriptions.forEach(rx => {
                     prescText += `<div class="mb-2 p-2 bg-blue-50 rounded">
                                     <strong>${rx.Medicine}</strong><br/>
-                                    ${rx.Dosage} · ${rx.Frequency}${rx.Duration ? ' · ' + rx.Duration : ''}
+                                    ${rx.Dosage} · ${rx.Frequency}${rx.Duration ? ' · ' + rx.Duration : ''} · ${rx.Quantity}
                                     ${rx.Instructions ? '<br/><em>' + rx.Instructions + '</em>' : ''}
                                 </div>`;
                 });

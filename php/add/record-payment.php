@@ -4,6 +4,10 @@ require_once '../../includes/auth.php';
 require_once '../../php/fetch/fetch.php';
 require_once '../../includes/audit.php';
 
+// Never print PHP warnings/errors into the response; they would break the JSON.
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
+
 SessionManager::requireLogin();
 SessionManager::requireAnyRole(['admin', 'doctor', 'staff']);
 header('Content-Type: application/json');
@@ -13,65 +17,75 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['status' => 'error', 'message' => 'Invalid request method.']);
     exit;
 }
+
 $input = json_decode(file_get_contents('php://input'), true);
 
-if (!isset($input['billing_id']) || !isset($input['amount_paid'])) {
+if (!is_array($input) || !isset($input['billing_id']) || !isset($input['amount_paid'])) {
     echo json_encode(['status' => 'error', 'message' => 'Missing required fields.']);
     exit;
 }
 
 $billingID = intval($input['billing_id']);
-$amountPaid = floatval($input['amount_paid']);
+$amountPaid = round(floatval($input['amount_paid']), 2);
 
-// AUDIT: who is performing this action.
-// NOTE: SessionManager::getUser() returns 'user_id' (lowercase), not 'UserID' —
-// this was previously read with the wrong key on the ReceivedBy field below too.
-$actorUserId = SessionManager::getUser($pdo)['user_id'] ?? null;
-
-// Server-side rate lookup — never trust a client-supplied percent
-$discountRates = [
-    'None' => 0,
-    'Senior Citizen' => 20,
-    'PWD' => 20,
-];
-$discountPercent = $discountRates[$discountType] ?? 0;
-
-// Fetch the FULL old billing row (not just a few columns) so we can audit-diff every field later
-$billing = fetchOneData(
-    $pdo,
-    'SELECT * FROM billing WHERE BillingID = ?',
-    [$billingID]
-);
-
-if (!$billing) {
-    echo json_encode(['status' => 'error', 'message' => 'Billing record not found.']);
+if ($billingID <= 0 || $amountPaid <= 0) {
+    echo json_encode(['status' => 'error', 'message' => 'Please enter a valid amount.']);
     exit;
 }
 
-$patient = fetchOneData($pdo, 'SELECT PatientType FROM patients WHERE PatientID = ?', [$billing['PatientID']]);
-
-$patientType = trim((string) ($patient['PatientType'] ?? 'Regular'));
-$requiredDiscountType = match (strtolower($patientType)) {
-    'senior citizen' => 'Senior Citizen',
-    'pwd' => 'PWD',
-    default => 'None',
-};
-$discountType = $requiredDiscountType;
-
-$originalAmount = floatval($billing['OriginalAmount']);
-$discountAmount = round($originalAmount * $discountPercent / 100, 2);
-$finalAmount = $originalAmount - $discountAmount;
+// AUDIT: who is performing this action (getUser() returns 'user_id', lowercase)
+$actorUserId = SessionManager::getUser($pdo)['user_id'] ?? null;
 
 try {
     $pdo->beginTransaction();
 
-    $paidSummary = fetchOneData(
-        $pdo,
-        'SELECT COALESCE(SUM(AmountPaid), 0) AS TotalPaid FROM payments WHERE BillingID = ?',
-        [$billingID]
-    );
-    $totalPaidBeforePayment = (float) ($paidSummary['TotalPaid'] ?? 0);
-    $remainingBalance = max(0, $finalAmount - $totalPaidBeforePayment);
+    // Lock the billing row so two simultaneous payments can't both pass the balance check.
+    // Fetch the FULL row so we can audit-diff every field later.
+    $stmt = $pdo->prepare('SELECT * FROM billing WHERE BillingID = ? FOR UPDATE');
+    $stmt->execute([$billingID]);
+    $billing = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$billing) {
+        $pdo->rollBack();
+        echo json_encode(['status' => 'error', 'message' => 'Billing record not found.']);
+        exit;
+    }
+
+    if ($billing['Status'] === 'Paid') {
+        $pdo->rollBack();
+        echo json_encode(['status' => 'error', 'message' => 'This bill has already been fully paid.']);
+        exit;
+    }
+
+    // Determine the discount from the patient's registered type (never trust the client)
+    $stmt = $pdo->prepare('SELECT PatientType FROM patients WHERE PatientID = ?');
+    $stmt->execute([$billing['PatientID']]);
+    $patient = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    $patientType = trim((string) ($patient['PatientType'] ?? 'Regular'));
+    $discountType = match (strtolower($patientType)) {
+        'senior citizen' => 'Senior Citizen',
+        'pwd' => 'PWD',
+        default => 'None',
+    };
+
+    // $discountType is now defined BEFORE the rate lookup (this was the original bug)
+    $discountRates = [
+        'None' => 0,
+        'Senior Citizen' => 20,
+        'PWD' => 20,
+    ];
+    $discountPercent = $discountRates[$discountType] ?? 0;
+
+    $originalAmount = floatval($billing['OriginalAmount']);
+    $discountAmount = round($originalAmount * $discountPercent / 100, 2);
+    $finalAmount = round($originalAmount - $discountAmount, 2);
+
+    // Total already paid on this bill
+    $stmt = $pdo->prepare('SELECT COALESCE(SUM(AmountPaid), 0) AS TotalPaid FROM payments WHERE BillingID = ?');
+    $stmt->execute([$billingID]);
+    $totalPaidBeforePayment = round((float) $stmt->fetchColumn(), 2);
+    $remainingBalance = max(0, round($finalAmount - $totalPaidBeforePayment, 2));
 
     if ($amountPaid > $remainingBalance) {
         $pdo->rollBack();
@@ -82,14 +96,16 @@ try {
         exit;
     }
 
-    // Persist the discount + recomputed FinalAmount before comparing payment
+    // Persist the discount + recomputed FinalAmount
     $updateBilling = $pdo->prepare(
         'UPDATE billing SET DiscountType = ?, DiscountPercent = ?, DiscountAmount = ?, FinalAmount = ? WHERE BillingID = ?'
     );
     $updateBilling->execute([$discountType, $discountPercent, $discountAmount, $finalAmount, $billingID]);
 
-    // AUDIT: log any changed billing fields (discount type/percent/amount, final amount)
-    $updatedBillingRow = fetchOneData($pdo, 'SELECT * FROM billing WHERE BillingID = ?', [$billingID]);
+    // AUDIT: log any changed billing fields
+    $stmt = $pdo->prepare('SELECT * FROM billing WHERE BillingID = ?');
+    $stmt->execute([$billingID]);
+    $updatedBillingRow = $stmt->fetch(PDO::FETCH_ASSOC);
     logFieldChanges($pdo, $actorUserId, 'billing', $billingID, $billing, $updatedBillingRow);
 
     // Record the payment
@@ -97,14 +113,8 @@ try {
         'INSERT INTO payments (BillingID, AmountPaid, ReferenceNo, PaymentDate, ReceivedBy)
          VALUES (?, ?, ?, NOW(), ?)'
     );
-    $stmt->execute([
-        $billingID,
-        $amountPaid,
-        null,
-        $actorUserId
-    ]);
-
-    $paymentID = $pdo->lastInsertId();
+    $stmt->execute([$billingID, $amountPaid, null, $actorUserId]);
+    $paymentID = (int) $pdo->lastInsertId();
 
     // AUDIT: payment recorded
     logAudit(
@@ -112,7 +122,7 @@ try {
         $actorUserId,
         'CREATE',
         'payments',
-        (int) $paymentID,
+        $paymentID,
         null,
         null,
         json_encode([
@@ -122,19 +132,11 @@ try {
         ])
     );
 
-    $totalAmountPaid = $amountPaid;
-    $previousPayments = fetchAllData(
-        $pdo,
-        'SELECT SUM(AmountPaid) as TotalPaid FROM payments WHERE BillingID = ? AND PaymentID != ?',
-        [$billingID, $paymentID]
-    );
-    if (!empty($previousPayments) && $previousPayments[0]['TotalPaid']) {
-        $totalAmountPaid += floatval($previousPayments[0]['TotalPaid']);
-    }
+    // Totals after this payment (reuses the sum we already computed)
+    $totalAmountPaid = round($totalPaidBeforePayment + $amountPaid, 2);
+    $amountDue = max(0, round($finalAmount - $totalAmountPaid, 2));
 
-    // Now compares against the freshly recalculated $finalAmount, not the stale 500
     $newStatus = ($totalAmountPaid >= $finalAmount) ? 'Paid' : 'Partially Paid';
-
     $previousStatus = $billing['Status'];
 
     $updateStmt = $pdo->prepare('UPDATE billing SET Status = ? WHERE BillingID = ?');
@@ -145,15 +147,12 @@ try {
         logAudit($pdo, $actorUserId, 'UPDATE', 'billing', $billingID, 'Status', $previousStatus, $newStatus);
     }
 
-    // Count payments on this bill (including the one we just inserted) to build a sequence number
-    $paymentCount = fetchOneData(
-        $pdo,
-        'SELECT COUNT(*) as cnt FROM payments WHERE BillingID = ?',
-        [$billingID]
-    );
-    $sequence = intval($paymentCount['cnt'] ?? 1);
+    // Sequence number = number of payments on this bill (including the one just inserted)
+    $stmt = $pdo->prepare('SELECT COUNT(*) FROM payments WHERE BillingID = ?');
+    $stmt->execute([$billingID]);
+    $sequence = max(1, (int) $stmt->fetchColumn());
 
-    $receiptNo = 'OR-' . date('Y') . '-' . str_pad($billingID, 5, '0', STR_PAD_LEFT) . '-' . $sequence;
+    $receiptNo = 'OR-' . date('Y') . '-' . str_pad((string) $billingID, 5, '0', STR_PAD_LEFT) . '-' . $sequence;
 
     $updateRef = $pdo->prepare('UPDATE payments SET ReferenceNo = ? WHERE PaymentID = ?');
     $updateRef->execute([$receiptNo, $paymentID]);
@@ -167,10 +166,13 @@ try {
         'receipt_no' => $receiptNo,
         'billing_status' => $newStatus,
         'total_paid' => $totalAmountPaid,
-        'amount_due' => max(0, $finalAmount - $totalAmountPaid)
+        'amount_due' => $amountDue
     ]);
 
-} catch (Exception $e) {
-    $pdo->rollBack();
-    echo json_encode(['status' => 'error', 'message' => 'Error recording payment: ' . $e->getMessage()]);
+} catch (Throwable $e) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    error_log('record-payment failed: ' . $e->getMessage());
+    echo json_encode(['status' => 'error', 'message' => 'Error recording payment. Please try again.']);
 }

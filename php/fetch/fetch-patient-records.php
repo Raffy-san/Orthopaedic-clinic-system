@@ -52,6 +52,7 @@ try {
             Dosage,
             Frequency,
             Duration,
+            Quantity,
             Instructions
         FROM prescriptions
         WHERE ConsultationID IN ($placeholders)

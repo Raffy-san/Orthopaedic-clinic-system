@@ -3,6 +3,7 @@ let csrfToken = window.csrfToken || "";
 let currentConsultationIndex = 0;
 let isSubmitting = false;
 let lastSavedConsultation = null;
+const logoUrl = new URL('../assets/img/logo4.png', window.location.href).href;
 
 // Load clinic queue on page load
 async function loadClinicQueue() {
@@ -98,6 +99,21 @@ function showMessage(title, message, type = "success", callback = null) {
         closeModal(modal);
         if (callback) callback();
     };
+}
+
+function calculateAge(birthDate) {
+    if (!birthDate) return '';
+    const [y, m, d] = String(birthDate).slice(0, 10).split('-').map(Number);
+    if (!y || !m || !d) return '';
+
+    const today = new Date();
+    let age = today.getFullYear() - y;
+    const hadBirthday =
+        today.getMonth() + 1 > m ||
+        (today.getMonth() + 1 === m && today.getDate() >= d);
+    if (!hadBirthday) age--;
+
+    return age;
 }
 
 // Load patient data and show form
@@ -215,7 +231,7 @@ async function loadConsultationHistory(patientID) {
                     const doctorName = consultation.DoctorFirstName + ' ' + consultation.DoctorLastName;
                     const medicinesHTML = consultation.prescriptions.length > 0
                         ? consultation.prescriptions.map(m =>
-                            `<div class="text-xs text-slate-600">💊 ${m.Medicine} (${m.Dosage}, ${m.Frequency})</div>`
+                            `<div class="text-xs text-slate-600">💊 ${m.Medicine} (${m.Dosage}, ${m.Frequency}) × ${m.Quantity ?? '-'}</div>`
                         ).join('')
                         : '<div class="text-xs text-slate-500 italic">No medicines prescribed</div>';
 
@@ -250,20 +266,21 @@ async function loadConsultationHistory(patientID) {
 }
 
 const medicinePresets = [
-    { name: 'Ibuprofen', dosage: '400mg', frequency: '3x daily', duration: '5 days', instructions: 'Take with food.' },
-    { name: 'Naproxen', dosage: '500mg', frequency: '2x daily', duration: '7 days', instructions: 'Take with food.' },
-    { name: 'Celecoxib', dosage: '200mg', frequency: '1x daily', duration: '7 days', instructions: 'Take with food.' },
-    { name: 'Diclofenac', dosage: '50mg', frequency: '2x daily', duration: '5 days', instructions: 'Take with food.' },
-    { name: 'Tramadol', dosage: '50mg', frequency: 'Every 6 hours as needed', duration: '5 days', instructions: 'May cause drowsiness. Avoid driving.' },
-    { name: 'Paracetamol', dosage: '500mg', frequency: 'Every 6 hours as needed', duration: '5 days', instructions: 'Do not exceed 4g per day.' },
-    { name: 'Methylcobalamin', dosage: '500mcg', frequency: '1x daily', duration: '30 days', instructions: '' },
-    { name: 'Calcium + Vitamin D3', dosage: '600mg/400IU', frequency: '1x daily', duration: '30 days', instructions: '' },
-    { name: 'Tolperisone', dosage: '150mg', frequency: '3x daily', duration: '5 days', instructions: 'Muscle relaxant — may cause drowsiness.' },
+    { name: 'Ibuprofen', dosage: '400mg', frequency: '3x daily', duration: '5 days', quantity: '10', instructions: 'Take with food.' },
+    { name: 'Naproxen', dosage: '500mg', frequency: '2x daily', duration: '7 days', quantity: '14', instructions: 'Take with food.' },
+    { name: 'Celecoxib', dosage: '200mg', frequency: '1x daily', duration: '7 days', quantity: '7', instructions: 'Take with food.' },
+    { name: 'Diclofenac', dosage: '50mg', frequency: '2x daily', duration: '5 days', quantity: '10', instructions: 'Take with food.' },
+    { name: 'Tramadol', dosage: '50mg', frequency: 'Every 6 hours as needed', duration: '5 days', quantity: '21', instructions: 'May cause drowsiness. Avoid driving.' },
+    { name: 'Paracetamol', dosage: '500mg', frequency: 'Every 6 hours as needed', duration: '5 days', quantity: '21', instructions: 'Do not exceed 4g per day.' },
+    { name: 'Methylcobalamin', dosage: '500mcg', frequency: '1x daily', duration: '30 days', quantity: '30', instructions: '' },
+    { name: 'Calcium + Vitamin D3', dosage: '600mg/400IU', frequency: '1x daily', duration: '30 days', quantity: '30', instructions: '' },
+    { name: 'Tolperisone', dosage: '150mg', frequency: '3x daily', duration: '5 days', quantity: '14', instructions: 'Muscle relaxant — may cause drowsiness.' },
 ];
 
 const frequencyOptions = ['1x daily', '2x daily', '3x daily', '4x daily', 'Every 6 hours as needed', 'Every 8 hours as needed', 'At bedtime'];
 const durationOptions = ['3 days', '5 days', '7 days', '10 days', '14 days', '30 days', 'Until finished'];
 const instructionOptions = ['Take with food.', 'Take on an empty stomach.', 'May cause drowsiness. Avoid driving.', 'Do not exceed recommended dose.', 'Stop if rash or discomfort occurs.'];
+const quantityOptions = ['3', '5', '7', '10', '14', '21', '30'];
 
 function buildChipRow(container, options, hiddenInput, multiFill) {
     container.innerHTML = '';
@@ -323,6 +340,7 @@ function addPrescriptionRow() {
     buildChipRow(row.querySelector('.frequency-chips'), frequencyOptions, frequencyHidden, false);
     buildChipRow(row.querySelector('.duration-chips'), durationOptions, durationHidden, false);
     buildChipRow(row.querySelector('.instruction-chips'), instructionOptions, instructionsTextarea, true);
+    buildChipRow(row.querySelector('.quantity-chips'), quantityOptions, row.querySelector('.rx-quantity'), false);
 
     const presetGrid = row.querySelector('.medicine-preset-grid');
     medicinePresets.forEach(preset => {
@@ -336,12 +354,14 @@ function addPrescriptionRow() {
             frequencyHidden.value = preset.frequency;
             durationHidden.value = preset.duration;
             instructionsTextarea.value = preset.instructions;
+            row.querySelector('.rx-quantity').value = preset.quantity || '';
 
             presetGrid.querySelectorAll('.preset-btn').forEach(c => c.classList.remove('bg-blue-100', 'border-blue-500'));
             card.classList.add('bg-blue-100', 'border-blue-500');
 
             highlightMatchingChip(row.querySelector('.frequency-chips'), preset.frequency);
             highlightMatchingChip(row.querySelector('.duration-chips'), preset.duration);
+            highlightMatchingChip(row.querySelector('.quantity-chips'), String(preset.quantity));
         });
         presetGrid.appendChild(card);
     });
@@ -425,9 +445,15 @@ document.getElementById('consultationForm').addEventListener('submit', async fun
             const medicine = row.querySelector('.rx-medicine').value.trim();
             const dosage = row.querySelector('.rx-dosage').value.trim();
             const frequency = row.querySelector('.rx-frequency').value.trim();
+            const quantity = parseInt(row.querySelector('.rx-quantity').value.trim(), 10);
 
             if (!medicine || !dosage || !frequency) {
                 showMessage('Missing Information', 'Please fill in medicine, dosage, and frequency for each prescription (or remove the empty card).', 'error');
+                return;
+            }
+
+            if (!quantity || quantity < 1) {
+                showMessage('Missing Information', 'Please enter a quantity for each prescription.', 'error');
                 return;
             }
 
@@ -436,6 +462,7 @@ document.getElementById('consultationForm').addEventListener('submit', async fun
                 dosage,
                 frequency,
                 duration: row.querySelector('.rx-duration').value.trim(),
+                quantity,
                 instructions: row.querySelector('.rx-instructions').value.trim()
             });
         }
@@ -524,23 +551,22 @@ document.getElementById('consultationForm').addEventListener('submit', async fun
 
 function printPrescription(consultationID, consultationData) {
     const patientName = document.getElementById('patientName').textContent;
-    const patientInfo = document.getElementById('patientInfo').textContent;
-    const diagnosis = consultationData.diagnosis;
-    const treatment = consultationData.treatment;
+    const patientAge = calculateAge(currentAppointmentData.BirthDate);
+    const patientGender = currentAppointmentData.Gender || '';
     const prescriptions = consultationData.prescriptions; // now an array
 
     // Build one <div class="prescription-item"> block per medicine
-    const prescriptionItemsHTML = prescriptions.map(prescription => `
-        <div class="prescription-item">
-            <div class="medicine-name">💊 ${prescription.medicine}</div>
-            <div class="prescription-details">
-                <div><strong>Dosage:</strong> ${prescription.dosage}</div>
-                <div><strong>Frequency:</strong> ${prescription.frequency}</div>
-                <div><strong>Duration:</strong> ${prescription.duration || 'As needed'}</div>
-                ${prescription.instructions ? '<div><strong>Instructions:</strong> ' + prescription.instructions + '</div>' : ''}
-            </div>
-        </div>
+    const prescriptionRowsHTML = prescriptions.map(prescription => `
+        <tr>
+            <td>${prescription.medicine}</td>
+            <td>${prescription.dosage}</td>
+            <td>${prescription.frequency}</td>
+            <td>${prescription.duration || 'As needed'}</td>
+            <td class="center">${prescription.quantity}</td>
+            <td>${prescription.instructions || '-'}</td>
+        </tr>
     `).join('');
+
 
     const printWindow = window.open('', '', 'height=600,width=800');
     const printContent = `
@@ -551,89 +577,114 @@ function printPrescription(consultationID, consultationData) {
             <style>
                 body {
                     font-family: Arial, sans-serif;
-                    padding: 40px;
+                    padding:0 10px 10px 10px;
                     background-color: #fff;
                 }
+
                 .header {
                     text-align: center;
-                    border-bottom: 2px solid #333;
-                    padding-bottom: 20px;
+                    border-bottom: 2px solid #1e6b34;
+                    line-height: 1.0;
                     margin-bottom: 30px;
                 }
-                .clinic-name {
-                    font-size: 24px;
-                    font-weight: bold;
-                    color: #333;
+
+                .header img {
+                    max-width: 180px;
                 }
-                .clinic-subtitle {
+
+                .header h1 {
+                    font-size: 18px;
+                    margin: 8px 0;
+                    font-weight: bold;
+                }
+                .header span {
                     font-size: 12px;
-                    color: #666;
-                    margin-top: 5px;
+                    display: block;
+                    color: #555;
+                }
+                .header p {
+                    font-size: 10px;
+                    margin: 4px 0;
+                    color: #555;
+                }
+                .address-table {
+                    width: auto;
+                    margin: 8px auto;
+                    border-collapse: collapse;
+                }
+                .address-table td {
+                    vertical-align: top;
+                    padding: 4px 16px;
+                }
+                .address-table .left {
+                    border-right: 1px solid #1e6b34;
+                    text-align: center;
+                }
+                .address-table .right {
+                    text-align: center;
+                }
+                .address-table h1 {
+                    font-size: 14px;
+                    margin: 0 0 2px;
+                }
+                .address-table p {
+                    font-size: 10px;
+                    margin: 2px 0;
+                    color: #555;
                 }
                 .patient-section {
                     margin-bottom: 25px;
-                    padding: 10px;
-                    background-color: #f5f5f5;
-                    border-radius: 5px;
                 }
-                .patient-section h3 {
-                    margin: 0 0 10px 0;
-                    font-size: 14px;
-                    color: #333;
-                }
+
                 .patient-info {
                     font-size: 12px;
-                    color: #666;
+                    color: #333;
                     line-height: 1.6;
                 }
-                .diagnosis-treatment {
-                    margin-bottom: 25px;
-                    padding: 10px;
-                    background-color: #f9f9f9;
-                    border-left: 3px solid #0066cc;
+                .patient-row {
+                    display: flex;
+                    gap: 24px;
+                    margin-top: 8px;
                 }
-                .diagnosis-treatment strong {
-                    display: block;
-                    margin-bottom: 5px;
-                    color: #333;
+                .patient-field {
+                    display: flex;
+                    align-items: flex-end;
+                    gap: 6px;
                 }
-                .diagnosis-treatment span {
-                    font-size: 13px;
-                    color: #555;
+                .patient-field .value {
+                    border-bottom: 1px solid #333;
+                    padding: 0 6px;
+                    min-width: 70px;
+                }
+                .patient-field.name .value {
+                    min-width: 280px;
+                }
+                .patient-field.date .value {
+                    min-width: 130px;
                 }
                 .prescription-section {
                     margin-top: 30px;
                 }
-                .prescription-section h2 {
-                    font-size: 16px;
-                    color: #333;
-                    border-bottom: 2px solid #0066cc;
-                    padding-bottom: 10px;
-                    margin-bottom: 15px;
-                }
-                .prescription-item {
-                    background-color: #fff;
-                    border: 1px solid #ddd;
-                    padding: 15px;
-                    margin-bottom: 15px;
-                    border-radius: 5px;
-                }
-                .prescription-item .medicine-name {
-                    font-size: 15px;
-                    font-weight: bold;
-                    color: #333;
-                    margin-bottom: 5px;
-                }
-                .prescription-details {
+                .prescription-table {
+                    width: 100%;
+                    border-collapse: collapse;
                     font-size: 12px;
-                    color: #666;
-                    line-height: 1.6;
                 }
-                .prescription-details div {
-                    margin-bottom: 5px;
-                }
-                .prescription-details strong {
+                .prescription-table th,
+                .prescription-table td {
+                    border: 1px solid #ddd;
+                    padding: 8px 10px;
+                    text-align: left;
+                    vertical-align: top;
                     color: #333;
+                }
+                .prescription-table th {
+                    background-color: #f5f5f5;
+                    font-size: 12px;
+                }
+                .prescription-table td.center,
+                .prescription-table th.center {
+                    text-align: center;
                 }
                 .footer {
                     margin-top: 40px;
@@ -662,43 +713,73 @@ function printPrescription(consultationID, consultationData) {
         </head>
         <body>
             <div class="header">
-                <div class="clinic-name">Orthopaedic Clinic</div>
-                <div class="clinic-subtitle">Medical Prescription</div>
+                <img src="${logoUrl}" alt="Clinic Logo">
+                <h1>DR. THYAM TIU FOOKSON, DPBO, FPOA</h1>
+                <span>ORTHOPAEDIC SURGEON</span>
+                <p>Fracture - Bone, Muscle, Joint Disease - Diabetic Limb - Sports Injuries</p>
+
+                <table class="address-table">
+                    <tr>
+                        <td class="left">
+                            <h1>MAASIN</h1>
+                            <p>LIVING HOPE HOSPITAL OPD</p>
+                            <p>MON-TUES-WED-FRI-SAT</p>
+                            <p>9 AM TO 12 NOON</p>
+                        </td>
+                        <td class="right">
+                            <h1>SOGOD</h1>
+                            <p>CORROMPIDO HOSP. OPD</p>
+                            <p>THURSDAY</p>
+                            <p>9 AM TO 12 NOON</p>
+                        </td>
+                    </tr>
+                </table>
             </div>
 
             <div class="patient-section">
-                <h3>PATIENT INFORMATION</h3>
                 <div class="patient-info">
-                    <div><strong>Name:</strong> ${patientName}</div>
-                    <div><strong>Patient ID:</strong> ${patientInfo}</div>
-                    <div><strong>Date:</strong> ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-                    <div><strong>Time:</strong> ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</div>
+                    <div class="patient-field name">
+                        <strong>Name:</strong>
+                        <span class="value">${patientName}</span>
+                    </div>
+                    <div class="patient-row">
+                        <div class="patient-field">
+                            <strong>Age:</strong>
+                            <span class="value">${patientAge}</span>
+                        </div>
+                        <div class="patient-field">
+                            <strong>Sex:</strong>
+                            <span class="value">${patientGender}</span>
+                        </div>
+                        <div class="patient-field date">
+                            <strong>Date:</strong>
+                            <span class="value">${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="diagnosis-treatment">
-                <strong>DIAGNOSIS</strong>
-                <span>${diagnosis}</span>
-            </div>
-
-            <div class="diagnosis-treatment">
-                <strong>TREATMENT PLAN</strong>
-                <span>${treatment}</span>
-            </div>
-
             <div class="prescription-section">
-                <h2>PRESCRIPTION</h2>
-                ${prescriptionItemsHTML}
+                <table class="prescription-table">
+                    <thead>
+                        <tr>
+                            <th>Medicine</th>
+                            <th>Dosage</th>
+                            <th>Frequency</th>
+                            <th>Duration</th>
+                            <th class="center">Qty</th>
+                            <th>Instructions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${prescriptionRowsHTML}
+                    </tbody>
+                </table>
             </div>
 
             <div class="signature-area">
                 <div class="doctor-sig">Doctor's Signature</div>
                 <div class="signature-line"></div>
-            </div>
-
-            <div class="footer">
-                <div>Consultation ID: ${consultationID}</div>
-                <div style="margin-top: 5px;">Printed on: ${new Date().toLocaleString()}</div>
             </div>
         </body>
         </html>
@@ -707,9 +788,14 @@ function printPrescription(consultationID, consultationData) {
     printWindow.document.write(printContent);
     printWindow.document.close();
 
-    setTimeout(function () {
-        printWindow.print();
-    }, 250);
+    const img = printWindow.document.querySelector('.header img');
+    if (img && !img.complete) {
+        img.onload = () => printWindow.print();
+        img.onerror = () => printWindow.print(); // print anyway if the logo fails
+    } else {
+        setTimeout(() => printWindow.print(), 250);
+    }
+
 }
 
 function showReprintBanner() {

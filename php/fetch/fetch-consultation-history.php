@@ -44,7 +44,7 @@ try {
     $result = [];
     foreach ($consultations as $consultation) {
         $prescStmt = $pdo->prepare("
-            SELECT Medicine, Dosage, Frequency, Duration, Instructions
+            SELECT Medicine, Dosage, Frequency, Duration, Quantity, Instructions
             FROM prescriptions
             WHERE ConsultationID = ?
             ORDER BY PrescriptionID

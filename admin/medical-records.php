@@ -147,6 +147,7 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                                 <th class="pb-2 font-medium">Dosage</th>
                                 <th class="pb-2 font-medium">Frequency</th>
                                 <th class="pb-2 font-medium">Duration</th>
+                                <th class="pb-2 font-medium">Quantity</th>
                             </tr>
                         </thead>
                         <tbody id="prescribedMedicinesBody"></tbody>

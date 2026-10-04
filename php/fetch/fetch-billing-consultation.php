@@ -53,7 +53,7 @@ if (!$consultation) {
 // Get prescription details if they exist
 $prescriptions = fetchAllData(
     $pdo,
-    'SELECT Medicine, Dosage, Frequency, Duration, Instructions
+    'SELECT Medicine, Dosage, Frequency, Duration, Quantity, Instructions
      FROM prescriptions
      WHERE ConsultationID = ?
      ORDER BY PrescriptionID',
