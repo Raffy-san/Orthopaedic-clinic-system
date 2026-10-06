@@ -265,17 +265,22 @@ async function loadConsultationHistory(patientID) {
     }
 }
 
-const medicinePresets = [
-    { name: 'Ibuprofen', dosage: '400mg', frequency: '3x daily', duration: '5 days', quantity: '10', instructions: 'Take with food.' },
-    { name: 'Naproxen', dosage: '500mg', frequency: '2x daily', duration: '7 days', quantity: '14', instructions: 'Take with food.' },
-    { name: 'Celecoxib', dosage: '200mg', frequency: '1x daily', duration: '7 days', quantity: '7', instructions: 'Take with food.' },
-    { name: 'Diclofenac', dosage: '50mg', frequency: '2x daily', duration: '5 days', quantity: '10', instructions: 'Take with food.' },
-    { name: 'Tramadol', dosage: '50mg', frequency: 'Every 6 hours as needed', duration: '5 days', quantity: '21', instructions: 'May cause drowsiness. Avoid driving.' },
-    { name: 'Paracetamol', dosage: '500mg', frequency: 'Every 6 hours as needed', duration: '5 days', quantity: '21', instructions: 'Do not exceed 4g per day.' },
-    { name: 'Methylcobalamin', dosage: '500mcg', frequency: '1x daily', duration: '30 days', quantity: '30', instructions: '' },
-    { name: 'Calcium + Vitamin D3', dosage: '600mg/400IU', frequency: '1x daily', duration: '30 days', quantity: '30', instructions: '' },
-    { name: 'Tolperisone', dosage: '150mg', frequency: '3x daily', duration: '5 days', quantity: '14', instructions: 'Muscle relaxant — may cause drowsiness.' },
-];
+let medicinePresets = [];
+
+async function loadMedicines() {
+    try {
+        const response = await fetch('../php/fetch/fetch-medicines.php');
+        const result = await response.json();
+        if (result.status === 'success') {
+            medicinePresets = result.data.map(m => ({
+                name: m.Name,
+                dosage: m.DefaultDosage || ''
+            }));
+        }
+    } catch (error) {
+        console.error('Error loading medicines:', error);
+    }
+}
 
 const frequencyOptions = ['1x daily', '2x daily', '3x daily', '4x daily', 'Every 6 hours as needed', 'Every 8 hours as needed', 'At bedtime'];
 const durationOptions = ['3 days', '5 days', '7 days', '10 days', '14 days', '30 days', 'Until finished'];
@@ -347,21 +352,13 @@ function addPrescriptionRow() {
         const card = document.createElement('button');
         card.type = 'button';
         card.className = 'preset-btn text-left text-sm border border-slate-200 rounded-lg px-3 py-2 hover:bg-blue-50 hover:border-blue-400 transition';
-        card.innerHTML = `<div class="font-semibold text-slate-800">${preset.name}</div><div class="text-xs text-slate-500">${preset.dosage} · ${preset.frequency}</div>`;
+        card.innerHTML = `<div class="font-semibold text-slate-800">${preset.name}</div><div class="text-xs text-slate-500">${preset.dosage}</div>`;
         card.addEventListener('click', () => {
             medicineInput.value = preset.name;
             dosageInput.value = preset.dosage;
-            frequencyHidden.value = preset.frequency;
-            durationHidden.value = preset.duration;
-            instructionsTextarea.value = preset.instructions;
-            row.querySelector('.rx-quantity').value = preset.quantity || '';
 
             presetGrid.querySelectorAll('.preset-btn').forEach(c => c.classList.remove('bg-blue-100', 'border-blue-500'));
             card.classList.add('bg-blue-100', 'border-blue-500');
-
-            highlightMatchingChip(row.querySelector('.frequency-chips'), preset.frequency);
-            highlightMatchingChip(row.querySelector('.duration-chips'), preset.duration);
-            highlightMatchingChip(row.querySelector('.quantity-chips'), String(preset.quantity));
         });
         presetGrid.appendChild(card);
     });
@@ -695,19 +692,36 @@ function printPrescription(consultationID, consultationData) {
                     color: #666;
                 }
                 .signature-area {
-                    margin-top: 40px;
-                    text-align: right;
-                }
-                .signature-line {
-                    border-top: 1px solid #333;
-                    width: 200px;
-                    margin-left: auto;
-                    margin-top: 30px;
-                }
-                .doctor-sig {
+                    position: fixed;
+                    bottom: 10px;
+                    right: 10px;
+                    width: 150px;
                     font-size: 12px;
                     color: #333;
+                }
+                .sig-line {
+                    display: flex;
+                    justify-content: center;
+                    gap: 6px;
+                    border-bottom: 1px solid #333;
+                    margin-top: 4px;
+                    min-height: 14px;
+                    line-height: 14px;
+                    padding-bottom: 1px;
                     font-weight: bold;
+                }
+                .sig-line:first-child {
+                    margin-top: 28px; /* room to sign above the printed name */
+                }
+                .sig-line .sig-name {
+                    flex: 1;
+                    text-align: center;
+                }
+                .sig-label {
+                    text-align: center;
+                    font-size: 10px;
+                    line-height: 12px;
+                    margin-top: 2px;
                 }
             </style>
         </head>
@@ -778,8 +792,20 @@ function printPrescription(consultationID, consultationData) {
             </div>
 
             <div class="signature-area">
-                <div class="doctor-sig">Doctor's Signature</div>
-                <div class="signature-line"></div>
+                <div class="sig-line">
+                    <span class="sig-name">Thyam T. Fookson</span>
+                    <span>M.D.</span>
+                </div>
+                <div class="sig-label">Signature over Printed Name</div>
+
+                <div class="sig-line">011925</div>
+                <div class="sig-label">License #</div>
+
+                <div class="sig-line">&nbsp;</div>
+                <div class="sig-label">S2 #</div>
+
+                <div class="sig-line">&nbsp;</div>
+                <div class="sig-label">PTR #</div>
             </div>
         </body>
         </html>
@@ -823,4 +849,7 @@ function hideReprintBanner() {
 }
 
 // Load queue on page load
-document.addEventListener('DOMContentLoaded', loadClinicQueue);
+document.addEventListener('DOMContentLoaded', () => {
+    loadMedicines();
+    loadClinicQueue();
+});

@@ -8,17 +8,17 @@ if (SessionManager::isLoggedIn()) {
     if ($role !== null && in_array(strtolower($role), ['admin', 'doctor', 'staff'], true)) {
         header('Location: admin/admin-dashboard.php');
         exit;
-    } else {
-        header('Location: users/user-dashboard.php');
-        exit;
     }
+
+    header('Location: unauthorized.php');
+    exit;
 }
 
 $loginError = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
-    $loginType = $_POST['loginType'] ?? 'staff';
+    $loginType = ($_POST['loginType'] ?? 'staff') === 'admin' ? 'admin' : 'staff';
 
     $statement = $pdo->prepare(
         "SELECT UserID, Username, PasswordHash, FirstName, LastName, Role, IsDoctor, Status
@@ -31,9 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $isActive = $user && ($user['Status'] ?? '') === 'Active';
     $validRole = $loginType === 'admin'
         ? $userRole === 'admin' || $userRole === 'doctor' || $isDoctor
-        : ($loginType === 'patient'
-            ? $userRole === 'patient'
-            : in_array($userRole, ['doctor', 'staff'], true) || $isDoctor);
+        : $userRole === 'staff';
 
     if (!$user) {
         $loginError = 'Username not found. Check the username and try again.';
@@ -42,9 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!$validRole) {
         $loginError = $loginType === 'admin'
             ? 'This account is not an administrator or doctor account.'
-            : ($loginType === 'patient'
-                ? 'This is not a patient account. Choose the correct login type.'
-                : 'This account is not registered as staff or doctor.');
+            : 'This account is not registered as staff.';
     } elseif (!password_verify($password, $user['PasswordHash'])) {
         $loginError = 'Incorrect password. Check your password and try again.';
     } else {
@@ -53,10 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['user'] = $user;
         $_SESSION['user_id'] = $user['UserID'];
         $_SESSION['access_type'] = $user['Role'];
-        $redirect = $userRole === 'patient'
-            ? 'users/user-dashboard.php'
-            : 'admin/admin-dashboard.php';
-        header('Location: ' . $redirect);
+        header('Location: admin/admin-dashboard.php');
         exit;
     }
 }

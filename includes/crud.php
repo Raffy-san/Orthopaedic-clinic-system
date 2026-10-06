@@ -637,3 +637,143 @@ function updateUser(PDO $pdo, array $data, ?int $actorUserId = null): array
         ];
     }
 }
+
+function addMedicine(PDO $pdo, array $data, ?int $actorUserId = null): array
+{
+    $name = trim((string) ($data['name'] ?? ''));
+    $dosage = trim((string) ($data['dosage'] ?? ''));
+
+    if ($name === '') {
+        return ['status' => 'error', 'message' => 'Medicine name is required.'];
+    }
+
+    try {
+        $pdo->beginTransaction();
+
+        $stmt = $pdo->prepare('INSERT INTO Medicines (Name, DefaultDosage) VALUES (?, ?)');
+        $stmt->execute([$name, $dosage ?: null]);
+        $medicineId = (int) $pdo->lastInsertId();
+
+        // AUDIT: medicine created
+        logAudit(
+            $pdo,
+            $actorUserId,
+            'CREATE',
+            'Medicines',
+            $medicineId,
+            null,
+            null,
+            json_encode([
+                'Name' => $name,
+                'DefaultDosage' => $dosage ?: null
+            ])
+        );
+
+        $pdo->commit();
+        return ['status' => 'success', 'message' => 'Medicine added successfully.'];
+
+    } catch (PDOException $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log('AddMedicine failed: ' . $e->getMessage());
+        return [
+            'status' => 'error',
+            'message' => $e->getCode() === '23000'
+                ? 'A medicine with that name already exists.'
+                : 'Unable to add the medicine. Please try again.'
+        ];
+    }
+}
+
+/**
+ * @param int|null $actorUserId The staff user performing this action.
+ */
+function updateMedicine(PDO $pdo, array $data, ?int $actorUserId = null): array
+{
+    $medicineId = (int) ($data['medicine_id'] ?? 0);
+    $name = trim((string) ($data['name'] ?? ''));
+    $dosage = trim((string) ($data['dosage'] ?? ''));
+
+    if ($name === '') {
+        return ['status' => 'error', 'message' => 'Medicine name is required.'];
+    }
+
+    try {
+        $pdo->beginTransaction();
+
+        // Fetch the full old row BEFORE updating, so we can diff afterwards
+        $stmt = $pdo->prepare('SELECT * FROM Medicines WHERE MedicineID = ?');
+        $stmt->execute([$medicineId]);
+        $oldMedicineRow = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$oldMedicineRow) {
+            $pdo->rollBack();
+            return ['status' => 'error', 'message' => 'Medicine not found.'];
+        }
+
+        $stmt = $pdo->prepare('UPDATE Medicines SET Name = ?, DefaultDosage = ? WHERE MedicineID = ?');
+        $stmt->execute([$name, $dosage ?: null, $medicineId]);
+
+        // AUDIT: fetch the new row and log per-field differences
+        $stmt = $pdo->prepare('SELECT * FROM Medicines WHERE MedicineID = ?');
+        $stmt->execute([$medicineId]);
+        $newMedicineRow = $stmt->fetch(PDO::FETCH_ASSOC);
+        logFieldChanges($pdo, $actorUserId, 'Medicines', $medicineId, $oldMedicineRow, $newMedicineRow);
+
+        $pdo->commit();
+        return ['status' => 'success', 'message' => 'Medicine updated successfully.'];
+
+    } catch (PDOException $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log('UpdateMedicine failed: ' . $e->getMessage());
+        return [
+            'status' => 'error',
+            'message' => $e->getCode() === '23000'
+                ? 'A medicine with that name already exists.'
+                : 'Unable to update the medicine. Please try again.'
+        ];
+    }
+}
+
+/**
+ * Hide (0) or show (1) a medicine without deleting it.
+ * @param int|null $actorUserId The staff user performing this action.
+ */
+function setMedicineActive(PDO $pdo, int $medicineId, bool $isActive, ?int $actorUserId = null): array
+{
+    try {
+        $pdo->beginTransaction();
+
+        $stmt = $pdo->prepare('SELECT IsActive FROM Medicines WHERE MedicineID = ?');
+        $stmt->execute([$medicineId]);
+        $oldActive = $stmt->fetchColumn();
+
+        if ($oldActive === false) {
+            $pdo->rollBack();
+            return ['status' => 'error', 'message' => 'Medicine not found.'];
+        }
+
+        $newActive = $isActive ? 1 : 0;
+
+        $stmt = $pdo->prepare('UPDATE Medicines SET IsActive = ? WHERE MedicineID = ?');
+        $stmt->execute([$newActive, $medicineId]);
+
+        // AUDIT: only when the status actually changed
+        if ((int) $oldActive !== $newActive) {
+            logAudit($pdo, $actorUserId, 'UPDATE', 'Medicines', $medicineId, 'IsActive', (string) $oldActive, (string) $newActive);
+        }
+
+        $pdo->commit();
+        return ['status' => 'success', 'message' => $isActive ? 'Medicine is now visible.' : 'Medicine hidden.'];
+
+    } catch (PDOException $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log('SetMedicineActive failed: ' . $e->getMessage());
+        return ['status' => 'error', 'message' => 'Unable to change the medicine status. Please try again.'];
+    }
+}

@@ -78,10 +78,6 @@ $completedAppointments = fetchAllData($pdo, "SELECT * FROM appointments WHERE st
 $consultations = fetchAllData($pdo, "SELECT * FROM consultations");
 $confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE status = 'Confirmed'");
 
-// --- Today's Schedule (Requirement #8) ---
-// NOTE: assumes AppointmentTime is a proper TIME column so ORDER BY sorts correctly.
-// If AppointmentTime is stored as plain 12-hour text without a sortable format,
-// let me know and I'll adjust the ORDER BY to combine it with the meridiem column.
 $todaySchedule = fetchAllData($pdo, "
     SELECT
         a.AppointmentID,
@@ -98,6 +94,93 @@ $todaySchedule = fetchAllData($pdo, "
     WHERE DATE(a.AppointmentDate) = CURDATE() AND a.Status <> 'Cancelled' AND a.Status <> 'Pending'
     ORDER BY a.AppointmentTime ASC
 ");
+
+$patientsRaw = fetchAllData($pdo, "
+    SELECT p.Province AS province, p.City AS city, p.Barangay AS barangay,
+           TIMESTAMPDIFF(YEAR, p.BirthDate, CURDATE()) AS age, a.AppointmentDate as date,
+           a.AppointmentTime as time, a.meridiem as meridiem,
+           p.Gender AS gender, COALESCE(a.Status, 'Pending') AS status
+    FROM patients p
+    INNER JOIN appointments a ON a.AppointmentID = (
+        SELECT MAX(a2.AppointmentID) FROM appointments a2
+        WHERE a2.PatientID = p.PatientID AND a2.Status IN ('Confirmed', 'Pending')
+    )
+    WHERE p.Province IS NOT NULL AND p.City IS NOT NULL AND p.Barangay IS NOT NULL
+    ORDER BY p.CreatedAt DESC
+");
+
+function slugifyProvinceName(string $name): string
+{
+    $slug = strtolower($name);
+    $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
+    return trim($slug, '-');
+}
+
+$boundaryCache = [];
+
+function normalizeBarangayName(string $name): string
+{
+    // Boundary dataset doesn't include the "(Pob.)" poblacion marker that
+    // PSGC dropdown data uses — strip it so names match.
+    $name = preg_replace('/\s*\(Pob\.?\)\s*/i', '', $name);
+    return trim($name);
+}
+
+
+function getBarangayCentroid(string $province, string $city, string $barangay, array &$cache): ?array
+{
+    $slug = slugifyProvinceName($province);
+
+    if (!isset($cache[$slug])) {
+        $path = __DIR__ . '/../boundaries/' . $slug . '.json';
+        if (!file_exists($path)) {
+            $cache[$slug] = null;
+        } else {
+            $cache[$slug] = json_decode(file_get_contents($path), true);
+        }
+    }
+
+    $data = $cache[$slug];
+    if (!$data) {
+        return null;
+    }
+
+    $matchedCity = null;
+    foreach ($data['cities'] as $c) {
+        if (strcasecmp($c['name'], $city) === 0) {
+            $matchedCity = $c;
+            break;
+        }
+    }
+    if (!$matchedCity) {
+        return null;
+    }
+
+    $normalizedBarangay = normalizeBarangayName($barangay);
+
+    foreach ($data['barangays'] as $b) {
+        if (
+            $b['cityCode'] === $matchedCity['code']
+            && strcasecmp(normalizeBarangayName($b['name']), $normalizedBarangay) === 0
+        ) {
+            return $b['centroid'] ?? null;
+        }
+    }
+
+    return null;
+}
+
+$patientsWithCoordinates = [];
+foreach ($patientsRaw as $row) {
+    $centroid = getBarangayCentroid($row['province'], $row['city'], $row['barangay'], $boundaryCache);
+    if (!$centroid) {
+        continue; // no matching boundary data — skip rather than plot a wrong/blank pin
+    }
+
+    $row['lat'] = $centroid['lat'];
+    $row['lng'] = $centroid['lng'];
+    $patientsWithCoordinates[] = $row;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -108,6 +191,7 @@ $todaySchedule = fetchAllData($pdo, "
     <link rel="stylesheet" href="../assets/css/output.css">
     <link rel="stylesheet" href="../assets/css/global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="icon" href="../assets/img/rounded-logo.ico" type="image/x-icon">
     <title>Dashboard</title>
 </head>
@@ -467,7 +551,8 @@ $todaySchedule = fetchAllData($pdo, "
                                         <span class="font-normal"><?= htmlspecialchars($meridiem) ?></span>
                                     </div>
                                     <div>
-                                        <p class="text-sm font-semibold <?= $slot['InProgress'] ? 'text-blue-900' : 'text-gray-800' ?>">
+                                        <p
+                                            class="text-sm font-semibold <?= $slot['InProgress'] ? 'text-blue-900' : 'text-gray-800' ?>">
                                             <?= htmlspecialchars($patientName) ?>
                                         </p>
                                         <p class="text-xs <?= $slot['InProgress'] ? 'text-blue-700' : 'text-gray-500' ?>">
@@ -484,10 +569,62 @@ $todaySchedule = fetchAllData($pdo, "
 
             </div>
 
+            <div class="rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
+                <div class="mb-6 flex flex-col gap-4 border-b border-slate-100 pb-5">
+                    <div>
+                        <h2 class="text-lg font-semibold text-slate-900">Patient locations</h2>
+                        <p class="mt-1 text-sm text-slate-500">Use the age filters, then select a pin to view
+                            appointment details.</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2" id="ageFilterGroup"
+                        aria-label="Filter patients by age">
+                        <span class="mr-1 text-xs font-semibold text-slate-500">Show:</span>
+                        <button data-age="all"
+                            class="age-filter-btn active-filter rounded-full px-4 py-2 text-xs font-semibold transition">
+                            All Ages
+                        </button>
+                        <button data-age="under30"
+                            class="age-filter-btn rounded-full px-4 py-2 text-xs font-semibold transition">
+                            Below 30
+                        </button>
+                        <button data-age="30to59"
+                            class="age-filter-btn rounded-full px-4 py-2 text-xs font-semibold transition">
+                            30 - 59
+                        </button>
+                        <button data-age="60plus"
+                            class="age-filter-btn rounded-full px-4 py-2 text-xs font-semibold transition">
+                            60 Above
+                        </button>
+                    </div>
+                </div>
+                <div id="patientMap" class="w-full rounded-3xl overflow-hidden border border-slate-200"
+                    style="height: 420px;"></div>
+                <div class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500"
+                    aria-label="Map status legend">
+                    <span class="font-semibold text-slate-700">Appointment status:</span>
+                    <span class="flex items-center gap-2"><span
+                            class="h-3 w-3 rounded-full bg-emerald-500"></span>Confirmed</span>
+                    <span class="flex items-center gap-2"><span
+                            class="h-3 w-3 rounded-full bg-amber-500"></span>Pending</span>
+                    <span class="flex items-center gap-2"><span
+                            class="h-3 w-3 rounded-full bg-rose-500"></span>Cancelled</span>
+                </div>
+                <p class="mt-3 text-[11px] leading-relaxed text-slate-400">
+                    Pins are anonymized for privacy — only age bracket, gender, and status are shown here.
+                    Full patient records are available in the patient's file, not on this map.
+                </p>
+            </div>
+
         </div>
 
     </section>
-    <script>window.csrfToken = <?= json_encode($csrfToken, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;</script>
+    <script>
+        window.csrfToken = <?= json_encode($csrfToken, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+        window.patientMapData = <?= json_encode($patientsWithCoordinates, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+    </script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="../assets/javascript/mapping.js"></script>
     <script src="../assets/javascript/appointment.js"></script>
 </body>
 
