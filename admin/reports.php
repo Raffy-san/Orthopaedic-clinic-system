@@ -14,12 +14,18 @@ if (!$admin) {
 
 $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
 $unlockToken = $_GET['financial_unlock'] ?? '';
-$financialReportUnlocked = !empty($unlockToken)
+$financialUnlockTokenValid = !empty($unlockToken)
     && !empty($_SESSION['financial_report_unlock_token'])
     && hash_equals((string) $_SESSION['financial_report_unlock_token'], (string) $unlockToken);
 
-if ($financialReportUnlocked) {
+$financialReportUnlocked = $financialUnlockTokenValid
+    || (int) ($_SESSION['financial_report_unlocked_until'] ?? 0) > time();
+
+if ($financialUnlockTokenValid) {
     unset($_SESSION['financial_report_unlock_token']);
+    $_SESSION['financial_report_unlocked_until'] = time() + 300;
+} elseif (!$financialReportUnlocked) {
+    unset($_SESSION['financial_report_unlocked_until']);
 }
 
 $reportTypes = [
@@ -46,6 +52,7 @@ if ($fromDate > $toDate) {
 $reportRows = [];
 $reportSummary = [];
 $reportError = null;
+$isCsvExport = ($_GET['export'] ?? '') === 'csv';
 
 try {
     switch ($reportType) {
@@ -113,6 +120,112 @@ try {
     $reportError = 'Unable to load the selected report.';
 }
 
+if ($isCsvExport) {
+    if ($reportError) {
+        http_response_code(500);
+        exit($reportError);
+    }
+    if ($reportType === 'financial' && !$financialReportUnlocked) {
+        http_response_code(403);
+        exit('Unlock the financial summary before exporting it.');
+    }
+
+    $exportColumns = [];
+    $exportRows = [];
+    $exportSummary = [];
+
+    switch ($reportType) {
+        case 'financial':
+            $exportColumns = ['Date', 'Patient', 'Reference', 'Status', 'Amount Paid'];
+            $exportRows = array_map(static fn(array $row): array => [
+                $row['PaymentDate'],
+                $row['PatientName'],
+                $row['ReferenceNo'],
+                $row['Status'],
+                $row['AmountPaid'],
+            ], $reportRows);
+            $exportSummary = [
+                ['Bills', $reportSummary['bills'] ?? 0],
+                ['Billed', $reportSummary['billed'] ?? 0],
+                ['Collected', $reportSummary['collected'] ?? 0],
+            ];
+            break;
+
+        case 'appointments':
+            $exportColumns = ['Date', 'Time', 'Patient', 'Doctor', 'Purpose', 'Status'];
+            $exportRows = array_map(static fn(array $row): array => [
+                $row['AppointmentDate'],
+                $row['AppointmentTime'],
+                $row['PatientName'],
+                $row['DoctorName'],
+                $row['Purpose'],
+                $row['Status'],
+            ], $reportRows);
+            break;
+
+        case 'consultations':
+            $exportColumns = ['Date', 'Patient', 'Doctor', 'Diagnosis', 'Treatment', 'Consultation Fee'];
+            $exportRows = array_map(static fn(array $row): array => [
+                $row['ConsultationDate'],
+                $row['PatientName'],
+                $row['DoctorName'],
+                $row['Diagnosis'],
+                $row['Treatment'],
+                $row['ConsultationFee'],
+            ], $reportRows);
+            break;
+
+        case 'patients':
+        default:
+            $exportColumns = ['Patient ID', 'Name', 'Birth Date', 'Gender', 'Patient Type', 'Phone', 'Registered'];
+            $exportRows = array_map(static fn(array $row): array => [
+                $row['PatientCode'],
+                $row['PatientName'],
+                $row['BirthDate'],
+                $row['Gender'],
+                $row['PatientType'],
+                $row['Phone'],
+                $row['CreatedAt'],
+            ], $reportRows);
+            break;
+    }
+
+    $filename = sprintf('clinic-%s-%s-to-%s.csv', $reportType, $fromDate, $toDate);
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('X-Content-Type-Options: nosniff');
+    header('Cache-Control: no-store, private');
+
+    $output = fopen('php://output', 'wb');
+    if ($output === false) {
+        error_log('Unable to open output stream for report CSV export.');
+        http_response_code(500);
+        exit('Unable to export the selected report.');
+    }
+
+    fwrite($output, "\xEF\xBB\xBF");
+    fputcsv($output, [$reportTypes[$reportType]]);
+    fputcsv($output, ['Date range', $fromDate . ' to ' . $toDate]);
+    foreach ($exportSummary as $summaryRow) {
+        fputcsv($output, $summaryRow);
+    }
+    if ($exportSummary) {
+        fputcsv($output, []);
+    }
+    fputcsv($output, $exportColumns);
+    foreach ($exportRows as $row) {
+        $safeRow = array_map(static function (mixed $value): mixed {
+            if (is_string($value) && preg_match('/^[\t\r ]*[=+\-@]/', $value)) {
+                return "'" . $value;
+            }
+            return $value;
+        }, $row);
+        fputcsv($output, $safeRow);
+    }
+    fclose($output);
+    exit;
+}
+
 function reportValue(mixed $value): string
 {
     return htmlspecialchars((string) ($value ?? '—'), ENT_QUOTES, 'UTF-8');
@@ -122,6 +235,7 @@ function reportMoney(mixed $value): string
 {
     return '₱' . number_format((float) $value, 2);
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -235,10 +349,18 @@ function reportMoney(mixed $value): string
                             <?= reportValue($toDate) ?>
                         </p>
                     </div>
-                    <button type="button" id="printReportBtn" data-report-type="<?= reportValue($reportType) ?>"
-                        class="print-hidden inline-flex items-center gap-2 px-3 py-2 bg-slate-700 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">
-                        <i class="fa-solid fa-print"></i> Print
-                    </button>
+                        <div class="print-hidden flex items-center gap-2">
+                            <?php if (!$reportError && ($reportType !== 'financial' || $financialReportUnlocked)): ?>
+                                <a href="?report_type=<?= urlencode($reportType) ?>&amp;from_date=<?= urlencode($fromDate) ?>&amp;to_date=<?= urlencode($toDate) ?>&amp;export=csv"
+                                    class="inline-flex items-center gap-2 px-3 py-2 bg-emerald-700 text-white text-sm font-semibold rounded-lg hover:bg-emerald-800">
+                                    <i class="fa-solid fa-file-csv"></i> Export CSV
+                                </a>
+                            <?php endif; ?>
+                            <button type="button" id="printReportBtn" data-report-type="<?= reportValue($reportType) ?>"
+                                class="inline-flex items-center gap-2 px-3 py-2 bg-slate-700 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">
+                                <i class="fa-solid fa-print"></i> Print
+                            </button>
+                        </div>
                 </div>
 
                 <?php if ($reportError): ?>
