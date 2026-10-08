@@ -14,8 +14,12 @@ const rescheduleSelectedTimeInput = document.getElementById('rescheduleSelectedT
 const resetRescheduleTimeSlots = () => {
     document.querySelectorAll('.reschedule-time-slot').forEach((slot) => {
         slot.disabled = false;
+        slot.classList.remove('hidden');
         slot.classList.remove('bg-red-100', 'text-red-700', 'bg-sky-600', 'text-white');
         slot.classList.add('bg-slate-100', 'text-slate-700');
+    });
+    document.querySelectorAll('#rescheduleMorningGroup, #rescheduleAfternoonGroup').forEach((group) => {
+        group.classList.remove('hidden');
     });
     rescheduleSelectedTime = null;
     if (rescheduleSelectedTimeInput) {
@@ -42,6 +46,7 @@ document.querySelectorAll('.reschedule-btn').forEach((btn) => {
         if (rescheduleTimeMessage) {
             rescheduleTimeMessage.textContent = 'Choose a date first to see available slots.';
             rescheduleTimeMessage.classList.remove('hidden');
+            rescheduleTimeMessage.classList.remove('text-red-600');
         }
 
         openModal(rescheduleModal);
@@ -74,13 +79,31 @@ if (rescheduleDateInput) {
                 throw new Error(data.message || 'Unable to load availability.');
             }
 
-            const takenTimes = new Set(data.taken_times);
+            if (data.closed) {
+                if (rescheduleTimeMessage) {
+                    rescheduleTimeMessage.textContent = data.closed_message || 'The clinic is closed on this date.';
+                    rescheduleTimeMessage.classList.remove('hidden');
+                    rescheduleTimeMessage.classList.add('text-red-600');
+                }
+                return;
+            }
+
+            if (rescheduleTimeMessage) {
+                rescheduleTimeMessage.classList.remove('text-red-600');
+            }
+
+            const availableTimes = new Set(data.available_times || []);
+            const takenTimes = new Set(data.taken_times || []);
             document.querySelectorAll('.reschedule-time-slot').forEach((slot) => {
+                slot.classList.toggle('hidden', !availableTimes.has(slot.dataset.time));
                 if (takenTimes.has(slot.dataset.time)) {
                     slot.disabled = true;
                     slot.classList.remove('bg-slate-100', 'text-slate-700');
                     slot.classList.add('bg-red-100', 'text-red-700');
                 }
+            });
+            document.querySelectorAll('#rescheduleMorningGroup, #rescheduleAfternoonGroup').forEach((group) => {
+                group.classList.toggle('hidden', !group.querySelector('.reschedule-time-slot:not(.hidden)'));
             });
 
             if (rescheduleTimeMessage) {

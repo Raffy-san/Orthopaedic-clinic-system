@@ -52,7 +52,9 @@ if ($fromDate > $toDate) {
 $reportRows = [];
 $reportSummary = [];
 $reportError = null;
-$isCsvExport = ($_GET['export'] ?? '') === 'csv';
+$exportFormat = $_GET['export'] ?? '';
+$isCsvExport = $exportFormat === 'csv';
+$isExcelExport = $exportFormat === 'xlsx';
 
 try {
     switch ($reportType) {
@@ -120,7 +122,7 @@ try {
     $reportError = 'Unable to load the selected report.';
 }
 
-if ($isCsvExport) {
+if ($isCsvExport || $isExcelExport) {
     if ($reportError) {
         http_response_code(500);
         exit($reportError);
@@ -188,6 +190,37 @@ if ($isCsvExport) {
                 $row['CreatedAt'],
             ], $reportRows);
             break;
+    }
+
+    if ($isExcelExport) {
+        require_once __DIR__ . '/../php/export/report-workbook.php';
+
+        try {
+            $workbookPath = createReportWorkbook(
+                $reportTypes[$reportType],
+                'Southern Leyte Orthopaedic Clinic System',
+                $fromDate,
+                $toDate,
+                $exportColumns,
+                $exportRows,
+                $exportSummary,
+                $reportType
+            );
+        } catch (Throwable $e) {
+            error_log('Unable to generate Excel report: ' . $e->getMessage());
+            http_response_code(500);
+            exit('Unable to create the Excel report. Please try again.');
+        }
+
+        $filename = sprintf('clinic-%s-%s-to-%s.xlsx', $reportType, $fromDate, $toDate);
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . filesize($workbookPath));
+        header('X-Content-Type-Options: nosniff');
+        header('Cache-Control: no-store, private');
+        readfile($workbookPath);
+        unlink($workbookPath);
+        exit;
     }
 
     $filename = sprintf('clinic-%s-%s-to-%s.csv', $reportType, $fromDate, $toDate);
@@ -351,8 +384,12 @@ function reportMoney(mixed $value): string
                     </div>
                         <div class="print-hidden flex items-center gap-2">
                             <?php if (!$reportError && ($reportType !== 'financial' || $financialReportUnlocked)): ?>
-                                <a href="?report_type=<?= urlencode($reportType) ?>&amp;from_date=<?= urlencode($fromDate) ?>&amp;to_date=<?= urlencode($toDate) ?>&amp;export=csv"
+                                <a href="?report_type=<?= urlencode($reportType) ?>&amp;from_date=<?= urlencode($fromDate) ?>&amp;to_date=<?= urlencode($toDate) ?>&amp;export=xlsx"
                                     class="inline-flex items-center gap-2 px-3 py-2 bg-emerald-700 text-white text-sm font-semibold rounded-lg hover:bg-emerald-800">
+                                    <i class="fa-solid fa-file-excel"></i> Export Excel
+                                </a>
+                                <a href="?report_type=<?= urlencode($reportType) ?>&amp;from_date=<?= urlencode($fromDate) ?>&amp;to_date=<?= urlencode($toDate) ?>&amp;export=csv"
+                                    class="inline-flex items-center gap-2 px-3 py-2 bg-slate-600 text-white text-sm font-semibold rounded-lg hover:bg-slate-700">
                                     <i class="fa-solid fa-file-csv"></i> Export CSV
                                 </a>
                             <?php endif; ?>
