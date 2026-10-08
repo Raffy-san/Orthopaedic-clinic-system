@@ -15,6 +15,13 @@ $navItems = [
         'roles' => ['staff'],
     ],
     [
+        'label' => 'Schedules',
+        'icon' => 'fa-calendar',
+        'file' => 'doctor-schedules.php',
+        'href' => '../admin/doctor-schedules.php',
+        'roles' => ['admin', 'doctor'],
+    ],
+    [
         'label' => 'Appointments',
         'icon' => 'fa-calendar',
         'file' => 'appointments.php',

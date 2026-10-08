@@ -144,10 +144,34 @@ if (!$admin) {
                         <h2 class="text-lg font-semibold text-slate-900">Choose an appointment date</h2>
                         <p class="mt-1 text-sm text-slate-500">Select a date to see which appointment times are
                             available.</p>
-                        <label for="appointmentDate" class="mt-5 block text-sm font-semibold text-slate-700">Appointment
-                            date</label>
-                        <input type="date" id="appointmentDate" name="appointment_date"
-                            class="mt-2 w-full border border-gray-300 bg-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <p id="appointmentDateLabel" class="mt-5 block text-sm font-semibold text-slate-700">Appointment
+                            date</p>
+                        <input type="hidden" id="appointmentDate" name="appointment_date">
+                        <div class="mt-2 rounded-xl border border-slate-200 p-4" data-availability-calendar
+                            data-input-id="appointmentDate" aria-labelledby="appointmentDateLabel">
+                            <div class="mb-4 flex items-center justify-between">
+                                <button type="button" data-calendar-prev aria-label="Previous month"
+                                    class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">&larr;</button>
+                                <h3 data-calendar-month class="font-semibold text-slate-900"></h3>
+                                <button type="button" data-calendar-next aria-label="Next month"
+                                    class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">&rarr;</button>
+                            </div>
+                            <div class="mb-2 grid grid-cols-7 gap-1 text-center text-xs font-semibold text-slate-500"
+                                aria-hidden="true">
+                                <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                            </div>
+                            <div data-calendar-days class="grid grid-cols-7 gap-1" role="grid"
+                                aria-label="Appointment dates"></div>
+                            <p data-calendar-error class="mt-3 hidden text-xs text-red-600" role="alert"></p>
+                            <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-500">
+                                <span class="flex items-center gap-2"><span
+                                        class="h-3 w-3 rounded-full border border-red-200 bg-red-100"></span>Doctor unavailable</span>
+                                <span class="flex items-center gap-2"><span
+                                        class="h-3 w-3 rounded-full border border-slate-200 bg-slate-100"></span>Clinic closed</span>
+                                <span class="flex items-center gap-2"><span
+                                        class="h-3 w-3 rounded-full border border-emerald-200 bg-white"></span>Available</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div id="appointmentTimeCalendar"
@@ -175,60 +199,63 @@ if (!$admin) {
                             </div>
                         </div>
 
-                        <div class="mb-3 flex items-center justify-between">
-                            <h3 class="text-xs font-bold uppercase tracking-wide text-slate-500">Morning</h3>
-                            <span class="text-xs text-slate-400">8:00 AM - 12:00 PM</span>
+                        <div data-time-slot-group>
+                            <div class="mb-3 flex items-center justify-between">
+                                <h3 class="text-xs font-bold uppercase tracking-wide text-slate-500">Morning</h3>
+                                <span class="text-xs text-slate-400">8:00 AM - 12:00 PM</span>
+                            </div>
+                            <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                                <button type="button" data-time="08:00 AM"
+                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">08:00
+                                    AM</button>
+                                <button type="button" data-time="08:30 AM"
+                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">08:30
+                                    AM</button>
+                                <button type="button" data-time="09:00 AM"
+                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">09:00
+                                    AM</button>
+                                <button type="button" data-time="09:30 AM"
+                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">09:30
+                                    AM</button>
+                                <button type="button" data-time="10:00 AM"
+                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">10:00
+                                    AM</button>
+                                <button type="button" data-time="10:30 AM"
+                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">10:30
+                                    AM</button>
+                                <button type="button" data-time="11:00 AM"
+                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">11:00
+                                    AM</button>
+                                <button type="button" data-time="11:30 AM"
+                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">11:30
+                                    AM</button>
+                            </div>
                         </div>
-                        <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                            <button type="button" data-time="08:00 AM"
-                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">08:00
-                                AM</button>
-                            <button type="button" data-time="08:30 AM"
-                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">08:30
-                                AM</button>
-                            <button type="button" data-time="09:00 AM"
-                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">09:00
-                                AM</button>
-                            <button type="button" data-time="09:30 AM"
-                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">09:30
-                                AM</button>
-                            <button type="button" data-time="10:00 AM"
-                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">10:00
-                                AM</button>
-                            <button type="button" data-time="10:30 AM"
-                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">10:30
-                                AM</button>
-                            <button type="button" data-time="11:00 AM"
-                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">11:00
-                                AM</button>
-                            <button type="button" data-time="11:30 AM"
-                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">11:30
-                                AM</button>
-                        </div>
-
-                        <div class="mb-3 flex items-center justify-between">
-                            <h3 class="text-xs font-bold uppercase tracking-wide text-slate-500">Afternoon</h3>
-                            <span class="text-xs text-slate-400">2:00 PM - 5:00 PM</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                            <button type="button" data-time="02:00 PM"
-                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">02:00
-                                PM</button>
-                            <button type="button" data-time="02:30 PM"
-                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">02:30
-                                PM</button>
-                            <button type="button" data-time="03:00 PM"
-                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">03:00
-                                PM</button>
-                            <button type="button" data-time="03:30 PM"
-                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">03:30
-                                PM</button>
-                            <button type="button" data-time="04:00 PM"
-                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">04:00
-                                PM</button>
-                            <button type="button" data-time="04:30 PM"
-                                class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">04:30
-                                PM</button>
+                        <div data-time-slot-group>
+                            <div class="mb-3 flex items-center justify-between">
+                                <h3 class="text-xs font-bold uppercase tracking-wide text-slate-500">Afternoon</h3>
+                                <span class="text-xs text-slate-400">2:00 PM - 5:00 PM</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                                <button type="button" data-time="02:00 PM"
+                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">02:00
+                                    PM</button>
+                                <button type="button" data-time="02:30 PM"
+                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">02:30
+                                    PM</button>
+                                <button type="button" data-time="03:00 PM"
+                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">03:00
+                                    PM</button>
+                                <button type="button" data-time="03:30 PM"
+                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">03:30
+                                    PM</button>
+                                <button type="button" data-time="04:00 PM"
+                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">04:00
+                                    PM</button>
+                                <button type="button" data-time="04:30 PM"
+                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">04:30
+                                    PM</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -510,9 +537,31 @@ if (!$admin) {
                     <input type="hidden" name="appointment_id" id="rescheduleAppointmentId">
 
                     <div class="mb-4">
-                        <label class="block text-gray-700 mb-1 text-sm">New Date</label>
-                        <input type="date" name="new_appointment_date" id="rescheduleDate" required
-                            class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        <p id="rescheduleDateLabel" class="block text-gray-700 mb-1 text-sm">New Date</p>
+                        <input type="hidden" name="new_appointment_date" id="rescheduleDate">
+                        <div class="rounded-xl border border-slate-200 p-4" data-availability-calendar
+                            data-input-id="rescheduleDate" aria-labelledby="rescheduleDateLabel">
+                            <div class="mb-4 flex items-center justify-between">
+                                <button type="button" data-calendar-prev aria-label="Previous month"
+                                    class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">&larr;</button>
+                                <h3 data-calendar-month class="font-semibold text-slate-900"></h3>
+                                <button type="button" data-calendar-next aria-label="Next month"
+                                    class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">&rarr;</button>
+                            </div>
+                            <div class="mb-2 grid grid-cols-7 gap-1 text-center text-xs font-semibold text-slate-500"
+                                aria-hidden="true">
+                                <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                            </div>
+                            <div data-calendar-days class="grid grid-cols-7 gap-1" role="grid"
+                                aria-label="Reschedule dates"></div>
+                            <p data-calendar-error class="mt-3 hidden text-xs text-red-600" role="alert"></p>
+                            <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-500">
+                                <span class="flex items-center gap-2"><span
+                                        class="h-3 w-3 rounded-full border border-red-200 bg-red-100"></span>Doctor unavailable</span>
+                                <span class="flex items-center gap-2"><span
+                                        class="h-3 w-3 rounded-full border border-slate-200 bg-slate-100"></span>Clinic closed</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="mb-2">
@@ -521,11 +570,12 @@ if (!$admin) {
                             available slots.</p>
 
                         <div id="rescheduleTimeCalendar" class="hidden">
-                            <div class="mb-2 flex items-center justify-between">
-                                <h4 class="text-xs font-bold uppercase tracking-wide text-slate-500">Morning</h4>
-                                <span class="text-xs text-slate-400">8:00 AM - 12:00 PM</span>
-                            </div>
-                            <div class="mb-4 grid grid-cols-3 gap-2" id="rescheduleMorningSlots">
+                            <div id="rescheduleMorningGroup">
+                                <div class="mb-2 flex items-center justify-between">
+                                    <h4 class="text-xs font-bold uppercase tracking-wide text-slate-500">Morning</h4>
+                                    <span class="text-xs text-slate-400">8:00 AM - 12:00 PM</span>
+                                </div>
+                                <div class="mb-4 grid grid-cols-3 gap-2" id="rescheduleMorningSlots">
                                 <button type="button" data-time="08:00 AM"
                                     class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">08:00
                                     AM</button>
@@ -550,13 +600,15 @@ if (!$admin) {
                                 <button type="button" data-time="11:30 AM"
                                     class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">11:30
                                     AM</button>
+                                </div>
                             </div>
 
-                            <div class="mb-2 flex items-center justify-between">
-                                <h4 class="text-xs font-bold uppercase tracking-wide text-slate-500">Afternoon</h4>
-                                <span class="text-xs text-slate-400">2:00 PM - 5:00 PM</span>
-                            </div>
-                            <div class="grid grid-cols-3 gap-2" id="rescheduleAfternoonSlots">
+                            <div id="rescheduleAfternoonGroup">
+                                <div class="mb-2 flex items-center justify-between">
+                                    <h4 class="text-xs font-bold uppercase tracking-wide text-slate-500">Afternoon</h4>
+                                    <span class="text-xs text-slate-400">2:00 PM - 5:00 PM</span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2" id="rescheduleAfternoonSlots">
                                 <button type="button" data-time="02:00 PM"
                                     class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">02:00
                                     PM</button>
@@ -575,6 +627,7 @@ if (!$admin) {
                                 <button type="button" data-time="04:30 PM"
                                     class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">04:30
                                     PM</button>
+                                </div>
                             </div>
                         </div>
                     </div>

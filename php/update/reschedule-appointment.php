@@ -34,6 +34,24 @@ if (!$appointmentId || $newDate === '' || $newTime === '') {
     exit;
 }
 
+$parsedDate = DateTime::createFromFormat('!Y-m-d', $newDate);
+$dateErrors = DateTime::getLastErrors();
+if (
+    !$parsedDate
+    || ($dateErrors !== false && ($dateErrors['warning_count'] > 0 || $dateErrors['error_count'] > 0))
+    || $parsedDate->format('Y-m-d') !== $newDate
+) {
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Please choose a valid appointment date.']);
+    exit;
+}
+
+if ($parsedDate < new DateTime('today')) {
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Cannot reschedule an appointment to a past date.']);
+    exit;
+}
+
 // Convert the 12-hour "hh:mm AM/PM" slot label into a proper 24-hour TIME value.
 // (book-appointment.php's own GET query derives AM/PM from this stored value alone,
 // via TIME_FORMAT(...,'%h:%i %p') — it does NOT look at the meridiem column — so this
@@ -49,6 +67,27 @@ $timeOnly = $parsedTime->format('H:i:s');
 $meridiem = $parsedTime->format('A');
 
 try {
+    $dayOfWeek = (int) $parsedDate->format('N');
+    $scheduleStatement = $pdo->prepare('SELECT IsOpen, StartTime, EndTime FROM clinic_schedule WHERE DayOfWeek = ?');
+    $scheduleStatement->execute([$dayOfWeek]);
+    $daySchedule = $scheduleStatement->fetch(PDO::FETCH_ASSOC);
+
+    $unavailabilityStatement = $pdo->prepare('SELECT Reason FROM doctor_unavailability WHERE UnavailableDate = ?');
+    $unavailabilityStatement->execute([$newDate]);
+    $unavailability = $unavailabilityStatement->fetch(PDO::FETCH_ASSOC);
+
+    if (!$daySchedule || !$daySchedule['IsOpen'] || $unavailability) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'The clinic/doctor is unavailable on the selected date.']);
+        exit;
+    }
+
+    if ($timeOnly < $daySchedule['StartTime'] || $timeOnly >= $daySchedule['EndTime']) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'The selected time is outside the clinic hours for this date.']);
+        exit;
+    }
+
     $appointmentStatement = $pdo->prepare(
         "SELECT AppointmentDate, AppointmentTime, meridiem, Status
          FROM appointments
