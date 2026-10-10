@@ -50,7 +50,7 @@ try {
         $placeholders = implode(',', array_fill(0, count($consultationIds), '?'));
         $prescriptions = fetchAllData(
             $pdo,
-            "SELECT ConsultationID, Medicine, Dosage, Frequency, Duration, Instructions
+            "SELECT ConsultationID, Medicine, Dosage, Frequency, Duration, Quantity, Instructions
              FROM prescriptions
              WHERE ConsultationID IN ($placeholders)
              ORDER BY PrescriptionID ASC",

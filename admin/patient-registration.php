@@ -3,7 +3,7 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../php/fetch/fetch.php';
 SessionManager::requireLogin();
-SessionManager::requireAnyRole(['admin', 'doctor', 'staff']);
+SessionManager::requireAnyRole(['staff']);
 $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
 
 $admin = SessionManager::getUser($pdo);

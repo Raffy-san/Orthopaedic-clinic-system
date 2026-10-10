@@ -4,13 +4,14 @@ require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../php/fetch/fetch.php';
 SessionManager::requireAdmin();
 SessionManager::requireLogin();
-SessionManager::requireAnyRole(['admin', 'doctor']);
+SessionManager::requireAnyRole(['staff']);
 
 $admin = SessionManager::getUser($pdo);
 
 if (!$admin) {
     SessionManager::logout('../index.php');
 }
+
 
 $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
 $unlockToken = $_GET['financial_unlock'] ?? '';
@@ -382,22 +383,22 @@ function reportMoney(mixed $value): string
                             <?= reportValue($toDate) ?>
                         </p>
                     </div>
-                        <div class="print-hidden flex items-center gap-2">
-                            <?php if (!$reportError && ($reportType !== 'financial' || $financialReportUnlocked)): ?>
-                                <a href="?report_type=<?= urlencode($reportType) ?>&amp;from_date=<?= urlencode($fromDate) ?>&amp;to_date=<?= urlencode($toDate) ?>&amp;export=xlsx"
-                                    class="inline-flex items-center gap-2 px-3 py-2 bg-emerald-700 text-white text-sm font-semibold rounded-lg hover:bg-emerald-800">
-                                    <i class="fa-solid fa-file-excel"></i> Export Excel
-                                </a>
-                                <a href="?report_type=<?= urlencode($reportType) ?>&amp;from_date=<?= urlencode($fromDate) ?>&amp;to_date=<?= urlencode($toDate) ?>&amp;export=csv"
-                                    class="inline-flex items-center gap-2 px-3 py-2 bg-slate-600 text-white text-sm font-semibold rounded-lg hover:bg-slate-700">
-                                    <i class="fa-solid fa-file-csv"></i> Export CSV
-                                </a>
-                            <?php endif; ?>
-                            <button type="button" id="printReportBtn" data-report-type="<?= reportValue($reportType) ?>"
-                                class="inline-flex items-center gap-2 px-3 py-2 bg-slate-700 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">
-                                <i class="fa-solid fa-print"></i> Print
-                            </button>
-                        </div>
+                    <div class="print-hidden flex items-center gap-2">
+                        <?php if (!$reportError && ($reportType !== 'financial' || $financialReportUnlocked)): ?>
+                            <a href="?report_type=<?= urlencode($reportType) ?>&amp;from_date=<?= urlencode($fromDate) ?>&amp;to_date=<?= urlencode($toDate) ?>&amp;export=xlsx"
+                                class="inline-flex items-center gap-2 px-3 py-2 bg-emerald-700 text-white text-sm font-semibold rounded-lg hover:bg-emerald-800">
+                                <i class="fa-solid fa-file-excel"></i> Export Excel
+                            </a>
+                            <a href="?report_type=<?= urlencode($reportType) ?>&amp;from_date=<?= urlencode($fromDate) ?>&amp;to_date=<?= urlencode($toDate) ?>&amp;export=csv"
+                                class="inline-flex items-center gap-2 px-3 py-2 bg-slate-600 text-white text-sm font-semibold rounded-lg hover:bg-slate-700">
+                                <i class="fa-solid fa-file-csv"></i> Export CSV
+                            </a>
+                        <?php endif; ?>
+                        <button type="button" id="printReportBtn" data-report-type="<?= reportValue($reportType) ?>"
+                            class="inline-flex items-center gap-2 px-3 py-2 bg-slate-700 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">
+                            <i class="fa-solid fa-print"></i> Print
+                        </button>
+                    </div>
                 </div>
 
                 <?php if ($reportError): ?>
@@ -604,6 +605,7 @@ function reportMoney(mixed $value): string
     <script>
         window.csrfToken = <?= json_encode($csrfToken, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
     </script>
+    <script src="../assets/javascript/print-prescription.js"></script>
     <script src="../assets/javascript/reports.js"></script>
 </body>
 

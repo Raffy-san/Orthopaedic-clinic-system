@@ -240,22 +240,50 @@ $defaultConsultationFee = 500; // PHP
                             </div>
 
                             <div id="followupDetails" class="hidden">
-                                <label class="text-sm font-semibold text-slate-700">Follow-up Date *</label>
-                                <input type="date" id="followupDate" name="followup[date]"
-                                    class="w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <div id="followupAlternatives" class="hidden mt-3">
-                                    <label for="followupAlternativeDate"
-                                        class="text-sm font-semibold text-slate-700">Alternative available dates</label>
-                                    <select id="followupAlternativeDate"
-                                        class="w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        <option value="">Select an alternative date</option>
-                                    </select>
+                                <p id="followupDateLabel" class="text-sm font-semibold text-slate-700">Follow-up Date *
+                                </p>
+                                <input type="hidden" id="followupDate" name="followup[date]">
+                                <div class="mt-2 rounded-xl border border-slate-200 p-4" data-availability-calendar
+                                    data-input-id="followupDate" aria-labelledby="followupDateLabel">
+                                    <div class="mb-4 flex items-center justify-between">
+                                        <button type="button" data-calendar-prev aria-label="Previous month"
+                                            class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">&larr;</button>
+                                        <h3 data-calendar-month class="font-semibold text-slate-900"></h3>
+                                        <button type="button" data-calendar-next aria-label="Next month"
+                                            class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">&rarr;</button>
+                                    </div>
+                                    <div class="mb-2 grid grid-cols-7 gap-1 text-center text-xs font-semibold text-slate-500"
+                                        aria-hidden="true">
+                                        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                                    </div>
+                                    <div data-calendar-days class="grid grid-cols-7 gap-1" role="grid"
+                                        aria-label="Follow-up dates"></div>
+                                    <p data-calendar-error class="mt-3 hidden text-xs text-red-600" role="alert"></p>
+                                    <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-500">
+                                        <span class="flex items-center gap-2"><span
+                                                class="h-3 w-3 rounded-full border border-red-200 bg-red-100"></span>Doctor
+                                            unavailable</span>
+                                        <span class="flex items-center gap-2"><span
+                                                class="h-3 w-3 rounded-full border border-slate-200 bg-slate-100"></span>Clinic
+                                            closed</span>
+                                        <span class="flex items-center gap-2"><span
+                                                class="h-3 w-3 rounded-full border border-emerald-200 bg-white"></span>Available</span>
+                                    </div>
                                 </div>
-                                <label class="text-sm font-semibold text-slate-700 mt-3 block">Remarks</label>
-                                <textarea id="followupRemarks" name="followup[remarks]"
-                                    class="w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="e.g., Check healing progress, review X-ray"></textarea>
                             </div>
+
+                            <div id="followupAlternatives" class="hidden mt-3">
+                                <label for="followupAlternativeDate"
+                                    class="text-sm font-semibold text-slate-700">Alternative available dates</label>
+                                <select id="followupAlternativeDate"
+                                    class="w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Select an alternative date</option>
+                                </select>
+                            </div>
+                            <label class="text-sm font-semibold text-slate-700 mt-3 block">Remarks</label>
+                            <textarea id="followupRemarks" name="followup[remarks]"
+                                class="w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="e.g., Check healing progress, review X-ray"></textarea>
                         </div>
 
                         <div>
@@ -273,6 +301,8 @@ $defaultConsultationFee = 500; // PHP
     <script>
         window.csrfToken = <?= json_encode($csrfToken, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
     </script>
+    <script src="../assets/javascript/availability-calendar.js"></script>
+    <script src="../assets/javascript/print-prescription.js"></script>
     <script src="../assets/javascript/consultation.js"></script>
 </body>
 

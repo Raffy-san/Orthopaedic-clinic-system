@@ -40,7 +40,7 @@ $navItems = [
         'icon' => 'fa-pills',
         'file' => 'medicines.php',
         'href' => '../admin/medicines.php',
-        'roles' => ['admin', 'staff', 'doctor'],
+        'roles' => ['staff'],
     ],
     [
         'label' => 'Medical Records',
@@ -61,14 +61,14 @@ $navItems = [
         'icon' => 'fa-heart-pulse',
         'file' => 'follow-up-checkups.php',
         'href' => '../admin/follow-up-checkups.php',
-        'roles' => ['admin', 'staff', 'doctor'],
+        'roles' => ['staff'],
     ],
     [
         'label' => 'Reports',
         'icon' => 'fa-file-lines',
         'file' => 'reports.php',
         'href' => '../admin/reports.php',
-        'roles' => ['admin', 'doctor'],
+        'roles' => ['staff'],
     ],
     [
         'label' => 'Staff Accounts',

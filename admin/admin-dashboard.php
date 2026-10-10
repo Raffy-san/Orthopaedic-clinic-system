@@ -492,6 +492,7 @@ foreach ($patientsRaw as $row) {
                                     <th class="px-6 py-4 font-medium">Patient ID</th>
                                     <th class="px-6 py-4 font-medium">Name</th>
                                     <th class="px-6 py-4 font-medium">Date</th>
+                                    <th class="px-6 py-4 font-medium">Time</th>
                                 </tr>
                             </thead>
 
@@ -518,6 +519,9 @@ foreach ($patientsRaw as $row) {
                                         '</td>';
                                     echo '<td class="px-6 py-4 text-gray-500">'
                                         . htmlspecialchars(date('M d, Y', strtotime($patient['CreatedAt']))) .
+                                        '</td>';
+                                    echo '<td class="px-6 py-4 text-gray-500">'
+                                        . htmlspecialchars(date('g:i A', strtotime($patient['CreatedAt']))) .
                                         '</td>';
                                 }
                                 ?>
