@@ -1,5 +1,31 @@
 let csrfToken = window.csrfToken || "";
 
+function formatAppointmentTime(appointmentTime, meridiem) {
+    if (!appointmentTime) {
+        return '';
+    }
+
+    const [timePart, secondsPart] = String(appointmentTime).split(':');
+    const hour = Number(timePart);
+    const minutes = Number(secondsPart ?? '0');
+
+    if (Number.isNaN(hour) || Number.isNaN(minutes)) {
+        return appointmentTime;
+    }
+
+    const normalizedMeridiem = (meridiem || '').toUpperCase();
+    let displayHour = hour;
+    let displayMeridiem = (normalizedMeridiem === 'AM' || normalizedMeridiem === 'PM') ? normalizedMeridiem : (hour >= 12 ? 'PM' : 'AM');
+
+    if (displayHour > 12) {
+        displayHour -= 12;
+    } else if (displayHour === 0) {
+        displayHour = 12;
+    }
+
+    return `${displayHour}:${String(minutes).padStart(2, '0')} ${displayMeridiem}`;
+}
+
 function updateBodyScroll() {
     const anyModalOpen = document.querySelectorAll('.modal:not(.hidden)').length > 0;
     document.body.style.overflow = anyModalOpen ? 'hidden' : 'auto';
@@ -72,12 +98,14 @@ async function loadFollowups() {
                 statusText = 'Cancelled';
             }
 
+            const formattedTime = formatAppointmentTime(followup.AppointmentTime, followup.AppointmentMeridiem);
+
             html += `
                         <div class="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow followup-card" data-followup-id="${followup.FollowUpID}">
                             <div class="flex justify-between items-start mb-4">
                                 <div>
                                     <h3 class="text-lg font-bold text-gray-800">${followup.PatientFirstName} ${followup.PatientLastName}</h3>
-                                    <p class="text-sm text-gray-500">Dr. ${followup.DoctorFirstName} ${followup.DoctorLastName} • ${formattedDate}</p>
+                                    <p class="text-sm text-gray-500">Dr. ${followup.DoctorFirstName} ${followup.DoctorLastName} • ${formattedDate} - ${formattedTime}</p>
                                 </div>
                                 <span class="inline-block px-3 py-1 text-xs font-semibold ${statusClass} rounded-full">${statusText}</span>
                             </div>

@@ -12,7 +12,7 @@ header('Content-Type: application/json');
 $csrfToken = $_SESSION['csrf_token'] ?? '';
 $requestData = json_decode(file_get_contents('php://input'), true);
 
-if (empty($requestData['csrf_token']) || $requestData['csrf_token'] !== $csrfToken) {
+if (empty($requestData['csrf_token']) || $csrfToken === '' || !hash_equals($csrfToken, $requestData['csrf_token'])) {
     http_response_code(403);
     echo json_encode(['status' => 'error', 'message' => 'Invalid CSRF token']);
     exit;
@@ -50,8 +50,10 @@ SessionManager::regenerateCsrfToken();
 $result['csrf_token'] = $_SESSION['csrf_token'];
 
 // Set response code based on status
-if ($result['status'] === 'error') {
-    http_response_code($result['code'] === 'followup_date_unavailable' ? 409 : 500);
+if (($result['status'] ?? '') === 'error') {
+    $code = $result['code'] ?? '';
+    $conflictCodes = ['followup_date_unavailable', 'followup_time_unavailable'];
+    http_response_code(in_array($code, $conflictCodes, true) ? 409 : 500);
 }
 
 echo json_encode($result);

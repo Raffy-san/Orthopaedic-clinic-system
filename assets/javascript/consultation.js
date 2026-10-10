@@ -414,6 +414,84 @@ document.getElementById('skipFollowupBtn').addEventListener('click', () => {
     document.getElementById('followupAlternatives').classList.add('hidden');
 });
 
+const followupDateInput = document.getElementById('followupDate');
+const followupTimeInput = document.getElementById('followupTime');
+const followupTimeMessage = document.getElementById('followupTimeMessage');
+const followupTimeSlots = document.getElementById('followupTimeSlots');
+const FOLLOWUP_DEFAULT_MESSAGE = 'Choose a date first to see available slots.';
+
+function setFollowupMessage(text, isError = false) {
+    followupTimeMessage.textContent = text;
+    followupTimeMessage.classList.toggle('text-red-600', isError);
+    followupTimeMessage.classList.toggle('text-slate-500', !isError);
+}
+
+function resetFollowupTime() {
+    followupTimeInput.value = '';
+    followupTimeSlots.classList.add('hidden');
+    document.querySelectorAll('.followup-time-slot').forEach((slot) => {
+        slot.disabled = false;
+        slot.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-sky-600', 'text-white');
+        slot.classList.add('bg-slate-100', 'text-slate-700');
+    });
+    setFollowupMessage(FOLLOWUP_DEFAULT_MESSAGE);
+}
+
+followupDateInput.addEventListener('change', async () => {
+    const date = followupDateInput.value;
+    resetFollowupTime();
+    if (!date) return;
+
+    setFollowupMessage('Loading availability...');
+    try {
+        const response = await fetch(`../php/add/book-appointment.php?date=${encodeURIComponent(date)}`);
+        const data = await response.json();
+        if (data.status !== 'success') {
+            throw new Error(data.message || 'Unable to load availability.');
+        }
+        if (followupDateInput.value !== date) return; // user picked another date meanwhile
+
+        if (data.closed) {
+            setFollowupMessage(data.closed_message || 'The clinic is closed on this date.', true);
+            return;
+        }
+
+        const available = new Set(data.available_times || []);
+        const taken = new Set(data.taken_times || []);
+        document.querySelectorAll('.followup-time-slot').forEach((slot) => {
+            slot.classList.toggle('hidden', !available.has(slot.dataset.time));
+            if (taken.has(slot.dataset.time)) {
+                slot.disabled = true;
+                slot.classList.remove('bg-slate-100', 'text-slate-700');
+                slot.classList.add('bg-red-100', 'text-red-700');
+            }
+        });
+
+        const count = [...document.querySelectorAll('.followup-time-slot')]
+            .filter((s) => !s.classList.contains('hidden') && !s.disabled).length;
+        setFollowupMessage(count
+            ? `${count} slot${count !== 1 ? 's' : ''} available on ${new Date(date + 'T00:00:00').toLocaleDateString()}.`
+            : 'No slots left on this date. Pick another date.', count === 0);
+        followupTimeSlots.classList.remove('hidden');
+    } catch (error) {
+        setFollowupMessage(error.message || 'Unable to load availability.', true);
+    }
+});
+
+document.querySelectorAll('.followup-time-slot').forEach((slot) => {
+    slot.addEventListener('click', () => {
+        if (slot.disabled) return;
+        document.querySelectorAll('.followup-time-slot').forEach((s) => {
+            if (s.disabled) return;
+            s.classList.remove('bg-sky-600', 'text-white');
+            s.classList.add('bg-slate-100', 'text-slate-700');
+        });
+        slot.classList.remove('bg-slate-100', 'text-slate-700');
+        slot.classList.add('bg-sky-600', 'text-white');
+        followupTimeInput.value = slot.dataset.time; // e.g. "09:30 AM"
+    });
+});
+
 document.getElementById('followupAlternativeDate').addEventListener('change', function () {
     if (this.value) {
         const input = document.getElementById('followupDate');
@@ -477,14 +555,20 @@ document.getElementById('consultationForm').addEventListener('submit', async fun
 
     const hasFollowup = !document.getElementById('followupDetails').classList.contains('hidden');
     const followupDate = document.getElementById('followupDate').value;
+    const followupTime = document.getElementById('followupTime').value;
 
     if (hasFollowup && !followupDate) {
         showMessage('Missing Information', 'Please select a follow-up date, or click "No — Skip".', 'error');
         return;
     }
+    if (hasFollowup && !followupTime) {
+        showMessage('Missing Information', 'Please select a follow-up time slot.', 'error');
+        return;
+    }
 
     const followupData = hasFollowup ? {
         date: followupDate,
+        time: followupTime,
         remarks: document.getElementById('followupRemarks').value
     } : null;
 
@@ -557,7 +641,7 @@ document.getElementById('consultationForm').addEventListener('submit', async fun
 });
 
 function printPrescription(consultationData) {
-    printPrescription({
+    printPrescriptionSlip({
         patientName: document.getElementById('patientName').textContent,
         birthDate: currentAppointmentData.BirthDate,
         gender: currentAppointmentData.Gender,
