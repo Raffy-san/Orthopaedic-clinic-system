@@ -68,6 +68,7 @@
 
     // --- Individual Patient Report modal ---
     const patientModal = document.getElementById('patientRecordModal');
+    let currentReport = null;
 
     function openPatientModal() {
         patientModal.classList.remove('hidden');
@@ -91,32 +92,37 @@
     }
 
     function renderPatientModal(data) {
+        currentReport = data;
         const p = data.patient;
         const billing = data.billing_summary || {};
         const consultations = data.consultations || [];
 
         const consultationRows = consultations.length
-            ? consultations.map((c) => {
+            ? consultations.map((c, index) => {
                 const prescriptions = c.Prescriptions?.length
                     ? `<ul class="space-y-2">${c.Prescriptions.map((prescription) => `
-                        <li>
-                            <p class="font-medium">${escapeHtml(prescription.Medicine)}</p>
-                            <p class="text-xs text-gray-500">${escapeHtml(prescription.Dosage)} · ${escapeHtml(prescription.Frequency)} · ${escapeHtml(prescription.Duration)}</p>
-                            ${prescription.Instructions ? `<p class="text-xs text-gray-500">${escapeHtml(prescription.Instructions)}</p>` : ''}
-                        </li>
-                    `).join('')}</ul>`
+                <li>
+                    <p class="font-medium">${escapeHtml(prescription.Medicine)}${prescription.Quantity ? ' × ' + escapeHtml(prescription.Quantity) : ''}</p>
+                    <p class="text-xs text-gray-500">${escapeHtml(prescription.Dosage)} · ${escapeHtml(prescription.Frequency)} · ${escapeHtml(prescription.Duration)}</p>
+                    ${prescription.Instructions ? `<p class="text-xs text-gray-500">${escapeHtml(prescription.Instructions)}</p>` : ''}
+                </li>
+            `).join('')}</ul>
+            <button type="button" data-consultation-index="${index}"
+                class="print-prescription-btn print-hidden mt-2 inline-flex items-center gap-1 px-2 py-1 bg-slate-700 text-white text-xs font-semibold rounded hover:bg-slate-800">
+                <i class="fa-solid fa-prescription"></i> Print Rx
+            </button>`
                     : '<span class="text-gray-500">None recorded</span>';
 
                 return `
-                <tr class="border-b last:border-0">
-                    <td class="py-2">${escapeHtml(c.ConsultationDate)}</td>
-                    <td>${escapeHtml(c.DoctorName)}</td>
-                    <td>${escapeHtml(c.Diagnosis)}</td>
-                    <td>${escapeHtml(c.Treatment)}</td>
-                    <td>${prescriptions}</td>
-                    <td class="text-right">${money(c.ConsultationFee)}</td>
-                </tr>
-            `;
+        <tr class="border-b last:border-0">
+            <td class="py-2">${escapeHtml(c.ConsultationDate)}</td>
+            <td>${escapeHtml(c.DoctorName)}</td>
+            <td>${escapeHtml(c.Diagnosis)}</td>
+            <td>${escapeHtml(c.Treatment)}</td>
+            <td>${prescriptions}</td>
+            <td class="text-right">${money(c.ConsultationFee)}</td>
+        </tr>
+    `;
             }).join('')
             : `<tr><td colspan="6" class="py-4 text-center text-gray-500 text-sm">No consultation history yet.</td></tr>`;
 
@@ -186,6 +192,9 @@
             document.body.classList.add('printing-patient-report');
             window.print();
         });
+        patientModal.querySelectorAll('.print-prescription-btn').forEach((btn) => {
+            btn.addEventListener('click', () => printPrescription(Number(btn.dataset.consultationIndex)));
+        });
     }
 
     document.querySelectorAll('.view-patient-report-btn').forEach((btn) => {
@@ -234,4 +243,26 @@
     window.addEventListener('afterprint', function () {
         document.body.classList.remove('printing-patient-report');
     });
+    
+    function printPrescription(consultationIndex) {
+        if (!currentReport) return;
+        const p = currentReport.patient;
+        const c = (currentReport.consultations || [])[consultationIndex];
+        if (!c || !c.Prescriptions?.length) return;
+
+        printPrescriptionSlip({
+            patientName: [p.FirstName, p.MiddleName, p.LastName].filter(Boolean).join(' '),
+            birthDate: p.BirthDate,
+            gender: p.Gender,
+            date: c.ConsultationDate, // reprint shows the original visit date
+            prescriptions: c.Prescriptions.map((rx) => ({
+                medicine: rx.Medicine,
+                dosage: rx.Dosage,
+                frequency: rx.Frequency,
+                duration: rx.Duration,
+                quantity: rx.Quantity,
+                instructions: rx.Instructions
+            }))
+        });
+    }
 })();

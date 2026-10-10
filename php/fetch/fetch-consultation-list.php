@@ -32,6 +32,7 @@ try {
         INNER JOIN patients p      ON p.PatientID = c.PatientID
         LEFT JOIN appointments a   ON a.AppointmentID = c.AppointmentID
         LEFT JOIN users u          ON u.UserID = a.DoctorID
+        WHERE c.IsCompleted = 1
     ";
 
     $conditions = [];

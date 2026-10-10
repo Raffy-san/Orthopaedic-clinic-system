@@ -205,12 +205,6 @@ if (!$admin) {
                                 <span class="text-xs text-slate-400">8:00 AM - 12:00 PM</span>
                             </div>
                             <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                                <button type="button" data-time="08:00 AM"
-                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">08:00
-                                    AM</button>
-                                <button type="button" data-time="08:30 AM"
-                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">08:30
-                                    AM</button>
                                 <button type="button" data-time="09:00 AM"
                                     class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">09:00
                                     AM</button>
@@ -229,32 +223,6 @@ if (!$admin) {
                                 <button type="button" data-time="11:30 AM"
                                     class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">11:30
                                     AM</button>
-                            </div>
-                        </div>
-                        <div data-time-slot-group>
-                            <div class="mb-3 flex items-center justify-between">
-                                <h3 class="text-xs font-bold uppercase tracking-wide text-slate-500">Afternoon</h3>
-                                <span class="text-xs text-slate-400">2:00 PM - 5:00 PM</span>
-                            </div>
-                            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                                <button type="button" data-time="02:00 PM"
-                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">02:00
-                                    PM</button>
-                                <button type="button" data-time="02:30 PM"
-                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">02:30
-                                    PM</button>
-                                <button type="button" data-time="03:00 PM"
-                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">03:00
-                                    PM</button>
-                                <button type="button" data-time="03:30 PM"
-                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">03:30
-                                    PM</button>
-                                <button type="button" data-time="04:00 PM"
-                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">04:00
-                                    PM</button>
-                                <button type="button" data-time="04:30 PM"
-                                    class="time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100">04:30
-                                    PM</button>
                             </div>
                         </div>
                     </div>
