@@ -165,9 +165,11 @@ if (!$admin) {
                             <p data-calendar-error class="mt-3 hidden text-xs text-red-600" role="alert"></p>
                             <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-500">
                                 <span class="flex items-center gap-2"><span
-                                        class="h-3 w-3 rounded-full border border-red-200 bg-red-100"></span>Doctor unavailable</span>
+                                        class="h-3 w-3 rounded-full border border-red-200 bg-red-100"></span>Doctor
+                                    unavailable</span>
                                 <span class="flex items-center gap-2"><span
-                                        class="h-3 w-3 rounded-full border border-slate-200 bg-slate-100"></span>Clinic closed</span>
+                                        class="h-3 w-3 rounded-full border border-slate-200 bg-slate-100"></span>Clinic
+                                    closed</span>
                                 <span class="flex items-center gap-2"><span
                                         class="h-3 w-3 rounded-full border border-emerald-200 bg-white"></span>Available</span>
                             </div>
@@ -202,7 +204,7 @@ if (!$admin) {
                         <div data-time-slot-group>
                             <div class="mb-3 flex items-center justify-between">
                                 <h3 class="text-xs font-bold uppercase tracking-wide text-slate-500">Morning</h3>
-                                <span class="text-xs text-slate-400">8:00 AM - 12:00 PM</span>
+                                <span class="text-xs text-slate-400">9:00 AM - 12:00 PM</span>
                             </div>
                             <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
                                 <button type="button" data-time="09:00 AM"
@@ -372,7 +374,8 @@ if (!$admin) {
                                 <div class="flex items-start gap-4">
                                     <div
                                         class="min-w-[90px] rounded-3xl bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm">
-                                        <?= htmlspecialchars($formattedTime, ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($appointment['Meridiem'], ENT_QUOTES, 'UTF-8') ?>
+                                        <?= htmlspecialchars($formattedTime, ENT_QUOTES, 'UTF-8') ?>
+                                        <?= htmlspecialchars($appointment['Meridiem'], ENT_QUOTES, 'UTF-8') ?>
                                     </div>
                                     <div>
                                         <p class="font-semibold text-slate-900">
@@ -525,9 +528,11 @@ if (!$admin) {
                             <p data-calendar-error class="mt-3 hidden text-xs text-red-600" role="alert"></p>
                             <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-500">
                                 <span class="flex items-center gap-2"><span
-                                        class="h-3 w-3 rounded-full border border-red-200 bg-red-100"></span>Doctor unavailable</span>
+                                        class="h-3 w-3 rounded-full border border-red-200 bg-red-100"></span>Doctor
+                                    unavailable</span>
                                 <span class="flex items-center gap-2"><span
-                                        class="h-3 w-3 rounded-full border border-slate-200 bg-slate-100"></span>Clinic closed</span>
+                                        class="h-3 w-3 rounded-full border border-slate-200 bg-slate-100"></span>Clinic
+                                    closed</span>
                             </div>
                         </div>
                     </div>
@@ -541,60 +546,27 @@ if (!$admin) {
                             <div id="rescheduleMorningGroup">
                                 <div class="mb-2 flex items-center justify-between">
                                     <h4 class="text-xs font-bold uppercase tracking-wide text-slate-500">Morning</h4>
-                                    <span class="text-xs text-slate-400">8:00 AM - 12:00 PM</span>
+                                    <span class="text-xs text-slate-400">9:00 AM - 12:00 PM</span>
                                 </div>
-                                <div class="mb-4 grid grid-cols-3 gap-2" id="rescheduleMorningSlots">
-                                <button type="button" data-time="08:00 AM"
-                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">08:00
-                                    AM</button>
-                                <button type="button" data-time="08:30 AM"
-                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">08:30
-                                    AM</button>
-                                <button type="button" data-time="09:00 AM"
-                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">09:00
-                                    AM</button>
-                                <button type="button" data-time="09:30 AM"
-                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">09:30
-                                    AM</button>
-                                <button type="button" data-time="10:00 AM"
-                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">10:00
-                                    AM</button>
-                                <button type="button" data-time="10:30 AM"
-                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">10:30
-                                    AM</button>
-                                <button type="button" data-time="11:00 AM"
-                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">11:00
-                                    AM</button>
-                                <button type="button" data-time="11:30 AM"
-                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">11:30
-                                    AM</button>
-                                </div>
-                            </div>
-
-                            <div id="rescheduleAfternoonGroup">
-                                <div class="mb-2 flex items-center justify-between">
-                                    <h4 class="text-xs font-bold uppercase tracking-wide text-slate-500">Afternoon</h4>
-                                    <span class="text-xs text-slate-400">2:00 PM - 5:00 PM</span>
-                                </div>
-                                <div class="grid grid-cols-3 gap-2" id="rescheduleAfternoonSlots">
-                                <button type="button" data-time="02:00 PM"
-                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">02:00
-                                    PM</button>
-                                <button type="button" data-time="02:30 PM"
-                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">02:30
-                                    PM</button>
-                                <button type="button" data-time="03:00 PM"
-                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">03:00
-                                    PM</button>
-                                <button type="button" data-time="03:30 PM"
-                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">03:30
-                                    PM</button>
-                                <button type="button" data-time="04:00 PM"
-                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">04:00
-                                    PM</button>
-                                <button type="button" data-time="04:30 PM"
-                                    class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">04:30
-                                    PM</button>
+                                <div class="grid grid-cols-3 gap-2" id="rescheduleMorningSlots">
+                                    <button type="button" data-time="09:00 AM"
+                                        class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">09:00
+                                        AM</button>
+                                    <button type="button" data-time="09:30 AM"
+                                        class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">09:30
+                                        AM</button>
+                                    <button type="button" data-time="10:00 AM"
+                                        class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">10:00
+                                        AM</button>
+                                    <button type="button" data-time="10:30 AM"
+                                        class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">10:30
+                                        AM</button>
+                                    <button type="button" data-time="11:00 AM"
+                                        class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">11:00
+                                        AM</button>
+                                    <button type="button" data-time="11:30 AM"
+                                        class="reschedule-time-slot rounded-2xl bg-slate-100 px-3 py-3 text-xs font-semibold text-slate-700 hover:bg-sky-100">11:30
+                                        AM</button>
                                 </div>
                             </div>
                         </div>
@@ -603,7 +575,8 @@ if (!$admin) {
                     <input type="hidden" name="new_appointment_time" id="rescheduleSelectedTime" required>
 
                     <div class="flex w-full mt-4">
-                        <button type="button" class="close w-full cursor-pointer mr-2 px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 text-sm">Cancel</button>
+                        <button type="button"
+                            class="close w-full cursor-pointer mr-2 px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 text-sm">Cancel</button>
                         <button type="submit" id="confirmReschedule"
                             class="cursor-pointer w-full px-4 py-2 bg-sky-600 text-white rounded hover:bg-sky-800 text-sm">
                             Confirm New Schedule
@@ -622,6 +595,7 @@ if (!$admin) {
         window.patientMapData = <?= json_encode($patientsWithCoordinates, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
     </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="../assets/javascript/availability-calendar.js"></script>
     <script src="../assets/javascript/mapping.js"></script>
     <script src="../assets/javascript/appointment.js"></script>
     <script src="../assets/javascript/reschedule.js"></script>

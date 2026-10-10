@@ -24,6 +24,8 @@ try {
             f.Status,
             f.Remarks,
             f.AppointmentID,
+            a.AppointmentTime,
+            a.meridiem AS AppointmentMeridiem,
             p.FirstName as PatientFirstName,
             p.LastName as PatientLastName,
             p.PatientCode,
@@ -32,11 +34,14 @@ try {
         FROM followups f
         LEFT JOIN patients p ON f.PatientID = p.PatientID
         LEFT JOIN users u ON f.DoctorID = u.UserID
+        LEFT JOIN appointments a ON f.AppointmentID = a.AppointmentID
         WHERE f.FollowUpDate >= CURDATE()
         ORDER BY f.FollowUpDate ASC, f.Status ASC
     ");
     $stmt->execute();
     $followups = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    
 
     // For each follow-up, fetch the consultation info to get the reason
     foreach ($followups as &$followup) {

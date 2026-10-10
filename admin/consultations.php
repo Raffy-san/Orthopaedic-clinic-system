@@ -270,28 +270,43 @@ $defaultConsultationFee = 500; // PHP
                                                 class="h-3 w-3 rounded-full border border-emerald-200 bg-white"></span>Available</span>
                                     </div>
                                 </div>
+
+                                <div class="mt-4">
+                                    <p class="text-sm font-semibold text-slate-700">Follow-up Time *</p>
+                                    <input type="hidden" id="followupTime" name="followup[time]">
+                                    <p id="followupTimeMessage" class="mt-1 text-xs text-slate-500">Choose a date first
+                                        to see available slots.</p>
+                                    <div id="followupTimeSlots"
+                                        class="mt-3 hidden grid grid-cols-2 gap-3 sm:grid-cols-3">
+                                        <?php foreach (['09:00', '09:30', '10:00', '10:30', '11:00', '11:30'] as $t): ?>
+                                            <button type="button" data-time="<?= $t ?> AM"
+                                                class="followup-time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100"><?= $t ?>
+                                                AM</button>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+
+                                <div id="followupAlternatives" class="hidden mt-3">
+                                    <label for="followupAlternativeDate"
+                                        class="text-sm font-semibold text-slate-700">Alternative available dates</label>
+                                    <select id="followupAlternativeDate"
+                                        class="w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="">Select an alternative date</option>
+                                    </select>
+                                </div>
+
+                                <label class="text-sm font-semibold text-slate-700 mt-3 block">Remarks</label>
+                                <textarea id="followupRemarks" name="followup[remarks]"
+                                    class="w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="e.g., Check healing progress, review X-ray"></textarea>
                             </div>
 
-                            <div id="followupAlternatives" class="hidden mt-3">
-                                <label for="followupAlternativeDate"
-                                    class="text-sm font-semibold text-slate-700">Alternative available dates</label>
-                                <select id="followupAlternativeDate"
-                                    class="w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <option value="">Select an alternative date</option>
-                                </select>
+                            <div>
+                                <button type="submit"
+                                    class="w-full inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition">Save
+                                    & Pass to Billing</button>
                             </div>
-                            <label class="text-sm font-semibold text-slate-700 mt-3 block">Remarks</label>
-                            <textarea id="followupRemarks" name="followup[remarks]"
-                                class="w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="e.g., Check healing progress, review X-ray"></textarea>
                         </div>
-
-                        <div>
-                            <button type="submit"
-                                class="w-full inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition">Save
-                                & Pass to Billing</button>
-                        </div>
-                    </div>
                 </form>
             </div>
 

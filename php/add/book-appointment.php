@@ -80,7 +80,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $unavailability = $unavailabilityStmt->fetch(PDO::FETCH_ASSOC);
 
     $allSlots = [
-        '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+        '09:00 AM',
+        '09:30 AM',
+        '10:00 AM',
+        '10:30 AM',
+        '11:00 AM',
+        '11:30 AM',
     ];
     $availableTimes = [];
     if ($daySchedule && $daySchedule['IsOpen']) {
@@ -108,7 +113,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     $statement = $pdo->prepare("SELECT TIME_FORMAT(AppointmentTime, '%h:%i %p') AS appointment_time
-        FROM appointments WHERE AppointmentDate = ? AND Status <> 'Cancelled'");
+    FROM appointments
+    WHERE AppointmentDate = ? AND Status NOT IN ('Cancelled', 'Rescheduled')");
     $statement->execute([$date]);
     $bookedTimes = array_column($statement->fetchAll(PDO::FETCH_ASSOC), 'appointment_time');
 
@@ -178,6 +184,22 @@ if ($submittedDate) {
         echo json_encode(['status' => 'error', 'message' => 'The selected time is outside the doctor\'s working hours for this date.']);
         exit;
     }
+}
+
+$slotCheck = $pdo->prepare("
+    SELECT 1 FROM appointments
+    WHERE AppointmentDate = ? AND AppointmentTime = ?
+      AND Status NOT IN ('Cancelled', 'Rescheduled')
+    LIMIT 1
+");
+$slotCheck->execute([$data['appointmentDate'], $appointmentTime->format('H:i:s')]);
+if ($slotCheck->fetchColumn()) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'That time slot is already taken. Please choose another.',
+        'csrf_token' => SessionManager::regenerateCsrfToken()
+    ]);
+    exit;
 }
 
 $patientStatement = $pdo->prepare('SELECT PatientID FROM patients WHERE PatientCode = ?');
