@@ -1,5 +1,4 @@
 <?php
-require_once __DIR__ . '/notifications.php';
 require_once __DIR__ . '/audit.php';
 
 /**
@@ -512,14 +511,15 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
 
             // Create the follow-up as a Confirmed appointment (this is what blocks the slot)
             $apptStmt = $pdo->prepare("
-        INSERT INTO appointments
-            (PatientID, DoctorID, AppointmentDate, AppointmentTime, meridiem, Purpose, ChiefComplaint, Status, Remarks)
-        VALUES
-            (:patient_id, :doctor_id, :appt_date, :appt_time, :meridiem, 'Follow-up check-up', 'Follow-up check-up', 'Confirmed', :remarks)
-    ");
+    INSERT INTO appointments
+        (PatientID, DoctorID, CreatedBy, AppointmentDate, AppointmentTime, meridiem, Purpose, ChiefComplaint, Status, Remarks)
+    VALUES
+        (:patient_id, :doctor_id, :created_by, :appt_date, :appt_time, :meridiem, 'Follow-up check-up', 'Follow-up check-up', 'Confirmed', :remarks)
+");
             $apptStmt->execute([
                 ':patient_id' => $patientID,
                 ':doctor_id' => $doctorID,
+                ':created_by' => $doctorID,
                 ':appt_date' => $followupDate,
                 ':appt_time' => $time24,
                 ':meridiem' => $timeObj->format('A'),
@@ -574,15 +574,6 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
                     'AppointmentID' => $followupAppointmentID,
                     'FollowUpDate' => $followupDate,
                 ])
-            );
-
-            createPatientNotification(
-                $pdo,
-                $patientID,
-                'Follow-up check-up scheduled',
-                'Your follow-up check-up is scheduled for ' . $dateObj->format('F j, Y') . ' at ' . $timeObj->format('g:i A') . '.',
-                'followup',
-                (int) $followupID
             );
         }
 
@@ -890,4 +881,21 @@ function setMedicineActive(PDO $pdo, int $medicineId, bool $isActive, ?int $acto
         error_log('SetMedicineActive failed: ' . $e->getMessage());
         return ['status' => 'error', 'message' => 'Unable to change the medicine status. Please try again.'];
     }
+}
+
+function getClinicDoctorId(PDO $pdo): int
+{
+    static $id = null;
+    if ($id === null) {
+        $id = (int) $pdo->query(
+            "SELECT UserID FROM users
+             WHERE IsDoctor = 1 AND Status = 'Active'
+             ORDER BY UserID
+             LIMIT 1"
+        )->fetchColumn();
+    }
+    if ($id < 1) {
+        throw new RuntimeException('No active doctor account found.');
+    }
+    return $id;
 }

@@ -11,9 +11,9 @@ try {
 
     // Advanced search filters
     $diagnosis = trim($_GET['diagnosis'] ?? '');
-    $dateFrom  = trim($_GET['date_from'] ?? '');
-    $dateTo    = trim($_GET['date_to'] ?? '');
-    $doctorId  = trim($_GET['doctor_id'] ?? '');
+    $dateFrom = trim($_GET['date_from'] ?? '');
+    $dateTo = trim($_GET['date_to'] ?? '');
+    $doctorId = trim($_GET['doctor_id'] ?? '');
 
     $sql = "
         SELECT
@@ -25,13 +25,12 @@ try {
             p.PatientCode,
             p.FirstName,
             p.LastName,
-            a.DoctorID,
+            c.DoctorID,
             u.FirstName AS DoctorFirstName,
             u.LastName  AS DoctorLastName
         FROM consultations c
         INNER JOIN patients p      ON p.PatientID = c.PatientID
-        LEFT JOIN appointments a   ON a.AppointmentID = c.AppointmentID
-        LEFT JOIN users u          ON u.UserID = a.DoctorID
+        LEFT JOIN users u          ON u.UserID = c.DoctorID
         WHERE c.IsCompleted = 1
     ";
 
@@ -68,12 +67,12 @@ try {
 
     // Doctor filter
     if ($doctorId !== '' && ctype_digit($doctorId)) {
-        $conditions[] = "a.DoctorID = ?";
+        $conditions[] = "c.DoctorID = ?";
         $params[] = (int) $doctorId;
     }
 
     if (!empty($conditions)) {
-        $sql .= " WHERE " . implode(' AND ', $conditions);
+        $sql .= " AND " . implode(' AND ', $conditions);
     }
 
     $sql .= " ORDER BY c.ConsultationDate DESC ";

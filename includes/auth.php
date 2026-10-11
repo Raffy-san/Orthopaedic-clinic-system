@@ -127,7 +127,6 @@ class SessionManager
         $roleMap = [
             'admin' => 'Admin',
             'doctor' => 'Doctor',
-            'receptionist' => 'Receptionist',
             'staff' => 'Staff',
         ];
 

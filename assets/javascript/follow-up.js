@@ -1,93 +1,61 @@
-let csrfToken = window.csrfToken || "";
+function escapeHtml(value) {
+    const div = document.createElement('div');
+    div.textContent = value ?? '';
+    return div.innerHTML;
+}
 
 function formatAppointmentTime(appointmentTime, meridiem) {
     if (!appointmentTime) {
         return '';
     }
 
-    const [timePart, secondsPart] = String(appointmentTime).split(':');
+    const [timePart, minutePart] = String(appointmentTime).split(':');
     const hour = Number(timePart);
-    const minutes = Number(secondsPart ?? '0');
+    const minutes = Number(minutePart ?? '0');
 
     if (Number.isNaN(hour) || Number.isNaN(minutes)) {
         return appointmentTime;
     }
 
-    const normalizedMeridiem = (meridiem || '').toUpperCase();
+    const normalized = (meridiem || '').toUpperCase();
+    const displayMeridiem = (normalized === 'AM' || normalized === 'PM') ? normalized : (hour >= 12 ? 'PM' : 'AM');
     let displayHour = hour;
-    let displayMeridiem = (normalizedMeridiem === 'AM' || normalizedMeridiem === 'PM') ? normalizedMeridiem : (hour >= 12 ? 'PM' : 'AM');
-
-    if (displayHour > 12) {
-        displayHour -= 12;
-    } else if (displayHour === 0) {
-        displayHour = 12;
-    }
+    if (displayHour > 12) displayHour -= 12;
+    else if (displayHour === 0) displayHour = 12;
 
     return `${displayHour}:${String(minutes).padStart(2, '0')} ${displayMeridiem}`;
 }
 
-function updateBodyScroll() {
-    const anyModalOpen = document.querySelectorAll('.modal:not(.hidden)').length > 0;
-    document.body.style.overflow = anyModalOpen ? 'hidden' : 'auto';
-}
-
-const openModal = (modal) => {
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
-    updateBodyScroll();
-};
-
-const closeModal = (modal) => {
-    modal.classList.add("hidden");
-    updateBodyScroll();
-};
-
-function showMessage(title, message, type = "success", callback = null) {
-    const modal = document.getElementById("messageModal");
-    const titleElement = document.getElementById("messageTitle");
-    const textElement = document.getElementById("messageText");
-
-    titleElement.textContent = title;
-    textElement.textContent = message;
-
-    titleElement.classList.toggle("text-green-600", type === "success");
-    titleElement.classList.toggle("text-red-600", type !== "success");
-
-    openModal(modal);
-
-    document.getElementById("closeMessageBtn").onclick = () => {
-        closeModal(modal);
-        if (callback) callback();
-    };
-}
-
-// Load follow-ups on page load
 async function loadFollowups() {
+    const container = document.getElementById('followupsContainer');
+
     try {
         const response = await fetch('../php/fetch/fetch-followups.php');
         const result = await response.json();
 
         if (result.status !== 'success') {
-            document.getElementById('followupsContainer').innerHTML = '<div class="bg-white rounded-lg p-8 text-center"><p class="text-sm text-red-600">Error loading follow-ups: ' + result.message + '</p></div>';
+            container.innerHTML = '<div class="bg-white rounded-lg p-8 text-center"><p class="text-sm text-red-600">Error loading follow-ups: ' + escapeHtml(result.message) + '</p></div>';
             return;
         }
 
         const followups = result.data;
         if (followups.length === 0) {
-            document.getElementById('followupsContainer').innerHTML = '<div class="bg-white rounded-lg p-8 text-center"><p class="text-sm text-gray-500">No upcoming follow-ups scheduled</p></div>';
+            container.innerHTML = '<div class="bg-white rounded-lg p-8 text-center"><p class="text-sm text-gray-500">No upcoming follow-ups scheduled</p></div>';
             return;
         }
 
-        let html = '';
+        let html = `
+            <p class="text-xs text-slate-500">
+                To cancel or reschedule a follow-up, use the Appointments page.
+            </p>`;
+
         followups.forEach(followup => {
-            const date = new Date(followup.FollowUpDate);
-            const formattedDate = date.toLocaleDateString('en-US', {
+            const formattedDate = new Date(followup.FollowUpDate + 'T00:00:00').toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric',
                 year: 'numeric'
             });
 
-            // Status badge
             let statusClass = 'text-teal-700 bg-teal-100';
             let statusText = 'Scheduled';
             if (followup.Status === 'Completed') {
@@ -99,106 +67,38 @@ async function loadFollowups() {
             }
 
             const formattedTime = formatAppointmentTime(followup.AppointmentTime, followup.AppointmentMeridiem);
+            const when = formattedTime ? `${formattedDate} - ${formattedTime}` : `${formattedDate} - No time recorded`;
+            const patientName = `${followup.PatientFirstName} ${followup.PatientLastName}`;
+            const doctorName = followup.DoctorFirstName
+                ? `Dr. ${followup.DoctorFirstName} ${followup.DoctorLastName}`
+                : '';
+
+            const contactHtml = followup.Status === 'Scheduled'
+                ? (followup.PatientPhone
+                    ? `<p class="text-sm text-gray-600"><i class="fa-solid fa-phone mr-2"></i>Contact: <span class="font-semibold select-all">${escapeHtml(followup.PatientPhone)}</span></p>`
+                    : '<p class="text-sm text-amber-600">No phone number on file for this patient.</p>')
+                : '';
 
             html += `
-                        <div class="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow followup-card" data-followup-id="${followup.FollowUpID}">
-                            <div class="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 class="text-lg font-bold text-gray-800">${followup.PatientFirstName} ${followup.PatientLastName}</h3>
-                                    <p class="text-sm text-gray-500">Dr. ${followup.DoctorFirstName} ${followup.DoctorLastName} • ${formattedDate} - ${formattedTime}</p>
-                                </div>
-                                <span class="inline-block px-3 py-1 text-xs font-semibold ${statusClass} rounded-full">${statusText}</span>
-                            </div>
-                            <p class="text-sm text-gray-600 mb-4">${followup.reason || 'Follow-up visit'}</p>
-                            ${followup.Remarks ? '<p class="text-sm text-gray-500 mb-4 italic">' + followup.Remarks + '</p>' : ''}
-                            <div class="flex gap-3">
-                                <button class="px-4 py-2 text-sm font-medium text-purple-600 border border-purple-300 rounded-lg hover:bg-purple-50 transition notify-btn" data-followup-id="${followup.FollowUpID}">
-                                    <i class="fa-solid fa-bell mr-2"></i>Notify Patient
-                                </button>
-                                <button class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition confirm-btn" data-followup-id="${followup.FollowUpID}" data-status="${followup.Status}">
-                                    Confirm & Update DB
-                                </button>
-                            </div>
+                <div class="bg-white rounded-lg p-6 shadow-sm followup-card" data-followup-id="${followup.FollowUpID}">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">${escapeHtml(patientName)}</h3>
+                            <p class="text-sm text-gray-500">${escapeHtml(doctorName)}${doctorName ? ' • ' : ''}${escapeHtml(when)}</p>
                         </div>
-                    `;
+                        <span class="inline-block px-3 py-1 text-xs font-semibold ${statusClass} rounded-full">${statusText}</span>
+                    </div>
+                    ${followup.Remarks ? '<p class="text-sm text-gray-500 mb-4 italic">' + escapeHtml(followup.Remarks) + '</p>' : ''}
+                    ${contactHtml}
+                </div>
+            `;
         });
 
-        document.getElementById('followupsContainer').innerHTML = html;
-
-        // Add event listeners
-        document.querySelectorAll('.notify-btn').forEach(btn => {
-            btn.addEventListener('click', notifyPatient);
-        });
-
-        document.querySelectorAll('.confirm-btn').forEach(btn => {
-            btn.addEventListener('click', confirmFollowup);
-        });
-
+        container.innerHTML = html;
     } catch (error) {
         console.error('Error:', error);
-        document.getElementById('followupsContainer').innerHTML = '<div class="bg-white rounded-lg p-8 text-center"><p class="text-sm text-red-600">Error loading follow-ups</p></div>';
+        container.innerHTML = '<div class="bg-white rounded-lg p-8 text-center"><p class="text-sm text-red-600">Error loading follow-ups</p></div>';
     }
 }
 
-// Notify patient function
-async function notifyPatient(e) {
-    const followupID = e.currentTarget.getAttribute('data-followup-id');
-
-    try {
-        const response = await fetch('../php/add/add-notification.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ followup_id: followupID, csrf_token: csrfToken })
-        });
-        const result = await response.json();
-        showMessage(
-            result.status === 'success' ? 'Notification Sent' : 'Error',
-            result.message,
-            result.status === 'success' ? 'success' : 'error'
-        );
-    } catch (error) {
-        showMessage('Error', 'Unable to send the patient notification.', 'error');
-    }
-}
-
-// Confirm follow-up function
-async function confirmFollowup(e) {
-    const followupID = e.currentTarget.getAttribute('data-followup-id');
-    const currentStatus = e.currentTarget.getAttribute('data-status');
-
-    const newStatus = currentStatus === 'Scheduled' ? 'Completed' : currentStatus;
-
-    try {
-        const response = await fetch('../php/update/update-followup-status.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                followup_id: followupID,
-                status: newStatus,
-                csrf_token: csrfToken
-            })
-        });
-
-        const result = await response.json();
-
-        if (result.csrf_token) {
-            csrfToken = result.csrf_token;
-        }
-
-        if (result.status === 'success') {
-            showMessage('Status Updated', 'Follow-up status updated to: ' + newStatus, 'success', () => {
-                loadFollowups(); // Reload the list
-            });
-        } else {
-            showMessage('Error', 'Error: ' + result.message, 'error');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        showMessage('Error', 'An error occurred while updating the follow-up.', 'error');
-    }
-}
-
-// Load follow-ups when page loads
 document.addEventListener('DOMContentLoaded', loadFollowups);
