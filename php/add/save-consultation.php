@@ -2,7 +2,6 @@
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/crud.php';
-require_once __DIR__ . '/../../includes/notifications.php';
 
 SessionManager::requireLogin();
 
@@ -32,16 +31,6 @@ $actorUserId = SessionManager::getUser($pdo)['user_id'] ?? null;
 
 // Call the saveConsultation function from crud.php
 $result = saveConsultation($pdo, $requestData, $doctorID, $actorUserId);
-
-if (($result['code'] ?? '') === 'followup_date_unavailable' && !empty($result['patient_id'])) {
-    createPatientNotification(
-        $pdo,
-        (int) $result['patient_id'],
-        'Follow-up date unavailable',
-        'The doctor is unavailable on ' . date('F j, Y', strtotime($result['requested_date'])) . '. Please select an available alternative date in the patient portal or contact the clinic.',
-        'followup'
-    );
-}
 
 // Regenerate CSRF token
 SessionManager::regenerateCsrfToken();

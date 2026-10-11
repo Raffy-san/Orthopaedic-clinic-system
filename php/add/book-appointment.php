@@ -68,7 +68,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
-    // --- Clinic/doctor availability check (requirement: slots not clickable if doctor unavailable) ---
     $dayOfWeek = (int) $parsedDate->format('N'); // 1 = Monday ... 7 = Sunday
 
     $scheduleStmt = $pdo->prepare('SELECT IsOpen, StartTime, EndTime FROM clinic_schedule WHERE DayOfWeek = ?');
@@ -97,7 +96,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         }
     }
 
-    // Closed either because the weekly schedule says so, or because of a specific leave/holiday entry
     if (!$daySchedule || !$daySchedule['IsOpen'] || $unavailability) {
         $reason = $unavailability['Reason'] ?? null;
         echo json_encode([
@@ -113,8 +111,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     $statement = $pdo->prepare("SELECT TIME_FORMAT(AppointmentTime, '%h:%i %p') AS appointment_time
-    FROM appointments
-    WHERE AppointmentDate = ? AND Status NOT IN ('Cancelled', 'Rescheduled')");
+        FROM appointments
+        WHERE AppointmentDate = ? AND Status NOT IN ('Cancelled', 'Rescheduled')");
     $statement->execute([$date]);
     $bookedTimes = array_column($statement->fetchAll(PDO::FETCH_ASSOC), 'appointment_time');
 
@@ -133,16 +131,24 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$sessionToken = $_SESSION['csrf_token'] ?? '';
-$submittedToken = $_POST['csrf_token'] ?? '';
-if ($sessionToken === '' || $submittedToken === '' || !hash_equals($sessionToken, $submittedToken)) {
-    http_response_code(403);
+// Sends an error with a fresh CSRF token so the page can retry
+function bookingError(string $message, int $httpCode = 200): void
+{
+    if ($httpCode !== 200) {
+        http_response_code($httpCode);
+    }
     echo json_encode([
         'status' => 'error',
-        'message' => 'Your session token is invalid. Refresh the page and try again.',
+        'message' => $message,
         'csrf_token' => SessionManager::regenerateCsrfToken()
     ]);
     exit;
+}
+
+$sessionToken = $_SESSION['csrf_token'] ?? '';
+$submittedToken = $_POST['csrf_token'] ?? '';
+if ($sessionToken === '' || $submittedToken === '' || !hash_equals($sessionToken, $submittedToken)) {
+    bookingError('Your session token is invalid. Refresh the page and try again.', 403);
 }
 
 $data = [
@@ -156,34 +162,36 @@ $data = [
 $userId = $_SESSION['user_id'] ?? $_SESSION['userId'] ?? $_SESSION['user']['UserID'] ?? null;
 $appointmentTime = DateTime::createFromFormat('h:i A', $data['appointmentTime']);
 if ($data['patientCode'] === '' || $data['appointmentDate'] === '' || !$appointmentTime || $userId === null) {
-    echo json_encode(['status' => 'error', 'message' => 'Please provide a valid patient, date, and time.']);
-    exit;
+    bookingError('Please provide a valid patient, date, and time.');
 }
 
-// Re-validate availability server-side on submit too — the GET check above is only a UI aid
-// and a request could theoretically be forged to bypass it.
+// Strict date validation (a malformed date must not skip the checks below)
 $submittedDate = DateTime::createFromFormat('!Y-m-d', $data['appointmentDate']);
-if ($submittedDate) {
-    $dayOfWeek = (int) $submittedDate->format('N');
+if (!$submittedDate || $submittedDate->format('Y-m-d') !== $data['appointmentDate']) {
+    bookingError('Please choose a valid appointment date.');
+}
+if ($submittedDate < new DateTime('today')) {
+    bookingError('Cannot book an appointment in the past.');
+}
 
-    $scheduleStmt = $pdo->prepare('SELECT IsOpen, StartTime, EndTime FROM clinic_schedule WHERE DayOfWeek = ?');
-    $scheduleStmt->execute([$dayOfWeek]);
-    $daySchedule = $scheduleStmt->fetch(PDO::FETCH_ASSOC);
+// Re-validate availability server-side (the GET check above is only a UI aid)
+$dayOfWeek = (int) $submittedDate->format('N');
 
-    $unavailabilityStmt = $pdo->prepare('SELECT Reason FROM doctor_unavailability WHERE UnavailableDate = ?');
-    $unavailabilityStmt->execute([$data['appointmentDate']]);
-    $unavailability = $unavailabilityStmt->fetch(PDO::FETCH_ASSOC);
+$scheduleStmt = $pdo->prepare('SELECT IsOpen, StartTime, EndTime FROM clinic_schedule WHERE DayOfWeek = ?');
+$scheduleStmt->execute([$dayOfWeek]);
+$daySchedule = $scheduleStmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$daySchedule || !$daySchedule['IsOpen'] || $unavailability) {
-        echo json_encode(['status' => 'error', 'message' => 'The clinic/doctor is unavailable on the selected date.']);
-        exit;
-    }
+$unavailabilityStmt = $pdo->prepare('SELECT Reason FROM doctor_unavailability WHERE UnavailableDate = ?');
+$unavailabilityStmt->execute([$data['appointmentDate']]);
+$unavailability = $unavailabilityStmt->fetch(PDO::FETCH_ASSOC);
 
-    $submittedTime24 = $appointmentTime->format('H:i:s');
-    if ($submittedTime24 < $daySchedule['StartTime'] || $submittedTime24 >= $daySchedule['EndTime']) {
-        echo json_encode(['status' => 'error', 'message' => 'The selected time is outside the doctor\'s working hours for this date.']);
-        exit;
-    }
+if (!$daySchedule || !$daySchedule['IsOpen'] || $unavailability) {
+    bookingError('The clinic/doctor is unavailable on the selected date.');
+}
+
+$submittedTime24 = $appointmentTime->format('H:i:s');
+if ($submittedTime24 < $daySchedule['StartTime'] || $submittedTime24 >= $daySchedule['EndTime']) {
+    bookingError('The selected time is outside the doctor\'s working hours for this date.');
 }
 
 $slotCheck = $pdo->prepare("
@@ -192,29 +200,30 @@ $slotCheck = $pdo->prepare("
       AND Status NOT IN ('Cancelled', 'Rescheduled')
     LIMIT 1
 ");
-$slotCheck->execute([$data['appointmentDate'], $appointmentTime->format('H:i:s')]);
+$slotCheck->execute([$data['appointmentDate'], $submittedTime24]);
 if ($slotCheck->fetchColumn()) {
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'That time slot is already taken. Please choose another.',
-        'csrf_token' => SessionManager::regenerateCsrfToken()
-    ]);
-    exit;
+    bookingError('That time slot is already taken. Please choose another.');
 }
 
 $patientStatement = $pdo->prepare('SELECT PatientID FROM patients WHERE PatientCode = ?');
 $patientStatement->execute([$data['patientCode']]);
 $patientId = $patientStatement->fetchColumn();
 if (!$patientId) {
-    echo json_encode(['status' => 'error', 'message' => 'Patient code not found.']);
-    exit;
+    bookingError('Patient code not found.');
 }
 
-$data['patientId'] = $patientId;
-$data['doctorId'] = $userId;
-$data['meridiem'] = $appointmentTime->format('A');
-$data['appointmentTime'] = $appointmentTime->format('H:i:s');
+try {
+    $data['patientId'] = $patientId;
+    $data['doctorId'] = getClinicDoctorId($pdo);   // the clinic's doctor
+    $data['createdBy'] = $userId;                  // the staff member who booked
+    $data['meridiem'] = $appointmentTime->format('A');
+    $data['appointmentTime'] = $submittedTime24;
 
-$result = bookAppointment($pdo, $data);
+    $result = bookAppointment($pdo, $data);
+} catch (Throwable $e) {
+    error_log('book-appointment failed: ' . $e->getMessage());
+    $result = ['status' => 'error', 'message' => 'Unable to book the appointment. Please try again.'];
+}
+
 $result['csrf_token'] = SessionManager::regenerateCsrfToken();
 echo json_encode($result);

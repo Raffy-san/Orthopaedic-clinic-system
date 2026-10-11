@@ -29,6 +29,7 @@ try {
             p.FirstName as PatientFirstName,
             p.LastName as PatientLastName,
             p.PatientCode,
+            p.Phone as PatientPhone,
             u.FirstName as DoctorFirstName,
             u.LastName as DoctorLastName
         FROM followups f
