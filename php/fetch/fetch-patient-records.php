@@ -19,6 +19,7 @@ try {
             c.AppointmentID,
             c.DoctorID,
             d.FirstName AS DoctorFirstName,
+            d.MiddleName AS DoctorMiddleName,
             d.LastName AS DoctorLastName,
             c.Diagnosis,
             c.Treatment,

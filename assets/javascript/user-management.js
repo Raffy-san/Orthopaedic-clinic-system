@@ -16,6 +16,7 @@ function enterEditMode(data) {
     userIdInput.value = data.id;
     form.querySelector('input[name="username"]').value = data.username;
     form.querySelector('input[name="firstName"]').value = data.firstName;
+    form.querySelector('input[name="middleName"]').value = data.middleName || '';
     form.querySelector('input[name="lastName"]').value = data.lastName;
     form.querySelector('select[name="role"]').value = data.role;
     form.querySelector('input[name="email"]').value = data.email;
@@ -65,6 +66,7 @@ document.querySelectorAll('.edit-user-btn').forEach((button) => {
             id: button.dataset.id,
             username: button.dataset.username,
             firstName: button.dataset.firstName,
+            middleName: button.dataset.middleName,
             lastName: button.dataset.lastName,
             role: button.dataset.role,
             isDoctor: button.dataset.isDoctor,

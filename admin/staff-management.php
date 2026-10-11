@@ -105,7 +105,8 @@ $doctorAccounts = count(array_filter($user, static fn(array $account): bool => $
                                 class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-green-500 focus:outline-none"></label>
                         <label class="text-sm font-medium text-slate-700">Password
                             <div class="relative">
-                                <input name="password" id="Password" type="password" placeholder="8+ characters" required
+                                <input name="password" id="Password" type="password" placeholder="8+ characters"
+                                    required
                                     class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-green-500 focus:outline-none">
                                 <i id="togglePassword"
                                     class="fa-solid fa-eye cursor-pointer absolute right-3 top-5 text-gray-400 hover:text-gray-600 text-sm transition">
@@ -115,16 +116,20 @@ $doctorAccounts = count(array_filter($user, static fn(array $account): bool => $
                         <label class="text-sm font-medium text-slate-700">First name<input name="firstName"
                                 placeholder="First name" required
                                 class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-green-500 focus:outline-none"></label>
+                        <label class="text-sm font-medium text-slate-700">Middle name<input name="middleName"
+                                placeholder="Middle name"
+                                class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-green-500 focus:outline-none"></label>
                         <label class="text-sm font-medium text-slate-700">Last name<input name="lastName"
                                 placeholder="Last name" required
                                 class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-green-500 focus:outline-none"></label>
-                        <label class="text-sm font-medium text-slate-700">Role<select name="role"
+                        <label class="text-sm font-medium text-slate-700">Role
+                            <select name="role"
                                 class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 bg-white focus:border-green-500 focus:outline-none">
                                 <option value="Staff">Staff</option>
                                 <option value="Doctor">Doctor</option>
                                 <option value="Admin">Admin</option>
-                                <option value="Patient">Patient</option>
-                            </select></label>
+                            </select>
+                        </label>
                         <label class="text-sm font-medium text-slate-700">Email<input name="email" type="email"
                                 placeholder="Optional email"
                                 class="mt-2 w-full border border-slate-200 rounded-lg p-2.5 focus:border-green-500 focus:outline-none"></label>

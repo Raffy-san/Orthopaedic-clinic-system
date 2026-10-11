@@ -84,15 +84,16 @@ function addUser(PDO $pdo, array $data, ?int $actorUserId = null): array
         $pdo->beginTransaction();
 
         $statement = $pdo->prepare(
-            'INSERT INTO users (Username, PasswordHash, FirstName, LastName, Role, IsDoctor, Email, Phone)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO users (Username, PasswordHash, FirstName, MiddleName ,LastName, Role, IsDoctor, Email, Phone)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $statement->execute([
             $data['username'],
             password_hash($data['password'], PASSWORD_DEFAULT),
             $data['firstName'],
+            $data['middleName'] ?? null,
             $data['lastName'],
-            $data['role'],
+            $data['role'],  
             $data['isDoctor'],
             $data['email'] ?: null,
             $data['phone'] ?: null
@@ -111,6 +112,7 @@ function addUser(PDO $pdo, array $data, ?int $actorUserId = null): array
             json_encode([
                 'Username' => $data['username'],
                 'FirstName' => $data['firstName'],
+                'MiddleName' => $data['middleName'] ?? null,
                 'LastName' => $data['lastName'],
                 'Role' => $data['role'],
                 'IsDoctor' => $data['isDoctor'],
@@ -684,13 +686,14 @@ function updateUser(PDO $pdo, array $data, ?int $actorUserId = null): array
         if ($data['password'] !== '') {
             $statement = $pdo->prepare(
                 'UPDATE users
-                 SET Username = ?, PasswordHash = ?, FirstName = ?, LastName = ?, Role = ?, IsDoctor = ?, Email = ?, Phone = ?
+                 SET Username = ?, PasswordHash = ?, FirstName = ?, MiddleName = ?, LastName = ?, Role = ?, IsDoctor = ?, Email = ?, Phone = ?
                  WHERE UserID = ?'
             );
             $statement->execute([
                 $data['username'],
                 password_hash($data['password'], PASSWORD_DEFAULT),
                 $data['firstName'],
+                $data['middleName'] ?? null,
                 $data['lastName'],
                 $data['role'],
                 $data['isDoctor'],
@@ -701,12 +704,13 @@ function updateUser(PDO $pdo, array $data, ?int $actorUserId = null): array
         } else {
             $statement = $pdo->prepare(
                 'UPDATE users
-                 SET Username = ?, FirstName = ?, LastName = ?, Role = ?, IsDoctor = ?, Email = ?, Phone = ?
+                 SET Username = ?, FirstName = ?, MiddleName = ?, LastName = ?, Role = ?, IsDoctor = ?, Email = ?, Phone = ?
                  WHERE UserID = ?'
             );
             $statement->execute([
                 $data['username'],
                 $data['firstName'],
+                $data['middleName'] ?? null,
                 $data['lastName'],
                 $data['role'],
                 $data['isDoctor'],
