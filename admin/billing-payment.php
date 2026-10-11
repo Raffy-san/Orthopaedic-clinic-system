@@ -95,6 +95,8 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                         <button id="load-btn" type="button"
                             class="ml-2 inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-3 rounded-lg shadow-sm">Load</button>
                     </div>
+
+                    <div id="bill-picker" class="hidden mt-4 space-y-2"></div>
                 </div>
 
                 <div id="consultation-card"
@@ -174,10 +176,10 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                         class="print-hidden hidden mt-3 w-full bg-slate-700 hover:bg-slate-800 text-white font-semibold py-3 rounded-lg">
                         <i class="fas fa-print mr-2" aria-hidden="true"></i>Print Receipt</button>
                 </div>
-                    </div>
             </div>
+        </div>
 
-            <?php include '../includes/message-modal.php' ?>
+        <?php include '../includes/message-modal.php' ?>
     </section>
 
     <script>

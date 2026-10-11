@@ -70,7 +70,7 @@ async function loadFollowups() {
             const when = formattedTime ? `${formattedDate} - ${formattedTime}` : `${formattedDate} - No time recorded`;
             const patientName = `${followup.PatientFirstName} ${followup.PatientLastName}`;
             const doctorName = followup.DoctorFirstName
-                ? `Dr. ${followup.DoctorFirstName} ${followup.DoctorLastName}`
+                ? `Dr. ${followup.DoctorFirstName} ${followup.DoctorMiddleName || ''} ${followup.DoctorLastName}`
                 : '';
 
             const contactHtml = followup.Status === 'Scheduled'

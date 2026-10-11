@@ -28,6 +28,7 @@ $data = [
 	'username' => trim($_POST['username'] ?? ''),
 	'password' => $_POST['password'] ?? '',
 	'firstName' => trim($_POST['firstName'] ?? ''),
+	'middleName' => trim($_POST['middleName'] ?? ''),
 	'lastName' => trim($_POST['lastName'] ?? ''),
 	'role' => $_POST['role'] ?? 'Receptionist',
 	'isDoctor' => isset($_POST['isDoctor']) ? 1 : 0,

@@ -31,6 +31,7 @@ try {
             p.PatientCode,
             p.Phone as PatientPhone,
             u.FirstName as DoctorFirstName,
+            u.MiddleName as DoctorMiddleName,
             u.LastName as DoctorLastName
         FROM followups f
         LEFT JOIN patients p ON f.PatientID = p.PatientID
@@ -41,8 +42,6 @@ try {
     ");
     $stmt->execute();
     $followups = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    
 
     // For each follow-up, fetch the consultation info to get the reason
     foreach ($followups as &$followup) {

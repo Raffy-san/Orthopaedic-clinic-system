@@ -143,7 +143,7 @@ function loadPatientRecords(consultationHistory, currentConsultationId, recordSu
     document.getElementById('patientName').textContent = `${recordSummary.FirstName} ${recordSummary.LastName}`;
     document.getElementById('patientCode').textContent = recordSummary.PatientCode;
     document.getElementById('consultationDate').textContent = formatDate(current.ConsultationDate);
-    document.getElementById('doctorName').textContent = current.DoctorFirstName && current.DoctorLastName ? `${current.DoctorFirstName} ${current.DoctorLastName}` : 'N/A';
+    document.getElementById('doctorName').textContent = current.DoctorFirstName && current.DoctorMiddleName && current.DoctorLastName ? `${current.DoctorFirstName} ${current.DoctorMiddleName} ${current.DoctorLastName}` : 'N/A';
     document.getElementById('historyPatientName').textContent = `${recordSummary.FirstName} ${recordSummary.LastName}`;
 
     document.getElementById('patientID').value = recordSummary.PatientID ?? '';
@@ -168,7 +168,7 @@ function loadPatientRecords(consultationHistory, currentConsultationId, recordSu
         <div class="flex gap-3">
             <span class="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full ${c.ConsultationID == currentConsultationId ? 'bg-blue-600' : 'bg-slate-300'}"></span>
             <div class="flex-1">
-                <p class="text-xs text-slate-400">${formatDate(c.ConsultationDate)} · Dr. ${[c.DoctorFirstName, c.DoctorLastName].filter(Boolean).join(' ') || 'N/A'}</p>
+                <p class="text-xs text-slate-400">${formatDate(c.ConsultationDate)} · Dr. ${[c.DoctorFirstName, c.DoctorMiddleName, c.DoctorLastName].filter(Boolean).join(' ') || 'N/A'}</p>
                 <p class="font-medium text-slate-800">${c.Diagnosis}</p>
                 <div class="flex items-center gap-3 mt-1">
                     ${c.ConsultationID == currentConsultationId ? '<a href="#" class="text-xs text-blue-600">← Current visit</a>' : ''}
