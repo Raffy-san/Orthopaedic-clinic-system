@@ -68,7 +68,7 @@ $navItems = [
         'icon' => 'fa-file-lines',
         'file' => 'reports.php',
         'href' => '../admin/reports.php',
-        'roles' => ['staff'],
+        'roles' => ['staff', 'admin', 'doctor'],
     ],
     [
         'label' => 'Staff Accounts',
@@ -77,6 +77,14 @@ $navItems = [
         'href' => '../admin/staff-management.php',
         'roles' => ['admin', 'doctor'],
     ],
+    [
+        'label' => 'Audit Logs',
+        'icon' => 'fa-user-secret',
+        'file' => 'audit-logs.php',
+        'href' => '../admin/audit-logs.php',
+        'roles' => ['admin', 'doctor'],
+    ],
+
 ];
 
 $currentRole = strtolower((string) (SessionManager::getCurrentRole() ?? 'staff'));
