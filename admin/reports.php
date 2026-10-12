@@ -4,7 +4,7 @@ require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../php/fetch/fetch.php';
 
 SessionManager::requireLogin();
-SessionManager::requireAnyRole(['Staff']);
+SessionManager::requireAnyRole(['staff', 'admin', 'doctor']);
 
 $admin = SessionManager::getUser($pdo);
 
@@ -54,7 +54,6 @@ $reportRows = [];
 $reportSummary = [];
 $reportError = null;
 $exportFormat = $_GET['export'] ?? '';
-$isCsvExport = $exportFormat === 'csv';
 $isExcelExport = $exportFormat === 'xlsx';
 
 try {
@@ -123,7 +122,7 @@ try {
     $reportError = 'Unable to load the selected report.';
 }
 
-if ($isCsvExport || $isExcelExport) {
+if ($isExcelExport) {
     if ($reportError) {
         http_response_code(500);
         exit($reportError);
@@ -193,70 +192,33 @@ if ($isCsvExport || $isExcelExport) {
             break;
     }
 
-    if ($isExcelExport) {
-        require_once __DIR__ . '/../php/export/report-workbook.php';
+    require_once __DIR__ . '/../php/export/report-workbook.php';
 
-        try {
-            $workbookPath = createReportWorkbook(
-                $reportTypes[$reportType],
-                'Southern Leyte Orthopaedic Clinic System',
-                $fromDate,
-                $toDate,
-                $exportColumns,
-                $exportRows,
-                $exportSummary,
-                $reportType
-            );
-        } catch (Throwable $e) {
-            error_log('Unable to generate Excel report: ' . $e->getMessage());
-            http_response_code(500);
-            exit('Unable to create the Excel report. Please try again.');
-        }
-
-        $filename = sprintf('clinic-%s-%s-to-%s.xlsx', $reportType, $fromDate, $toDate);
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
-        header('Content-Length: ' . filesize($workbookPath));
-        header('X-Content-Type-Options: nosniff');
-        header('Cache-Control: no-store, private');
-        readfile($workbookPath);
-        unlink($workbookPath);
-        exit;
+    try {
+        $workbookPath = createReportWorkbook(
+            $reportTypes[$reportType],
+            'Southern Leyte Orthopaedic Clinic System',
+            $fromDate,
+            $toDate,
+            $exportColumns,
+            $exportRows,
+            $exportSummary,
+            $reportType
+        );
+    } catch (Throwable $e) {
+        error_log('Unable to generate Excel report: ' . $e->getMessage());
+        http_response_code(500);
+        exit('Unable to create the Excel report. Please try again.');
     }
 
-    $filename = sprintf('clinic-%s-%s-to-%s.csv', $reportType, $fromDate, $toDate);
-    header('Content-Type: text/csv; charset=UTF-8');
+    $filename = sprintf('clinic-%s-%s-to-%s.xlsx', $reportType, $fromDate, $toDate);
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Content-Length: ' . filesize($workbookPath));
     header('X-Content-Type-Options: nosniff');
     header('Cache-Control: no-store, private');
-
-    $output = fopen('php://output', 'wb');
-    if ($output === false) {
-        error_log('Unable to open output stream for report CSV export.');
-        http_response_code(500);
-        exit('Unable to export the selected report.');
-    }
-
-    fwrite($output, "\xEF\xBB\xBF");
-    fputcsv($output, [$reportTypes[$reportType]]);
-    fputcsv($output, ['Date range', $fromDate . ' to ' . $toDate]);
-    foreach ($exportSummary as $summaryRow) {
-        fputcsv($output, $summaryRow);
-    }
-    if ($exportSummary) {
-        fputcsv($output, []);
-    }
-    fputcsv($output, $exportColumns);
-    foreach ($exportRows as $row) {
-        $safeRow = array_map(static function (mixed $value): mixed {
-            if (is_string($value) && preg_match('/^[\t\r ]*[=+\-@]/', $value)) {
-                return "'" . $value;
-            }
-            return $value;
-        }, $row);
-        fputcsv($output, $safeRow);
-    }
-    fclose($output);
+    readfile($workbookPath);
+    unlink($workbookPath);
     exit;
 }
 
@@ -388,10 +350,6 @@ function reportMoney(mixed $value): string
                             <a href="?report_type=<?= urlencode($reportType) ?>&amp;from_date=<?= urlencode($fromDate) ?>&amp;to_date=<?= urlencode($toDate) ?>&amp;export=xlsx"
                                 class="inline-flex items-center gap-2 px-3 py-2 bg-emerald-700 text-white text-sm font-semibold rounded-lg hover:bg-emerald-800">
                                 <i class="fa-solid fa-file-excel"></i> Export Excel
-                            </a>
-                            <a href="?report_type=<?= urlencode($reportType) ?>&amp;from_date=<?= urlencode($fromDate) ?>&amp;to_date=<?= urlencode($toDate) ?>&amp;export=csv"
-                                class="inline-flex items-center gap-2 px-3 py-2 bg-slate-600 text-white text-sm font-semibold rounded-lg hover:bg-slate-700">
-                                <i class="fa-solid fa-file-csv"></i> Export CSV
                             </a>
                         <?php endif; ?>
                         <button type="button" id="printReportBtn" data-report-type="<?= reportValue($reportType) ?>"
