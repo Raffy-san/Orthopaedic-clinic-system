@@ -140,7 +140,7 @@
             </div>
 
             <div class="signature-area">
-                <div class="sig-line"><span class="sig-name">Thyam T. Fookson</span><span>M.D.</span></div>
+                <div class="sig-line"><span class="sig-name">Thyam T. Fookson</span><span>, DPBO</span><span>, FPOA</span></div>
                 <div class="sig-label">Signature over Printed Name</div>
                 <div class="sig-line">011925</div>
                 <div class="sig-label">License #</div>

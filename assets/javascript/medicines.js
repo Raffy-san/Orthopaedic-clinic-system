@@ -35,6 +35,7 @@ function renderTable() {
         return `
             <tr class="border-t border-slate-100 ${active ? '' : 'opacity-50'}">
                 <td class="py-2 font-semibold text-slate-800">${esc(m.Name)}</td>
+                <td class="py-2 font-semibold text-slate-800">${esc(m.BrandName)}</td>
                 <td class="py-2 text-slate-600">${esc(m.DefaultDosage)}</td>
                 <td class="py-2">
                     <span class="text-xs px-2 py-1 rounded-full font-semibold ${active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}">
@@ -81,6 +82,7 @@ function editMedicine(index) {
     const m = medicines[index];
     document.getElementById('medicineId').value = m.MedicineID;
     document.getElementById('mName').value = m.Name;
+    document.getElementById('mBrandName').value = m.BrandName || '';
     document.getElementById('mDosage').value = m.DefaultDosage || '';
     document.getElementById('formTitle').textContent = 'Edit Medicine';
     document.getElementById('saveBtn').textContent = 'Update Medicine';
@@ -120,6 +122,7 @@ document.getElementById('medicineForm').addEventListener('submit', async e => {
             action: id ? 'update' : 'add',
             medicine_id: id,
             name: document.getElementById('mName').value,
+            brand_name: document.getElementById('mBrandName').value,
             dosage: document.getElementById('mDosage').value
         });
 

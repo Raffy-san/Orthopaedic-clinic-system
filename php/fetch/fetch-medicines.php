@@ -13,7 +13,7 @@ try {
     // ?all=1 includes hidden medicines (used by the medicine page)
     $includeInactive = isset($_GET['all']) && $_GET['all'] === '1';
 
-    $sql = 'SELECT MedicineID, Name, DefaultDosage, IsActive FROM Medicines';
+    $sql = 'SELECT MedicineID, Name, BrandName, DefaultDosage, IsActive FROM Medicines';
     if (!$includeInactive) {
         $sql .= ' WHERE IsActive = 1';
     }

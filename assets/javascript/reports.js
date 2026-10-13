@@ -243,7 +243,7 @@
     window.addEventListener('afterprint', function () {
         document.body.classList.remove('printing-patient-report');
     });
-    
+
     function printPrescription(consultationIndex) {
         if (!currentReport) return;
         const p = currentReport.patient;
@@ -265,4 +265,21 @@
             }))
         });
     }
+
+    const financialPasswordInput = document.getElementById('financialPasswordInput');
+    const financialPasswordToggle = document.getElementById('financialPasswordToggle');
+    const financialPasswordToggleIcon = document.getElementById('financialPasswordToggleIcon');
+
+    function setFinancialPasswordVisible(visible) {
+        financialPasswordInput.type = visible ? 'text' : 'password';
+        financialPasswordToggleIcon.classList.toggle('fa-eye', !visible);
+        financialPasswordToggleIcon.classList.toggle('fa-eye-slash', visible);
+        financialPasswordToggle.setAttribute('aria-label', visible ? 'Hide password' : 'Show password');
+        financialPasswordToggle.setAttribute('aria-pressed', String(visible));
+    }
+
+    financialPasswordToggle.addEventListener('click', () => {
+        setFinancialPasswordVisible(financialPasswordInput.type === 'password');
+        financialPasswordInput.focus();
+    });
 })();

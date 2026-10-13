@@ -83,30 +83,36 @@ $dayNames = [1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday', 5
 
                 <!-- Add new unavailable date -->
                 <div class="bg-white rounded-3xl shadow-sm p-6 border border-slate-100">
-                    <h2 class="text-lg font-semibold text-slate-900 mb-4">Mark a Date Unavailable</h2>
-                    <form id="addUnavailabilityForm" class="flex flex-col sm:flex-row gap-3 items-end">
+                    <h2 class="text-lg font-semibold text-slate-900 mb-4">Mark Doctor Leave</h2>
+                    <form id="addUnavailabilityForm" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 items-end">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                        <div class="flex-1 w-full">
-                            <label class="block text-sm text-slate-700 mb-1">Date</label>
-                            <input type="date" name="unavailable_date" required
+                        <div class="w-full">
+                            <label class="block text-sm text-slate-700 mb-1">Start date</label>
+                            <input type="date" name="start_date" min="<?= htmlspecialchars(date('Y-m-d'), ENT_QUOTES, 'UTF-8') ?>" required
                                 class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                         </div>
-                        <div class="flex-1 w-full">
+                        <div class="w-full">
+                            <label class="block text-sm text-slate-700 mb-1">End date</label>
+                            <input type="date" name="end_date" min="<?= htmlspecialchars(date('Y-m-d'), ENT_QUOTES, 'UTF-8') ?>" required
+                                class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <div class="w-full">
                             <label class="block text-sm text-slate-700 mb-1">Reason (optional)</label>
                             <input type="text" name="reason" placeholder="e.g. Medical conference"
                                 class="w-full border border-gray-300 bg-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                         </div>
                         <button type="submit"
-                            class="w-full sm:w-auto px-5 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">
-                            Add
+                            class="w-full px-5 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">
+                            Mark unavailable
                         </button>
                     </form>
+                    <p class="text-xs text-slate-500 mt-2">The selected date range includes both the start and end dates.</p>
                     <p id="addUnavailabilityError" class="text-xs text-red-600 mt-2 hidden"></p>
                 </div>
 
                 <!-- List of upcoming unavailable dates -->
                 <div class="bg-white rounded-3xl shadow-sm p-6 border border-slate-100">
-                    <h2 class="text-lg font-semibold text-slate-900 mb-4">Upcoming Unavailable Dates</h2>
+                    <h2 class="text-lg font-semibold text-slate-900 mb-4">Upcoming Leave Dates</h2>
 
                     <div id="unavailabilityList" class="space-y-2">
                         <?php if (empty($unavailableDates)): ?>

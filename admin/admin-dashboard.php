@@ -17,52 +17,6 @@ if (!$admin) {
     SessionManager::logout('../index.php');
 }
 
-$totalStmt = $pdo->query("SELECT COUNT(*) FROM patients");
-$totalPatients = (int) $totalStmt->fetchColumn();
-
-$yesterdayStmt = $pdo->prepare("
-    SELECT COUNT(*) FROM patients 
-    WHERE CreatedAt < CURDATE()
-");
-$yesterdayStmt->execute();
-$totalAsOfYesterday = (int) $yesterdayStmt->fetchColumn();
-$diff = $totalPatients - $totalAsOfYesterday;
-
-if ($diff > 0) {
-    $changeText = "+{$diff} from yesterday";
-    $changeColor = "text-green-600";
-} elseif ($diff < 0) {
-    $changeText = "{$diff} from yesterday";
-    $changeColor = "text-red-600";
-} else {
-    $changeText = "No change from yesterday";
-    $changeColor = "text-gray-500";
-}
-
-$totalConsultStmt = $pdo->query("SELECT COUNT(*) FROM consultations");
-$totalConsultations = (int) $totalConsultStmt->fetchColumn();
-
-$consultYesterdayStmt = $pdo->prepare("
-    SELECT COUNT(*) FROM consultations 
-    WHERE ConsultationDate < CURDATE()
-");
-$consultYesterdayStmt->execute();
-$totalConsultAsOfYesterday = (int) $consultYesterdayStmt->fetchColumn();
-
-$consultDiff = $totalConsultations - $totalConsultAsOfYesterday;
-
-
-if ($consultDiff > 0) {
-    $consultChangeText = "+{$consultDiff} from yesterday";
-    $consultChangeColor = "text-green-600";
-} elseif ($consultDiff < 0) {
-    $consultChangeText = "{$consultDiff} from yesterday";
-    $consultChangeColor = "text-red-600";
-} else {
-    $consultChangeText = "No change from yesterday";
-    $consultChangeColor = "text-gray-500";
-}
-
 $pendingappointments = fetchAllData($pdo, "
     SELECT a.AppointmentID, a.AppointmentDate, a.AppointmentTime, a.Purpose, a.Status,
            p.PatientCode, p.FirstName AS patient_first_name, p.LastName AS patient_last_name
@@ -71,12 +25,30 @@ $pendingappointments = fetchAllData($pdo, "
     ORDER BY a.AppointmentDate DESC, a.AppointmentTime DESC
 ");
 
-$patients = fetchAllData($pdo, "SELECT * FROM patients ORDER BY userID DESC LIMIT 5");
 $appointments = fetchAllData($pdo, "SELECT * FROM appointments");
-$pendingAppointments = fetchAllData($pdo, "SELECT * FROM appointments WHERE status = 'Pending'");
-$completedAppointments = fetchAllData($pdo, "SELECT * FROM appointments WHERE status = 'Completed'");
-$consultations = fetchAllData($pdo, "SELECT * FROM consultations");
-$confirmedConsultations = fetchAllData($pdo, "SELECT * FROM appointments WHERE status = 'Confirmed'");
+$todayConsultationProfiles = fetchAllData($pdo, "
+    SELECT
+        a.AppointmentID,
+        a.AppointmentTime,
+        a.meridiem,
+        p.PatientCode,
+        p.FirstName,
+        p.MiddleName,
+        p.LastName,
+        TIMESTAMPDIFF(YEAR, p.BirthDate, CURDATE()) AS Age,
+        p.Gender,
+        CASE
+            WHEN c.ConsultationID IS NOT NULL AND c.IsCompleted = 1 THEN 'Completed'
+            WHEN c.ConsultationID IS NOT NULL THEN 'In Progress'
+            ELSE a.Status
+        END AS ConsultationStatus
+    FROM appointments a
+    INNER JOIN patients p ON p.PatientID = a.PatientID
+    LEFT JOIN consultations c ON c.AppointmentID = a.AppointmentID
+    WHERE DATE(a.AppointmentDate) = CURDATE()
+      AND a.Status NOT IN ('Cancelled', 'Pending')
+    ORDER BY a.AppointmentTime ASC, a.AppointmentID ASC
+");
 
 $todaySchedule = fetchAllData($pdo, "
     SELECT
@@ -209,41 +181,70 @@ foreach ($patientsRaw as $row) {
         </div>
 
         <div class="flex-1 min-h-0 overflow-auto p-6">
-            <div class="flex w-full gap-4">
-                <div class="bg-white p-6 rounded-2xl shadow-md flex-1">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-gray-500 text-md font-semibold">Patients Today</h2>
-                        <div class="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center">
-                            <i class="fas fa-user-injured text-purple-600"></i>
-                        </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-8">
+                <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-800">Patient Profiles for Today's Consultations</h2>
+                        <p class="mt-1 text-sm text-gray-500">Patients scheduled for consultation today</p>
                     </div>
-                    <p class="text-gray-800 text-3xl font-extrabold"><?= count($patients) ?></p>
-                    <p class="<?= $changeColor ?> text-sm font-medium"><?= htmlspecialchars($changeText) ?></p>
+                    <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
+                        <?= count($todayConsultationProfiles) ?>
+                    </span>
                 </div>
-                <div class="bg-white p-6 rounded-2xl shadow-md flex-1">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-gray-500 text-md font-semibold">Appointments </h2>
-                        <div class="w-12 h-12 rounded-2xl bg-cyan-100 flex items-center justify-center">
-                            <i class="fas fa-calendar text-cyan-600"></i>
-                        </div>
-                    </div>
-                    <p class="text-gray-800 text-3xl font-extrabold"><?php echo count($appointments); ?></p>
-                    <p class="text-gray-500 text-sm font-medium"><?php echo count($pendingAppointments); ?> pending ·
-                        <?php echo count($completedAppointments); ?> completed
-                    </p>
-                </div>
-                <div class="bg-white p-6 rounded-2xl shadow-md flex-1">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-gray-500 text-md font-semibold">Consultations</h2>
-                        <div class="w-12 h-12 rounded-2xl bg-orange-100 flex items-center justify-center">
-                            <i class="fas fa-stethoscope text-orange-500"></i>
-                        </div>
-                    </div>
-                    <p class="text-gray-800 text-3xl font-extrabold"><?php echo count($consultations); ?></p>
-                    <p class="<?= $consultChangeColor ?> text-sm font-medium">
-                        <?php echo htmlspecialchars($consultChangeText); ?>
-                    </p>
-                    </p>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="text-left text-sm text-gray-500 bg-slate-50">
+                            <tr class="border-b border-gray-100">
+                                <th class="px-6 py-4 font-medium">Patient Profile</th>
+                                <th class="px-6 py-4 font-medium">Age</th>
+                                <th class="px-6 py-4 font-medium">Gender</th>
+                                <th class="px-6 py-4 font-medium">Consultation Time</th>
+                                <th class="px-6 py-4 font-medium">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm">
+                            <?php if (empty($todayConsultationProfiles)): ?>
+                                <tr>
+                                    <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                                        No patients are scheduled for consultation today.
+                                    </td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($todayConsultationProfiles as $profile):
+                                    $patientName = trim(implode(' ', array_filter([
+                                        $profile['FirstName'],
+                                        $profile['MiddleName'],
+                                        $profile['LastName'],
+                                    ])));
+                                    $consultationStatus = $profile['ConsultationStatus'];
+                                    $statusClasses = [
+                                        'Completed' => 'bg-slate-100 text-slate-600',
+                                        'In Progress' => 'bg-emerald-100 text-emerald-700',
+                                        'Confirmed' => 'bg-blue-100 text-blue-700',
+                                        'Rescheduled' => 'bg-amber-100 text-amber-700',
+                                    ];
+                                    $statusClass = $statusClasses[$consultationStatus] ?? 'bg-slate-100 text-slate-600';
+                                    $consultationTime = (new DateTime($profile['AppointmentTime']))->format('g:i A');
+                                    ?>
+                                    <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                                        <td class="px-6 py-4">
+                                            <p class="font-semibold text-gray-800"><?= htmlspecialchars($patientName, ENT_QUOTES, 'UTF-8') ?></p>
+                                            <p class="mt-1 text-xs text-gray-500"><?= htmlspecialchars($profile['PatientCode'], ENT_QUOTES, 'UTF-8') ?></p>
+                                        </td>
+                                        <td class="px-6 py-4 text-gray-600"><?= (int) $profile['Age'] ?></td>
+                                        <td class="px-6 py-4 text-gray-600"><?= htmlspecialchars($profile['Gender'], ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td class="px-6 py-4 text-gray-600"><?= htmlspecialchars($consultationTime, ENT_QUOTES, 'UTF-8') ?></td>
+                                        <td class="px-6 py-4">
+                                            <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold <?= $statusClass ?>">
+                                                <?= htmlspecialchars($consultationStatus, ENT_QUOTES, 'UTF-8') ?>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
