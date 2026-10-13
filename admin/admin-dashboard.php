@@ -26,29 +26,50 @@ $pendingappointments = fetchAllData($pdo, "
 ");
 
 $appointments = fetchAllData($pdo, "SELECT * FROM appointments");
-$todayConsultationProfiles = fetchAllData($pdo, "
-    SELECT
-        a.AppointmentID,
-        a.AppointmentTime,
-        a.meridiem,
-        p.PatientCode,
-        p.FirstName,
-        p.MiddleName,
-        p.LastName,
-        TIMESTAMPDIFF(YEAR, p.BirthDate, CURDATE()) AS Age,
-        p.Gender,
-        CASE
-            WHEN c.ConsultationID IS NOT NULL AND c.IsCompleted = 1 THEN 'Completed'
-            WHEN c.ConsultationID IS NOT NULL THEN 'In Progress'
-            ELSE a.Status
-        END AS ConsultationStatus
-    FROM appointments a
-    INNER JOIN patients p ON p.PatientID = a.PatientID
-    LEFT JOIN consultations c ON c.AppointmentID = a.AppointmentID
-    WHERE DATE(a.AppointmentDate) = CURDATE()
-      AND a.Status NOT IN ('Cancelled', 'Pending')
-    ORDER BY a.AppointmentTime ASC, a.AppointmentID ASC
-");
+if ($currentRole === 'staff') {
+    $todaySummaryRows = fetchAllData($pdo, "
+        SELECT
+            (
+                SELECT COUNT(*)
+                FROM patients p
+                WHERE p.CreatedAt >= CURDATE()
+                  AND p.CreatedAt < CURDATE() + INTERVAL 1 DAY
+            ) AS PatientsToday,
+            COALESCE(SUM(CASE WHEN a.Status <> 'Cancelled' THEN 1 ELSE 0 END), 0) AS AppointmentsToday,
+            (
+                SELECT COUNT(*)
+                FROM consultations c
+                WHERE DATE(c.ConsultationDate) = CURDATE()
+            ) AS ConsultationsToday
+        FROM appointments a
+        WHERE DATE(a.AppointmentDate) = CURDATE()
+    ");
+    $todaySummary = $todaySummaryRows[0];
+} else {
+    $todayConsultationProfiles = fetchAllData($pdo, "
+        SELECT
+            a.AppointmentID,
+            a.AppointmentTime,
+            a.meridiem,
+            p.PatientCode,
+            p.FirstName,
+            p.MiddleName,
+            p.LastName,
+            TIMESTAMPDIFF(YEAR, p.BirthDate, CURDATE()) AS Age,
+            p.Gender,
+            CASE
+                WHEN c.ConsultationID IS NOT NULL AND c.IsCompleted = 1 THEN 'Completed'
+                WHEN c.ConsultationID IS NOT NULL THEN 'In Progress'
+                ELSE a.Status
+            END AS ConsultationStatus
+        FROM appointments a
+        INNER JOIN patients p ON p.PatientID = a.PatientID
+        LEFT JOIN consultations c ON c.AppointmentID = a.AppointmentID
+        WHERE DATE(a.AppointmentDate) = CURDATE()
+          AND a.Status NOT IN ('Cancelled', 'Pending')
+        ORDER BY a.AppointmentTime ASC, a.AppointmentID ASC
+    ");
+}
 
 $todaySchedule = fetchAllData($pdo, "
     SELECT
@@ -181,6 +202,46 @@ foreach ($patientsRaw as $row) {
         </div>
 
         <div class="flex-1 min-h-0 overflow-auto p-6">
+            <?php if ($currentRole === 'staff'): ?>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-md">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-gray-500 text-md font-semibold">Patients Today</h2>
+                            <div class="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center">
+                                <i class="fas fa-user-injured text-purple-600"></i>
+                            </div>
+                        </div>
+                        <p class="text-gray-800 text-3xl font-extrabold"><?= (int) $todaySummary['PatientsToday'] ?></p>
+                        <?php if ((int) $todaySummary['PatientsToday'] > 0): ?>
+                            <p class="text-green-600 text-sm font-medium">
+                                +<?= (int) $todaySummary['PatientsToday'] ?> from yesterday
+                            </p>
+                        <?php else: ?>
+                            <p class="text-gray-500 text-sm font-medium">No change from yesterday</p>
+                        <?php endif; ?>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-md">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-gray-500 text-md font-semibold">Appointments</h2>
+                            <div class="w-12 h-12 rounded-2xl bg-cyan-100 flex items-center justify-center">
+                                <i class="fas fa-calendar text-cyan-600"></i>
+                            </div>
+                        </div>
+                        <p class="text-gray-800 text-3xl font-extrabold"><?= (int) $todaySummary['AppointmentsToday'] ?></p>
+                        <p class="text-gray-500 text-sm font-medium">Excluding cancelled</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-md">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-gray-500 text-md font-semibold">Consultations Today</h2>
+                            <div class="w-12 h-12 rounded-2xl bg-orange-100 flex items-center justify-center">
+                                <i class="fas fa-stethoscope text-orange-500"></i>
+                            </div>
+                        </div>
+                        <p class="text-gray-800 text-3xl font-extrabold"><?= (int) $todaySummary['ConsultationsToday'] ?></p>
+                        <p class="text-gray-500 text-sm font-medium">Recorded today</p>
+                    </div>
+                </div>
+            <?php else: ?>
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-8">
                 <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
                     <div>
@@ -247,6 +308,7 @@ foreach ($patientsRaw as $row) {
                     </table>
                 </div>
             </div>
+            <?php endif; ?>
 
             <div class="rounded-3xl bg-white p-6 shadow-sm border border-slate-100 mt-8">
                 <div class="flex items-center justify-between mb-6">

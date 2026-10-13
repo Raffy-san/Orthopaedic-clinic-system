@@ -13,7 +13,7 @@ ini_set('log_errors', '1');
 error_reporting(E_ALL);
 
 SessionManager::requireLogin();
-SessionManager::requireAnyRole(['admin', 'doctor', 'staff']); // only medical staff should issue certificates
+SessionManager::requireAnyRole(['admin', 'doctor']); // only medical staff should issue certificates
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

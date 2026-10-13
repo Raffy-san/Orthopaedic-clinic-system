@@ -47,7 +47,7 @@ $navItems = [
         'icon' => 'fa-file-medical',
         'file' => 'medical-records.php',
         'href' => '../admin/medical-records.php',
-        'roles' => ['admin', 'staff', 'doctor'],
+        'roles' => ['admin', 'doctor'],
     ],
     [
         'label' => 'Billing and Payment',
