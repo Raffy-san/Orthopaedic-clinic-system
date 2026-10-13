@@ -7,6 +7,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const listContainer = document.getElementById('unavailabilityList');
 
     if (addForm) {
+        const startDateInput = addForm.querySelector('[name="start_date"]');
+        const endDateInput = addForm.querySelector('[name="end_date"]');
+
+        startDateInput.addEventListener('change', () => {
+            endDateInput.min = startDateInput.value || endDateInput.min;
+            if (endDateInput.value && endDateInput.value < startDateInput.value) {
+                endDateInput.value = startDateInput.value;
+            }
+        });
+
         addForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             errorEl.classList.add('hidden');
@@ -32,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         location.reload();
                     });
                 } else {
-                    errorEl.textContent = data.message || 'Unable to add this date.';
+                    errorEl.textContent = data.message || 'Unable to mark this date range unavailable.';
                     errorEl.classList.remove('hidden');
                 }
             } catch (err) {

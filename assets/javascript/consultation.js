@@ -269,6 +269,16 @@ async function loadConsultationHistory(patientID) {
 
 let medicinePresets = [];
 
+function escapeHtml(value) {
+    const div = document.createElement('div');
+    div.textContent = value ?? '';
+    return div.innerHTML;
+}
+
+function medicineLabel(preset) {
+    return preset.brand ? `${preset.name} (${preset.brand})` : preset.name;
+}
+
 async function loadMedicines() {
     try {
         const response = await fetch('../php/fetch/fetch-medicines.php');
@@ -276,6 +286,7 @@ async function loadMedicines() {
         if (result.status === 'success') {
             medicinePresets = result.data.map(m => ({
                 name: m.Name,
+                brand: m.BrandName || '',
                 dosage: m.DefaultDosage || ''
             }));
         }
@@ -354,9 +365,9 @@ function addPrescriptionRow() {
         const card = document.createElement('button');
         card.type = 'button';
         card.className = 'preset-btn text-left text-sm border border-slate-200 rounded-lg px-3 py-2 hover:bg-blue-50 hover:border-blue-400 transition';
-        card.innerHTML = `<div class="font-semibold text-slate-800">${preset.name}</div><div class="text-xs text-slate-500">${preset.dosage}</div>`;
+        card.innerHTML = `<div class="font-semibold text-slate-800">${escapeHtml(medicineLabel(preset))}</div><div class="text-xs text-slate-500">${escapeHtml(preset.dosage)}</div>`;
         card.addEventListener('click', () => {
-            medicineInput.value = preset.name;
+            medicineInput.value = medicineLabel(preset);
             dosageInput.value = preset.dosage;
 
             presetGrid.querySelectorAll('.preset-btn').forEach(c => c.classList.remove('bg-blue-100', 'border-blue-500'));

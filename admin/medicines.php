@@ -56,6 +56,12 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                         </div>
 
                         <div>
+                            <label class="text-xs font-medium text-slate-500 mb-1 block">Brand Name *</label>
+                            <input type="text" id="mBrandName" required
+                                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                        </div>
+
+                        <div>
                             <label class="text-xs font-medium text-slate-500 mb-1 block">Dosage</label>
                             <input type="text" id="mDosage" placeholder="e.g. 400mg"
                                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
@@ -90,6 +96,7 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                         <thead>
                             <tr class="text-left text-slate-400 text-xs">
                                 <th class="pb-2 font-medium">Medicine</th>
+                                <th class="pb-2 font-medium">Brand</th>
                                 <th class="pb-2 font-medium">Dosage</th>
                                 <th class="pb-2 font-medium">Status</th>
                                 <th class="pb-2 font-medium"></th>

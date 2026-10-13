@@ -54,7 +54,7 @@ $navItems = [
         'icon' => 'fa-credit-card',
         'file' => 'billing-payment.php',
         'href' => '../admin/billing-payment.php',
-        'roles' => ['admin', 'doctor'],
+        'roles' => ['admin', 'doctor', 'staff'],
     ],
     [
         'label' => 'Follow-up Check-ups',

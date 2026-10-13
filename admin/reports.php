@@ -541,9 +541,16 @@ function reportMoney(mixed $value): string
         <div class="bg-white rounded-lg shadow-lg w-full max-w-sm p-5">
             <h3 class="text-base font-bold text-gray-800 mb-1">Unlock financial summary</h3>
             <p class="text-xs text-gray-500 mb-3">Re-enter your password to view billing and collection details.</p>
-            <input type="password" id="financialPasswordInput" autocomplete="current-password"
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Password">
+            <div class="relative">
+                <input type="password" id="financialPasswordInput" autocomplete="current-password"
+                    class="w-full px-3 py-2 pr-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Password">
+                <button type="button" id="financialPasswordToggle"
+                    class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
+                    aria-label="Show password" aria-pressed="false">
+                    <i class="fa-solid fa-eye" id="financialPasswordToggleIcon"></i>
+                </button>
+            </div>
             <p id="financialPasswordError" class="text-xs text-red-600 mt-1 hidden"></p>
             <div class="flex justify-end gap-2 mt-4">
                 <button type="button" id="financialPasswordCancel"

@@ -3,7 +3,7 @@
     const loadBtn = document.getElementById('load-btn');
     const patientLookupInput = document.getElementById('patient-lookup');
     const consultationCard = document.getElementById('consultation-card');
-    const receiptCard = document.getElementById('receipt-card');
+    const receiptCard = document.getElementById('billing-statement-card');
     const prescriptionSection = document.getElementById('prescription-section');
     const recordBtn = document.getElementById('record-btn');
     const printBtn = document.getElementById('print-btn');

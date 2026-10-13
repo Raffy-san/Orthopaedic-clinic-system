@@ -759,8 +759,9 @@ function addMedicine(PDO $pdo, array $data, ?int $actorUserId = null): array
     try {
         $pdo->beginTransaction();
 
-        $stmt = $pdo->prepare('INSERT INTO Medicines (Name, DefaultDosage) VALUES (?, ?)');
-        $stmt->execute([$name, $dosage ?: null]);
+        $brandName = trim((string) ($data['brand_name'] ?? ''));
+        $stmt = $pdo->prepare('INSERT INTO Medicines (Name, BrandName, DefaultDosage) VALUES (?, ?, ?)');
+        $stmt->execute([$name, $brandName ?: null, $dosage ?: null]);
         $medicineId = (int) $pdo->lastInsertId();
 
         // AUDIT: medicine created
@@ -774,6 +775,7 @@ function addMedicine(PDO $pdo, array $data, ?int $actorUserId = null): array
             null,
             json_encode([
                 'Name' => $name,
+                'BrandName' => $brandName ?: null,
                 'DefaultDosage' => $dosage ?: null
             ])
         );
@@ -802,6 +804,7 @@ function updateMedicine(PDO $pdo, array $data, ?int $actorUserId = null): array
 {
     $medicineId = (int) ($data['medicine_id'] ?? 0);
     $name = trim((string) ($data['name'] ?? ''));
+    $brandName = trim((string) ($data['brand_name'] ?? ''));
     $dosage = trim((string) ($data['dosage'] ?? ''));
 
     if ($name === '') {
@@ -821,8 +824,8 @@ function updateMedicine(PDO $pdo, array $data, ?int $actorUserId = null): array
             return ['status' => 'error', 'message' => 'Medicine not found.'];
         }
 
-        $stmt = $pdo->prepare('UPDATE Medicines SET Name = ?, DefaultDosage = ? WHERE MedicineID = ?');
-        $stmt->execute([$name, $dosage ?: null, $medicineId]);
+        $stmt = $pdo->prepare('UPDATE Medicines SET Name = ?, BrandName = ?, DefaultDosage = ? WHERE MedicineID = ?');
+        $stmt->execute([$name, $brandName ?: null, $dosage ?: null, $medicineId]);
 
         // AUDIT: fetch the new row and log per-field differences
         $stmt = $pdo->prepare('SELECT * FROM Medicines WHERE MedicineID = ?');

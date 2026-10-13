@@ -30,12 +30,12 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                 visibility: hidden;
             }
 
-            #receipt-card,
-            #receipt-card * {
+            #billing-statement-card,
+            #billing-statement-card * {
                 visibility: visible;
             }
 
-            #receipt-card {
+            #billing-statement-card {
                 position: absolute;
                 inset: 0;
                 width: 100%;
@@ -44,7 +44,7 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                 border: 0;
             }
 
-            #receipt-card .print-hidden {
+            #billing-statement-card .print-hidden {
                 display: none;
             }
         }
@@ -60,7 +60,7 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
             <h1 class="text-2xl font-bold text-white">Southern Leyte Orthopaedic Clinic System</h1>
             <div class="flex flex-col gap-3 items-end">
                 <h1 class="text-2xl font-bold text-white">Billing & Payment</h1>
-                <h3 class="text-sm font-medium text-white">Fee computation, discounts, and receipt generation</h3>
+                <h3 class="text-sm font-medium text-white">Fee computation, discounts, and billing statement generation</h3>
             </div>
         </div>
 
@@ -133,9 +133,9 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
             </div>
 
             <div class="col-span-6">
-                <div id="receipt-card" class="hidden bg-white rounded-2xl p-6 shadow-md border border-slate-100">
+                <div id="billing-statement-card" class="hidden bg-white rounded-2xl p-6 shadow-md border border-slate-100">
                     <div class="flex justify-between items-start">
-                        <h3 class="text-sm text-slate-500">Official Receipt</h3>
+                        <h3 class="text-sm text-slate-500">Official Billing Statement</h3>
                         <small id="or-number" class="text-xs text-slate-400">OR-2026-00000</small>
                     </div>
 
@@ -174,7 +174,7 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                         Payment</button>
                     <button id="print-btn" type="button"
                         class="print-hidden hidden mt-3 w-full bg-slate-700 hover:bg-slate-800 text-white font-semibold py-3 rounded-lg">
-                        <i class="fas fa-print mr-2" aria-hidden="true"></i>Print Receipt</button>
+                        <i class="fas fa-print mr-2" aria-hidden="true"></i>Print Billing Statement</button>
                 </div>
             </div>
         </div>

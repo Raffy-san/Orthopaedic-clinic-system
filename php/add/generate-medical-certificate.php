@@ -8,6 +8,10 @@ require_once __DIR__ . '/../../vendor/autoload.php'; // Composer autoloader for 
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+error_reporting(E_ALL);
+
 SessionManager::requireLogin();
 SessionManager::requireAnyRole(['admin', 'doctor', 'staff']); // only medical staff should issue certificates
 header('Content-Type: application/json');
