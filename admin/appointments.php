@@ -5,7 +5,7 @@ require_once __DIR__ . '/../includes/crud.php';
 require_once __DIR__ . '/../php/fetch/fetch.php';
 
 SessionManager::requireLogin();
-SessionManager::requireAnyRole(['admin', 'doctor', 'staff']);
+SessionManager::requireAnyRole(['staff']);
 $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
 $currentRole = strtolower((string) (SessionManager::getCurrentRole() ?? ''));
 $canApprove = in_array($currentRole, ['admin', 'doctor'], true);
