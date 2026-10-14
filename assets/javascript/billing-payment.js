@@ -132,6 +132,9 @@
             document.getElementById('consult-doctor').innerText = doctorName;
             document.getElementById('consult-diagnosis').innerText = data.consultation.Diagnosis || '—';
             document.getElementById('consult-treatment').innerText = data.consultation.Treatment || '—';
+            document.getElementById('statement-patient').innerText = patientName || '________________';
+            document.getElementById('statement-date').innerText = consultDate || '________________';
+            document.getElementById('statement-diagnosis').innerText = data.consultation.Diagnosis || '________________';
 
             if (data.prescriptions && data.prescriptions.length > 0) {
                 let prescText = '';
@@ -150,16 +153,9 @@
 
             const consultFee = parseFloat(data.billing.OriginalAmount) || 0;
             document.getElementById('consult-fee').innerText = '₱' + consultFee.toFixed(2);
+            document.getElementById('statement-subtotal').innerText = '₱' + consultFee.toFixed(2);
             document.getElementById('total-due').innerText = '₱' + parseFloat(data.billing.FinalAmount).toFixed(2);
-            document.getElementById('or-number').innerText = 'OR-2026-' + String(data.billing.BillingID).padStart(5, '0');
-
-            const balanceRow = document.getElementById('balance-remaining-row');
-            if (data.billing.Status === 'Partially Paid') {
-                document.getElementById('balance-remaining').innerText = '₱' + parseFloat(data.billing.AmountDue).toFixed(2);
-                balanceRow.classList.remove('hidden');
-            } else {
-                balanceRow.classList.add('hidden');
-            }
+            document.getElementById('statement-paid').innerText = '₱' + parseFloat(data.billing.AmountPaid || 0).toFixed(2);
 
             consultationCard.classList.remove('hidden');
             receiptCard.classList.remove('hidden');
@@ -265,18 +261,14 @@
 
         document.getElementById('consult-fee').innerText = '₱' + originalAmount.toFixed(2);
         if (discountPercent > 0) {
-            document.getElementById('consult-fee').innerText =
-                `₱${originalAmount.toFixed(2)} - ₱${discountAmount.toFixed(2)} (${discountPercent}%)`;
-        }
-        document.getElementById('total-due').innerText = '₱' + finalAmount.toFixed(2);
-
-        const balanceRow = document.getElementById('balance-remaining-row');
-        if (currentBillingData.Status === 'Partially Paid') {
-            document.getElementById('balance-remaining').innerText = '₱' + remainingBalance.toFixed(2);
-            balanceRow.classList.remove('hidden');
+            document.getElementById('consult-fee').innerText = '₱' + originalAmount.toFixed(2);
+            document.getElementById('statement-discount').innerText = '₱' + discountAmount.toFixed(2);
         } else {
-            balanceRow.classList.add('hidden');
+            document.getElementById('statement-discount').innerText = '₱0.00';
         }
+        document.getElementById('statement-subtotal').innerText = '₱' + originalAmount.toFixed(2);
+        document.getElementById('total-due').innerText = '₱' + finalAmount.toFixed(2);
+        document.getElementById('statement-paid').innerText = '₱' + (parseFloat(currentBillingData.AmountPaid || 0)).toFixed(2);
 
         if (currentBillingData.Status !== 'Paid') {
             document.getElementById('amount-paid').value = remainingBalance.toFixed(2);
@@ -325,18 +317,10 @@
                 'success',
                 () => {
                     currentBillingData.Status = result.billing_status;
-                    document.getElementById('or-number').innerText = result.receipt_no;
+                    document.getElementById('statement-paid').innerText = '₱' + parseFloat(result.total_paid).toFixed(2);
                     document.querySelector('#paid-amount span:last-child').innerText = '₱' + parseFloat(result.total_paid).toFixed(2);
                     document.getElementById('paid-amount').classList.remove('hidden');
                     printBtn.classList.remove('hidden');
-
-                    const balanceRow = document.getElementById('balance-remaining-row');
-                    if (result.billing_status === 'Partially Paid') {
-                        document.getElementById('balance-remaining').innerText = '₱' + parseFloat(result.amount_due).toFixed(2);
-                        balanceRow.classList.remove('hidden');
-                    } else {
-                        balanceRow.classList.add('hidden');
-                    }
 
                     if (result.billing_status === 'Paid') {
                         document.getElementById('amount-paid-field').classList.add('hidden');

@@ -25,6 +25,203 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
     <link rel="icon" href="../assets/img/rounded-logo.ico" type="image/x-icon">
     <title>Billing and Payment</title>
     <style>
+        .billing-print-card {
+            width: 100%;
+            max-width: 820px;
+            background: #f7f7f5;
+            border: 1px solid #d9d7d2;
+            padding: 16px 24px 20px;
+            color: #2f2f2f;
+            box-sizing: border-box;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .billing-print-card .clinic-header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .billing-print-card .clinic-name {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .billing-print-card .doctor-line,
+        .billing-print-card .contact-line {
+            font-size: 13px;
+            color: #1d1d1d;
+            margin-top: 4px;
+        }
+
+        .billing-print-card .billing-divider {
+            border-top: 2px solid #2f2f2f;
+            margin: 12px 0 18px;
+        }
+
+        .billing-print-card .statement-title {
+            text-align: center;
+            font-size: 27px;
+            font-weight: 800;
+            margin: 8px 0 20px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .billing-print-card .statement-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .billing-print-card .statement-meta .meta-field {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .billing-print-card .statement-meta .meta-field span:last-child {
+            flex: 1;
+            border-bottom: 1px solid #787878;
+            min-height: 18px;
+            display: inline-block;
+            padding-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .billing-print-card .statement-diagnosis {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .billing-print-card .statement-diagnosis span:last-child {
+            display: inline-block;
+            flex: 1;
+            border-bottom: 1px solid #787878;
+            min-height: 18px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .billing-print-card .statement-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 15px;
+            margin-bottom: 10px;
+        }
+
+        .billing-print-card .statement-table th,
+        .billing-print-card .statement-table td {
+            border: 1px solid #747474;
+            padding: 8px 10px;
+            vertical-align: middle;
+        }
+
+        .billing-print-card .statement-table thead th {
+            background: #4a5660;
+            color: #ffffff;
+            text-align: left;
+            font-weight: 700;
+        }
+
+        .billing-print-card .statement-table thead th:last-child {
+            text-align: center;
+        }
+
+        .billing-print-card .statement-table td:last-child {
+            text-align: right;
+            width: 28%;
+            min-width: 150px;
+        }
+
+        .billing-print-card .statement-table tbody tr td:nth-child(1) {
+            font-weight: 500;
+        }
+
+        .billing-print-card .statement-table tbody tr td:nth-child(2) {
+            min-width: 140px;
+        }
+
+        .billing-print-card .totals {
+            width: 300px;
+            margin-left: auto;
+            font-size: 15px;
+        }
+
+        .billing-print-card .total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            margin-bottom: 3px;
+        }
+
+        .billing-print-card .total-row span:last-child {
+            display: inline-block;
+            width: 125px;
+            min-height: 18px;
+            border: 1px solid #a9a9a9;
+            text-align: right;
+            padding: 4px 8px;
+            background: #f3f3f3;
+        }
+
+        .billing-print-card .grand-total {
+            font-weight: 800;
+            font-size: 20px;
+            margin-top: 6px;
+        }
+
+        .billing-print-card .grand-total span:last-child {
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .billing-print-card .paid-row {
+            margin-top: 14px;
+            justify-content: flex-end;
+            text-align: right;
+            font-size: 15px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .billing-print-card .paid-row span {
+            display: inline-block;
+            min-width: 92px;
+            border-bottom: 1px solid #6c6c6c;
+            text-align: right;
+            padding-bottom: 2px;
+        }
+
+        .billing-print-card .doctor-signature {
+            margin-top: 28px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 15px;
+            border-top: 1.5px solid #2f2f2f;
+            padding-top: 6px;
+            width: 40%;
+            margin-left: auto;
+            margin-right: 0;
+        }
+
         @media print {
             body * {
                 visibility: hidden;
@@ -42,10 +239,13 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                 margin: 0;
                 box-shadow: none;
                 border: 0;
+                background: #fff;
+                visibility: visible;
             }
 
-            #billing-statement-card .print-hidden {
-                display: none;
+            #billing-statement-card .print-hidden,
+            .print-hidden {
+                display: none !important;
             }
         }
     </style>
@@ -133,29 +333,80 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
             </div>
 
             <div class="col-span-6">
-                <div id="billing-statement-card" class="hidden bg-white rounded-2xl p-6 shadow-md border border-slate-100">
-                    <div class="flex justify-between items-start">
-                        <h3 class="text-sm text-slate-500">Official Billing Statement</h3>
-                        <small id="or-number" class="text-xs text-slate-400">OR-2026-00000</small>
+                <div id="billing-statement-card" class="hidden billing-print-card">
+                    <div class="clinic-header">
+                        <h2 class="clinic-name">Southern Leyte Orthopaedic Clinic</h2>
+                        <div class="doctor-line">Dr. Thyam Tiu Fookson, DPBO, FPOA</div>
+                        <div class="contact-line">0956 304 2109 | sl_ortho@yahoo.com</div>
                     </div>
 
-                    <div class="mt-4 border border-slate-100 rounded-lg p-4">
-                        <div class="flex justify-between text-sm text-slate-500">
-                            <div>Consultation Fee</div>
-                            <div id="consult-fee">—</div>
-                        </div>
+                    <div class="billing-divider"></div>
 
-                        <div class="mt-3 flex justify-between items-center">
-                            <div class="text-sm font-semibold">Total Due</div>
-                            <div id="total-due" class="text-lg font-bold">—</div>
-                        </div>
+                    <div class="statement-title">Billing Statement</div>
 
-                        <div id="balance-remaining-row"
-                            class="hidden mt-2 flex justify-between items-center text-orange-600">
-                            <div class="text-sm font-semibold">Balance Remaining</div>
-                            <div id="balance-remaining" class="text-lg font-bold">—</div>
+                    <div class="statement-meta">
+                        <div class="meta-field">
+                            <span>Patient:</span>
+                            <span id="statement-patient">________________</span>
+                        </div>
+                        <div class="meta-field">
+                            <span>Date:</span>
+                            <span id="statement-date">________________</span>
                         </div>
                     </div>
+
+                    <div class="statement-diagnosis">
+                        <span>Diagnosis:</span>
+                        <span id="statement-diagnosis">________________</span>
+                    </div>
+
+                    <table class="statement-table">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Amount (PHP)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Consultation Fee</td>
+                                <td id="consult-fee">₱0.00</td>
+                            </tr>
+                            <tr>
+                                <td>Medication</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>Procedure / Supplies</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td>Others</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="totals">
+                        <div class="total-row">
+                            <span>Subtotal</span>
+                            <span id="statement-subtotal">₱0.00</span>
+                        </div>
+                        <div class="total-row">
+                            <span>Less: Discount (20%)</span>
+                            <span id="statement-discount">₱0.00</span>
+                        </div>
+                        <div class="total-row grand-total">
+                            <span>TOTAL</span>
+                            <span id="total-due">₱0.00</span>
+                        </div>
+                        <div class="paid-row">
+                            <span>Paid:</span>
+                            <span id="statement-paid">₱0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="doctor-signature">Dr. Thyam T. Fookson, M.D.</div>
 
                     <div class="print-hidden mt-6" id="amount-paid-field">
                         <label for="amount-paid" class="block text-sm font-semibold text-slate-700 mb-2">Amount
