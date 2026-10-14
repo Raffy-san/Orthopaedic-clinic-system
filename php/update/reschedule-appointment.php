@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../../includes/auth.php';
-require_once __DIR__ . '/../../includes/audit.php';
+require_once __DIR__ . '/../../includes/crud.php';
 
 SessionManager::requireLogin();
 SessionManager::requireAnyRole(['staff']); // matches who sees the Reschedule button; add 'admin', 'doctor' if they need it
@@ -22,7 +22,8 @@ if (
     exit;
 }
 
-$appointmentId = intval($requestData['appointment_id'] ?? 0);
+$appointmentIdValue = trim((string) ($requestData['appointment_id'] ?? ''));
+$appointmentId = ctype_digit($appointmentIdValue) ? (int) $appointmentIdValue : 0;
 $newDate = trim($requestData['new_appointment_date'] ?? '');
 $newTime = trim($requestData['new_appointment_time'] ?? ''); // e.g. "09:00 AM"
 
@@ -50,11 +51,17 @@ if ($parsedDate < new DateTime('today')) {
     exit;
 }
 
-// "09:00 AM" -> real 24-hour TIME ("09:00:00"), which is what the slot picker reads.
-$parsedTime = DateTime::createFromFormat('h:i A', $newTime);
-if (!$parsedTime) {
+// Only allow the same half-hour slots offered by the booking calendar.
+$parsedTime = DateTime::createFromFormat('!h:i A', $newTime);
+$timeErrors = DateTime::getLastErrors();
+if (
+    !$parsedTime
+    || ($timeErrors !== false && ($timeErrors['warning_count'] > 0 || $timeErrors['error_count'] > 0))
+    || $parsedTime->format('h:i A') !== $newTime
+    || !in_array($newTime, clinicSlotLabels(), true)
+) {
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid time format.']);
+    echo json_encode(['status' => 'error', 'message' => 'Please choose a valid appointment time.']);
     exit;
 }
 $timeOnly = $parsedTime->format('H:i:s');
@@ -71,7 +78,12 @@ $fail = function (int $code, string $message) use ($pdo): void {
 };
 
 try {
+    $pdo->beginTransaction();
+
     $dayOfWeek = (int) $parsedDate->format('N');
+    $dayLock = $pdo->prepare('SELECT DayOfWeek FROM clinic_schedule WHERE DayOfWeek = ? FOR UPDATE');
+    $dayLock->execute([$dayOfWeek]);
+
     $scheduleStatement = $pdo->prepare('SELECT IsOpen, StartTime, EndTime FROM clinic_schedule WHERE DayOfWeek = ?');
     $scheduleStatement->execute([$dayOfWeek]);
     $daySchedule = $scheduleStatement->fetch(PDO::FETCH_ASSOC);
@@ -88,13 +100,13 @@ try {
         $fail(400, 'The selected time is outside the clinic hours for this date.');
     }
 
-    $pdo->beginTransaction();
-
     // Lock the appointment being moved
     $appointmentStatement = $pdo->prepare(
-        "SELECT AppointmentDate, AppointmentTime, meridiem, Status, Purpose
-         FROM appointments
-         WHERE AppointmentID = :appointment_id
+        "SELECT a.PatientID, a.AppointmentDate, a.AppointmentTime, a.meridiem, a.Status, a.Purpose,
+                p.PatientCode
+         FROM appointments a
+         INNER JOIN patients p ON p.PatientID = a.PatientID
+         WHERE a.AppointmentID = :appointment_id
          LIMIT 1
          FOR UPDATE"
     );
@@ -113,25 +125,12 @@ try {
         $fail(400, 'The appointment is already scheduled for that date and time.');
     }
 
-    // Is the new slot taken by a DIFFERENT appointment? Locked so two requests can't both pass.
-    // (meridiem is not part of the check: the 24-hour time already decides AM/PM,
-    // and older rows may have a NULL meridiem.)
-    $conflictStatement = $pdo->prepare(
-        "SELECT AppointmentID FROM appointments
-         WHERE AppointmentDate = :new_date AND AppointmentTime = :new_time
-           AND Status NOT IN ('Cancelled', 'Rescheduled')
-           AND AppointmentID <> :appointment_id
-         LIMIT 1
-         FOR UPDATE"
-    );
-    $conflictStatement->execute([
-        ':new_date' => $newDate,
-        ':new_time' => $timeOnly,
-        ':appointment_id' => $appointmentId
-    ]);
+    if (countActiveAppointments($pdo, $newDate, $appointmentId) >= DAILY_PATIENT_LIMIT) {
+        $fail(400, 'This date is already fully booked (' . DAILY_PATIENT_LIMIT . ' patients). Please choose another date.');
+    }
 
-    if ($conflictStatement->fetchColumn()) {
-        $fail(409, 'That time slot is already taken. Please choose another.');
+    if (countSlotAppointments($pdo, $newDate, $timeOnly, $appointmentId) >= SLOT_CAPACITY) {
+        $fail(400, 'That time slot is full. Please choose another.');
     }
 
     $stmt = $pdo->prepare("
@@ -146,10 +145,19 @@ try {
         ':appointment_id' => $appointmentId
     ]);
 
-    // If this appointment is a follow-up visit, keep its followups record in sync.
-    // Limited to follow-up appointments so older followups rows (which point at the
-    // ORIGINAL appointment) are not changed by mistake.
+    $scheduledFollowUp = null;
     if ($current['Purpose'] === 'Follow-up check-up') {
+        $followupLookup = $pdo->prepare("
+            SELECT FollowUpID, FollowUpDate
+            FROM followups
+            WHERE AppointmentID = :appointment_id AND Status = 'Scheduled'
+            LIMIT 1
+            FOR UPDATE
+        ");
+        $followupLookup->execute([':appointment_id' => $appointmentId]);
+        $scheduledFollowUp = $followupLookup->fetch(PDO::FETCH_ASSOC) ?: null;
+
+        // Only update the follow-up tied to this appointment, not older records.
         $followupStmt = $pdo->prepare("
             UPDATE followups
             SET FollowUpDate = :new_date
@@ -161,23 +169,44 @@ try {
         ]);
     }
 
-    // AUDIT: log the date/time change
     $actorUser = SessionManager::getUser($pdo);
-    $actorUserId = $actorUser['UserID'] ?? null;
+    $actorUserId = $actorUser['user_id'] ?? $actorUser['UserID'] ?? null;
+    if ($actorUserId !== null && !ctype_digit((string) $actorUserId)) {
+        $actorUserId = null;
+    }
+    $actorUserId = $actorUserId === null ? null : (int) $actorUserId;
 
-    $oldDateTime = $current['AppointmentDate'] . ' ' . $current['AppointmentTime'] . ' ' . $current['meridiem'];
-    $newDateTime = $newDate . ' ' . $timeOnly . ' ' . $meridiem;
+    $oldDateTime = $current['AppointmentDate'] . ' at '
+        . date('h:i A', strtotime($current['AppointmentTime']));
+    $newDateTime = $newDate . ' at ' . $parsedTime->format('h:i A');
 
+    // AUDIT: keep the old and new schedule visible in the audit log.
     logAudit(
         $pdo,
-        $actorUserId ? (int) $actorUserId : null,
+        $actorUserId,
         'UPDATE',
         'appointments',
         $appointmentId,
-        'AppointmentDate/AppointmentTime',
+        'Rescheduled appointment (' . $current['PatientCode'] . ')',
         $oldDateTime,
         $newDateTime
     );
+
+    if (
+        $scheduledFollowUp
+        && $scheduledFollowUp['FollowUpDate'] !== $newDate
+    ) {
+        logAudit(
+            $pdo,
+            $actorUserId,
+            'UPDATE',
+            'followups',
+            (int) $scheduledFollowUp['FollowUpID'],
+            'FollowUpDate',
+            $scheduledFollowUp['FollowUpDate'],
+            $newDate
+        );
+    }
 
     $pdo->commit();
 

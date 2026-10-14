@@ -8,6 +8,7 @@ SessionManager::requireAnyRole(['admin', 'doctor', 'staff']);
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    // ---- Calendar: closed dates for a month ----
     if (isset($_GET['month'])) {
         $month = $_GET['month'];
         $parsedMonth = DateTime::createFromFormat('!Y-m', $month);
@@ -59,6 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
+    // ---- Availability for one date ----
     $date = $_GET['date'] ?? '';
     $parsedDate = DateTime::createFromFormat('!Y-m-d', $date);
     $dateErrors = DateTime::getLastErrors();
@@ -69,6 +71,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     $dayOfWeek = (int) $parsedDate->format('N'); // 1 = Monday ... 7 = Sunday
+    $excludeAppointmentId = 0;
+    if (isset($_GET['exclude_appointment_id'])) {
+        if (!ctype_digit((string) $_GET['exclude_appointment_id']) || (int) $_GET['exclude_appointment_id'] < 1) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'Invalid appointment ID.']);
+            exit;
+        }
+
+        $excludeAppointmentId = (int) $_GET['exclude_appointment_id'];
+        $rescheduleStatement = $pdo->prepare(
+            "SELECT COUNT(*) FROM appointments
+             WHERE AppointmentID = ? AND Status = 'Confirmed'"
+        );
+        $rescheduleStatement->execute([$excludeAppointmentId]);
+        if ((int) $rescheduleStatement->fetchColumn() !== 1) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'Only confirmed appointments can be rescheduled.']);
+            exit;
+        }
+    }
 
     $scheduleStmt = $pdo->prepare('SELECT IsOpen, StartTime, EndTime FROM clinic_schedule WHERE DayOfWeek = ?');
     $scheduleStmt->execute([$dayOfWeek]);
@@ -78,17 +100,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $unavailabilityStmt->execute([$date]);
     $unavailability = $unavailabilityStmt->fetch(PDO::FETCH_ASSOC);
 
-    $allSlots = [
-        '09:00 AM',
-        '09:30 AM',
-        '10:00 AM',
-        '10:30 AM',
-        '11:00 AM',
-        '11:30 AM',
-    ];
     $availableTimes = [];
     if ($daySchedule && $daySchedule['IsOpen']) {
-        foreach ($allSlots as $slotLabel) {
+        foreach (clinicSlotLabels() as $slotLabel) {
             $slotTime = DateTime::createFromFormat('h:i A', $slotLabel)->format('H:i:s');
             if ($slotTime >= $daySchedule['StartTime'] && $slotTime < $daySchedule['EndTime']) {
                 $availableTimes[] = $slotLabel;
@@ -96,12 +110,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         }
     }
 
+    $bookedCount = countActiveAppointments($pdo, $date, $excludeAppointmentId ?: null);
+
     if (!$daySchedule || !$daySchedule['IsOpen'] || $unavailability) {
         $reason = $unavailability['Reason'] ?? null;
         echo json_encode([
             'status' => 'success',
             'available_times' => $availableTimes,
-            'taken_times' => [],
+            'slot_counts' => (object) [],
+            'slot_capacity' => SLOT_CAPACITY,
+            'limit' => DAILY_PATIENT_LIMIT,
+            'booked_count' => $bookedCount,
             'closed' => true,
             'closed_message' => $reason
                 ? "The doctor is unavailable on this date ({$reason})."
@@ -110,16 +129,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
-    $statement = $pdo->prepare("SELECT TIME_FORMAT(AppointmentTime, '%h:%i %p') AS appointment_time
+    // How many patients are already in each time slot, e.g. {"09:00 AM": 3}
+    $slotSql = "SELECT TIME_FORMAT(AppointmentTime, '%h:%i %p') AS t, COUNT(*) AS c
         FROM appointments
-        WHERE AppointmentDate = ? AND Status NOT IN ('Cancelled', 'Rescheduled')");
-    $statement->execute([$date]);
-    $bookedTimes = array_column($statement->fetchAll(PDO::FETCH_ASSOC), 'appointment_time');
+        WHERE AppointmentDate = ? AND Status NOT IN ('Cancelled', 'Rescheduled')";
+    $slotParams = [$date];
+    if ($excludeAppointmentId > 0) {
+        $slotSql .= ' AND AppointmentID <> ?';
+        $slotParams[] = $excludeAppointmentId;
+    }
+    $slotSql .= ' GROUP BY AppointmentTime';
+    $slotStmt = $pdo->prepare($slotSql);
+    $slotStmt->execute($slotParams);
+    $slotCounts = [];
+    foreach ($slotStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $slotCounts[$row['t']] = (int) $row['c'];
+    }
 
     echo json_encode([
         'status' => 'success',
         'available_times' => $availableTimes,
-        'taken_times' => $bookedTimes,
+        'slot_counts' => (object) $slotCounts,
+        'slot_capacity' => SLOT_CAPACITY,
+        'limit' => DAILY_PATIENT_LIMIT,
+        'booked_count' => $bookedCount,
         'closed' => false
     ]);
     exit;
@@ -194,16 +227,8 @@ if ($submittedTime24 < $daySchedule['StartTime'] || $submittedTime24 >= $daySche
     bookingError('The selected time is outside the doctor\'s working hours for this date.');
 }
 
-$slotCheck = $pdo->prepare("
-    SELECT 1 FROM appointments
-    WHERE AppointmentDate = ? AND AppointmentTime = ?
-      AND Status NOT IN ('Cancelled', 'Rescheduled')
-    LIMIT 1
-");
-$slotCheck->execute([$data['appointmentDate'], $submittedTime24]);
-if ($slotCheck->fetchColumn()) {
-    bookingError('That time slot is already taken. Please choose another.');
-}
+// NOTE: the old "slot already taken" check is gone. bookAppointment() now enforces
+// both the 20-per-day cap and the per-slot capacity inside a transaction.
 
 $patientStatement = $pdo->prepare('SELECT PatientID FROM patients WHERE PatientCode = ?');
 $patientStatement->execute([$data['patientCode']]);
@@ -219,7 +244,7 @@ try {
     $data['meridiem'] = $appointmentTime->format('A');
     $data['appointmentTime'] = $submittedTime24;
 
-    $result = bookAppointment($pdo, $data);
+    $result = bookAppointment($pdo, $data, (int) $userId);
 } catch (Throwable $e) {
     error_log('book-appointment failed: ' . $e->getMessage());
     $result = ['status' => 'error', 'message' => 'Unable to book the appointment. Please try again.'];

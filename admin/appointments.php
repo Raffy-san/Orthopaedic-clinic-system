@@ -189,11 +189,10 @@ if (!$admin) {
                                     class="shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700"></span>
                             </div>
                             <p class="text-xs text-slate-500">Select an available slot to continue booking. Red slots
-                                are
-                                already taken.</p>
+                                are full.</p>
                             <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500">
                                 <span class="flex items-center gap-2"><span
-                                        class="h-3 w-3 rounded-full bg-red-100 border border-red-200"></span>Taken</span>
+                                        class="h-3 w-3 rounded-full bg-red-100 border border-red-200"></span>Full</span>
                                 <span class="flex items-center gap-2"><span
                                         class="h-3 w-3 rounded-full bg-slate-100 border border-slate-200"></span>Available</span>
                                 <span class="flex items-center gap-2"><span

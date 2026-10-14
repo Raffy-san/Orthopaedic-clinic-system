@@ -48,8 +48,7 @@ const OUT_DIR = path.join(__dirname, 'boundaries');
 // name:         used to match the right feature by name, and to build the output filename
 const PROVINCES = [
   { regionPsgc: 800000000, provincePsgc: 806400000, name: 'Southern Leyte' },
-  // Example for a neighboring province — fill in the real codes before enabling:
-  // { regionPsgc: 800000000, provincePsgc: 806100000, name: 'Leyte' },
+  { regionPsgc: 800000000, provincePsgc: 803700000, name: 'Leyte' },
 ];
 
 async function getJSON(url) {

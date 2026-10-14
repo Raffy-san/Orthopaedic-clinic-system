@@ -88,6 +88,24 @@ $todaySchedule = fetchAllData($pdo, "
     ORDER BY a.AppointmentTime ASC
 ");
 
+$upcomingFollowUps = fetchAllData($pdo, "
+    SELECT
+        f.FollowUpID,
+        f.FollowUpDate,
+        a.AppointmentTime,
+        a.meridiem,
+        p.FirstName,
+        p.LastName,
+        p.PatientCode,
+        f.Remarks
+    FROM followups f
+    INNER JOIN patients p ON p.PatientID = f.PatientID
+    LEFT JOIN appointments a ON a.AppointmentID = f.AppointmentID
+    WHERE f.Status = 'Scheduled'
+      AND f.FollowUpDate >= CURDATE()
+    ORDER BY f.FollowUpDate ASC, a.AppointmentTime ASC, f.FollowUpID ASC
+");
+
 $patientsRaw = fetchAllData($pdo, "
     SELECT p.Province AS province, p.City AS city, p.Barangay AS barangay,
            TIMESTAMPDIFF(YEAR, p.BirthDate, CURDATE()) AS age, a.AppointmentDate as date,
@@ -253,9 +271,9 @@ foreach ($patientsRaw as $row) {
                     </span>
                 </div>
 
-                <div class="overflow-x-auto">
+                <div class="max-h-96 overflow-auto custom-scrollbar">
                     <table class="w-full">
-                        <thead class="text-left text-sm text-gray-500 bg-slate-50">
+                        <thead class="sticky top-0 z-10 bg-slate-50 text-left text-sm text-gray-500">
                             <tr class="border-b border-gray-100">
                                 <th class="px-6 py-4 font-medium">Patient Profile</th>
                                 <th class="px-6 py-4 font-medium">Age</th>
@@ -310,6 +328,53 @@ foreach ($patientsRaw as $row) {
             </div>
             <?php endif; ?>
 
+            <section class="mb-8 rounded-2xl border border-gray-100 bg-white shadow-sm">
+                <div class="flex items-center justify-between border-b border-gray-100 px-6 py-5">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-800">Upcoming Follow-up Check-ups</h2>
+                        <p class="mt-1 text-sm text-gray-500">Scheduled follow-up visits from today onward</p>
+                    </div>
+                    <span class="rounded-full bg-teal-100 px-3 py-1 text-xs font-bold text-teal-700">
+                        <?= count($upcomingFollowUps) ?>
+                    </span>
+                </div>
+                <div class="max-h-96 overflow-y-auto p-5 custom-scrollbar">
+                    <?php if (empty($upcomingFollowUps)): ?>
+                        <p class="text-sm text-gray-500">No upcoming follow-up check-ups scheduled.</p>
+                    <?php else: ?>
+                        <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                            <?php foreach ($upcomingFollowUps as $followUp):
+                                $followUpName = trim($followUp['FirstName'] . ' ' . $followUp['LastName']);
+                                $followUpTime = $followUp['AppointmentTime']
+                                    ? date('g:i A', strtotime($followUp['AppointmentTime']))
+                                    : 'Time not set';
+                                ?>
+                                <article class="flex items-start justify-between gap-4 rounded-xl border border-teal-100 bg-teal-50/60 px-4 py-3">
+                                    <div class="min-w-0">
+                                        <h3 class="truncate text-sm font-semibold text-gray-800">
+                                            <?= htmlspecialchars($followUpName, ENT_QUOTES, 'UTF-8') ?>
+                                        </h3>
+                                        <p class="mt-1 text-xs text-gray-500">
+                                            <?= htmlspecialchars($followUp['PatientCode'], ENT_QUOTES, 'UTF-8') ?>
+                                            · <?= htmlspecialchars(date('M j, Y', strtotime($followUp['FollowUpDate'])), ENT_QUOTES, 'UTF-8') ?>
+                                            · <?= htmlspecialchars($followUpTime, ENT_QUOTES, 'UTF-8') ?>
+                                        </p>
+                                        <?php if (!empty($followUp['Remarks'])): ?>
+                                            <p class="mt-2 break-words text-xs text-gray-600">
+                                                <?= htmlspecialchars($followUp['Remarks'], ENT_QUOTES, 'UTF-8') ?>
+                                            </p>
+                                        <?php endif; ?>
+                                    </div>
+                                    <span class="shrink-0 rounded-full bg-teal-100 px-3 py-1 text-[11px] font-semibold text-teal-700">
+                                        Follow-up
+                                    </span>
+                                </article>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </section>
+
             <div class="rounded-3xl bg-white p-6 shadow-sm border border-slate-100 mt-8">
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="text-lg font-semibold text-slate-900">Pending Requests</h2>
@@ -322,7 +387,7 @@ foreach ($patientsRaw as $row) {
                     </span>
                 </div>
 
-                <div class="space-y-3">
+                <div class="max-h-96 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
                     <?php
                     $pendingAppointments = array_filter($pendingappointments, fn($a) => $a['Status'] === 'Pending');
 
@@ -391,7 +456,7 @@ foreach ($patientsRaw as $row) {
                         </h2>
                     </div>
 
-                    <div class="p-5 space-y-3 max-h-96 overflow-y-auto">
+                    <div class="p-5 space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
                         <?php
                         // NOTE: adjust column names (StartTime/EndTime) to match your actual `consultations` table
                         $completedToday = fetchAllData($pdo, "
@@ -435,7 +500,7 @@ foreach ($patientsRaw as $row) {
                         </h2>
                     </div>
 
-                    <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                    <div class="max-h-96 overflow-auto custom-scrollbar">
                         <table class="w-full">
                             <thead class="text-left text-sm text-gray-500 bg-emerald-50 sticky top-0">
                                 <tr class="border-b border-gray-100">
@@ -599,7 +664,7 @@ foreach ($patientsRaw as $row) {
                         <h2 class="text-lg font-semibold text-gray-800">Today's Schedule</h2>
                     </div>
 
-                    <div class="p-5 space-y-4 max-h-96 overflow-y-auto">
+                    <div class="p-5 space-y-4 max-h-96 overflow-y-auto custom-scrollbar">
                         <?php
                         if (empty($todaySchedule)) {
                             echo '<p class="text-sm text-gray-500">No appointments scheduled for today.</p>';

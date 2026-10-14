@@ -202,7 +202,7 @@ function escapeAttr(value) {
 }
 
 // --- Issue Medical Certificate modal (shared logic, also usable from the Consultation page) ---
-function openCertificateModal({ patientCode, consultationId, diagnosis }) {
+function openCertificateModal({ patientCode, consultationId }) {
     const modal = document.getElementById('certificateModal');
     if (!modal) {
         console.warn('certificateModal not found on this page.');
@@ -211,7 +211,7 @@ function openCertificateModal({ patientCode, consultationId, diagnosis }) {
 
     document.getElementById('certPatientCode').value = patientCode;
     document.getElementById('certConsultationId').value = consultationId || '';
-    document.getElementById('certDiagnosis').value = diagnosis || '';
+    document.getElementById('certDiagnosis').value = '';
     document.getElementById('certRemarks').value = '';
     document.getElementById('certModalError')?.classList.add('hidden');
 

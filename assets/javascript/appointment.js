@@ -172,9 +172,12 @@ const loadTimeSlots = async () => {
             appointmentDateMessage.classList.remove('text-red-600');
         }
 
-        const takenTimes = new Set(data.taken_times || []);
+        const slotCounts = data.slot_counts || {};
+        const slotCapacity = Number(data.slot_capacity);
+        const dayIsFull = Number(data.booked_count) >= Number(data.limit);
         document.querySelectorAll('.time-slot').forEach((slot) => {
-            if (!slot.classList.contains('hidden') && takenTimes.has(slot.dataset.time)) {
+            const slotIsFull = Number(slotCounts[slot.dataset.time] || 0) >= slotCapacity;
+            if (!slot.classList.contains('hidden') && (dayIsFull || slotIsFull)) {
                 slot.disabled = true;
                 slot.classList.remove('bg-slate-100', 'text-slate-700');
                 slot.classList.add('bg-red-100', 'text-red-700');
@@ -184,7 +187,9 @@ const loadTimeSlots = async () => {
         const availableCount = [...document.querySelectorAll('.time-slot')]
             .filter((slot) => !slot.classList.contains('hidden') && !slot.disabled).length;
         if (appointmentDateMessage) {
-            appointmentDateMessage.textContent = `Available appointments for ${new Date(`${appointmentDate.value}T00:00:00`).toLocaleDateString()}.`;
+            appointmentDateMessage.textContent = dayIsFull
+                ? `This date is fully booked (${data.limit} appointments). Please choose another date.`
+                : `Available appointments for ${new Date(`${appointmentDate.value}T00:00:00`).toLocaleDateString()}.`;
         }
         if (availableSlotCount) {
             availableSlotCount.textContent = `${availableCount} available`;

@@ -442,8 +442,10 @@ function resetFollowupTime() {
     followupTimeSlots.classList.add('hidden');
     document.querySelectorAll('.followup-time-slot').forEach((slot) => {
         slot.disabled = false;
+        slot.removeAttribute('title');
         slot.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-sky-600', 'text-white');
         slot.classList.add('bg-slate-100', 'text-slate-700');
+        slot.classList.add('hover:bg-sky-100');
     });
     setFollowupMessage(FOLLOWUP_DEFAULT_MESSAGE);
 }
@@ -457,7 +459,7 @@ followupDateInput.addEventListener('change', async () => {
     try {
         const response = await fetch(`../php/add/book-appointment.php?date=${encodeURIComponent(date)}`);
         const data = await response.json();
-        if (data.status !== 'success') {
+        if (!response.ok || data.status !== 'success') {
             throw new Error(data.message || 'Unable to load availability.');
         }
         if (followupDateInput.value !== date) return; // user picked another date meanwhile
@@ -468,21 +470,28 @@ followupDateInput.addEventListener('change', async () => {
         }
 
         const available = new Set(data.available_times || []);
-        const taken = new Set(data.taken_times || []);
+        const slotCounts = data.slot_counts || {};
+        const slotCapacity = Number(data.slot_capacity);
+        const dayIsFull = Number(data.booked_count) >= Number(data.limit);
         document.querySelectorAll('.followup-time-slot').forEach((slot) => {
             slot.classList.toggle('hidden', !available.has(slot.dataset.time));
-            if (taken.has(slot.dataset.time)) {
+            const slotIsFull = Number(slotCounts[slot.dataset.time] || 0) >= slotCapacity;
+            if (available.has(slot.dataset.time) && (dayIsFull || slotIsFull)) {
                 slot.disabled = true;
+                slot.title = 'This time slot is full.';
                 slot.classList.remove('bg-slate-100', 'text-slate-700');
+                slot.classList.remove('hover:bg-sky-100');
                 slot.classList.add('bg-red-100', 'text-red-700');
             }
         });
 
         const count = [...document.querySelectorAll('.followup-time-slot')]
             .filter((s) => !s.classList.contains('hidden') && !s.disabled).length;
-        setFollowupMessage(count
-            ? `${count} slot${count !== 1 ? 's' : ''} available on ${new Date(date + 'T00:00:00').toLocaleDateString()}.`
-            : 'No slots left on this date. Pick another date.', count === 0);
+        setFollowupMessage(dayIsFull
+            ? `This date is fully booked (${data.limit} appointments). Pick another date.`
+            : count
+                ? `${count} slot${count !== 1 ? 's' : ''} available on ${new Date(date + 'T00:00:00').toLocaleDateString()}. Each time slot can hold up to ${data.slot_capacity} appointments.`
+                : 'No slots left on this date. Pick another date.', count === 0);
         followupTimeSlots.classList.remove('hidden');
     } catch (error) {
         setFollowupMessage(error.message || 'Unable to load availability.', true);

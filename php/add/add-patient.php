@@ -47,6 +47,7 @@ $data = [
 	'birthDate' => trim($_POST['birthDate'] ?? ''),
 	'gender' => ucfirst(strtolower(trim($_POST['gender'] ?? ''))),
 	'phone' => trim($_POST['phone'] ?? ''),
+	'email' => trim($_POST['email'] ?? ''),
 	'address' => $fullAddress,
 	'province' => $province,
 	'city' => $city,

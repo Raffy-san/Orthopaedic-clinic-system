@@ -124,7 +124,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            font-size: 10px;
+            font-size: 12px;
             color: #777;
             text-align: center;
         }
@@ -145,7 +145,7 @@
 
         .footer-icon {
             color: #1e6b34;
-            font-size: 12px;
+            font-size: 14px;
             font-weight: bold;
             padding-right: 4px;
         }
