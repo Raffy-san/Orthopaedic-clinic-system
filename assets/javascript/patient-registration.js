@@ -245,6 +245,10 @@ function setActivePatientType(type) {
                             <input name="phone" type="tel" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter phone number">
                         </div>
                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+                            <label class="text-[11px] text-slate-600">Email</label>
+                            <input name="email" type="email" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter email address">
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
                             <label class="text-[11px] text-slate-600">Province</label>
                             <select id="provinceSelect" name="province" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
                                 <option value="">Loading...</option>
@@ -304,10 +308,10 @@ function setActivePatientType(type) {
                     </div>
 
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
-                        <label class="text-[11px] text-slate-600">Patient Name</label>
-                        <input id="existingNameInput" type="text" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Type existing patient name">
+                        <label for="existingNameInput" class="text-[11px] text-slate-600">Full Patient Name</label>
+                        <input id="existingNameInput" type="text" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none" placeholder="Enter name as registered">
                     </div>
-                    <button class="col-span-1 mt-2 w-full rounded-2xl bg-sky-400 px-3 py-2 text-xs text-white font-semibold hover:bg-sky-500 md:col-span-2" type="button">Validate & Load Profile</button>
+                    <button id="validateExistingPatientBtn" class="col-span-1 mt-2 w-full rounded-2xl bg-sky-400 px-3 py-2 text-xs text-white font-semibold hover:bg-sky-500 md:col-span-2" type="button">Validate & Load Profile</button>
                     </div>
                 `;
 
@@ -316,10 +320,13 @@ function setActivePatientType(type) {
             .then(data => {
                 const select = document.getElementById('existingPatientIdInput');
                 if (data.status === 'success') {
-                    select.innerHTML = '<option value="">Please Select Patient ID</option>' +
-                        data.patients.map(p =>
-                            `<option value="${p.PatientCode}">${p.PatientCode}</option>`
-                        ).join('');
+                    select.replaceChildren(new Option('Please Select Patient ID', ''));
+                    data.patients.forEach(patient => {
+                        const fullName = [patient.FirstName, patient.MiddleName, patient.LastName]
+                            .filter(Boolean)
+                            .join(' ');
+                        select.add(new Option(`${patient.PatientCode} — ${fullName}`, patient.PatientCode));
+                    });
                 } else {
                     select.innerHTML = '<option value="">Error fetching patients</option>';
                 }
@@ -393,6 +400,7 @@ step2Content.addEventListener('submit', (event) => {
             lastName: formData.get('lastName'),
             birthDate: formData.get('birthDate'),
             phone: formData.get('phone'),
+            email: formData.get('email'),
             province: formData.get('province'),
             city: formData.get('city'),
             barangay: formData.get('barangay'),
@@ -431,7 +439,7 @@ step2Content.addEventListener('submit', (event) => {
 });
 
 step2Content.addEventListener('click', (event) => {
-    if (event.target.textContent === 'Validate & Load Profile') {
+    if (event.target.closest('#validateExistingPatientBtn')) {
         event.preventDefault();
         validateExistingPatient();
     }
@@ -440,13 +448,14 @@ step2Content.addEventListener('click', (event) => {
 function validateExistingPatient() {
     const patientIdInput = document.getElementById('existingPatientIdInput');
     const patientId = patientIdInput?.value.trim();
+    const patientName = document.getElementById('existingNameInput')?.value.trim();
 
-    if (!patientId) {
-        showMessage('Missing Information', 'Please enter a Patient ID', 'error');
+    if (!patientId || !patientName) {
+        showMessage('Missing Information', 'Please select a Patient ID and enter the full patient name.', 'error');
         return;
     }
 
-    fetch(`../php/fetch/get-patient.php?patient_code=${encodeURIComponent(patientId)}`, {
+    fetch(`../php/fetch/get-patient.php?patient_code=${encodeURIComponent(patientId)}&patient_name=${encodeURIComponent(patientName)}`, {
         method: 'GET',
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
@@ -457,7 +466,9 @@ function validateExistingPatient() {
             }
 
             const patient = data.patient;
-            currentPatientName = `${patient.FirstName} ${patient.LastName}`;
+            currentPatientName = [patient.FirstName, patient.MiddleName, patient.LastName]
+                .filter(Boolean)
+                .join(' ');
             updateConfirmationStep();
 
             step2Content.innerHTML = `
@@ -493,6 +504,11 @@ function validateExistingPatient() {
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
                         <label class="text-[11px] text-slate-600">Phone</label>
                         <input name="phone" type="tel" value="${patient.Phone || ''}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
+                    </div>
+
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">
+                        <label class="text-[11px] text-slate-600">Email</label>
+                        <input name="email" type="email" value="${patient.Email || ''}" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-teal-500 focus:outline-none">
                     </div>
                     
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-2.5">

@@ -8,6 +8,13 @@ $navItems = [
         'roles' => ['admin', 'staff', 'doctor'],
     ],
     [
+        'label' => 'Patient Directory',
+        'icon' => 'fa-user-friends',
+        'file' => 'patient-directory.php',
+        'href' => '../admin/patient-directory.php',
+        'roles' => ['staff'],
+    ],
+    [
         'label' => 'Patient Registration',
         'icon' => 'fa-user-plus',
         'file' => 'patient-registration.php',

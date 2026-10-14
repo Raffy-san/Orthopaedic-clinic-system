@@ -35,8 +35,16 @@ $reportTypes = [
     'appointments' => 'Appointments Report',
     'consultations' => 'Consultation Log'
 ];
-$reportType = $_GET['report_type'] ?? 'patients';
-$reportType = array_key_exists($reportType, $reportTypes) ? $reportType : 'patients';
+$currentRole = strtolower((string) SessionManager::getCurrentRole());
+if (in_array($currentRole, ['admin', 'doctor'], true)) {
+    $reportTypes = ['financial' => $reportTypes['financial']];
+} elseif ($currentRole === 'staff') {
+    unset($reportTypes['financial']);
+}
+
+$defaultReportType = in_array($currentRole, ['admin', 'doctor'], true) ? 'financial' : 'patients';
+$reportType = $_GET['report_type'] ?? $defaultReportType;
+$reportType = array_key_exists($reportType, $reportTypes) ? $reportType : $defaultReportType;
 $fromDate = $_GET['from_date'] ?? date('Y-m-01');
 $toDate = $_GET['to_date'] ?? date('Y-m-d');
 
@@ -266,6 +274,7 @@ function reportMoney(mixed $value): string
                 <div class="bg-white rounded-lg p-4 shadow-sm">
                     <h2 class="text-base font-bold text-gray-800 mb-3">1. Select Report Type</h2>
                     <div class="space-y-2">
+                        <?php if (isset($reportTypes['patients'])): ?>
                         <a href="?report_type=patients&from_date=<?= urlencode($fromDate) ?>&to_date=<?= urlencode($toDate) ?>"
                             class="block w-full text-left px-3 py-2 rounded-lg border-2 <?= $reportType === 'patients' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50' ?> transition">
                             <div class="flex items-center gap-2">
@@ -275,7 +284,9 @@ function reportMoney(mixed $value): string
                                     Records Report</span>
                             </div>
                         </a>
+                        <?php endif; ?>
 
+                        <?php if (isset($reportTypes['financial'])): ?>
                         <a href="?report_type=financial&from_date=<?= urlencode($fromDate) ?>&to_date=<?= urlencode($toDate) ?>"
                             class="block w-full text-left px-3 py-2 rounded-lg border-2 <?= $reportType === 'financial' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50' ?> transition">
                             <div class="flex items-center gap-2">
@@ -285,7 +296,9 @@ function reportMoney(mixed $value): string
                                     Summary</span>
                             </div>
                         </a>
+                        <?php endif; ?>
 
+                        <?php if (isset($reportTypes['appointments'])): ?>
                         <a href="?report_type=appointments&from_date=<?= urlencode($fromDate) ?>&to_date=<?= urlencode($toDate) ?>"
                             class="block w-full text-left px-3 py-2 rounded-lg border-2 <?= $reportType === 'appointments' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50' ?> transition">
                             <div class="flex items-center gap-2">
@@ -295,7 +308,9 @@ function reportMoney(mixed $value): string
                                     Report</span>
                             </div>
                         </a>
+                        <?php endif; ?>
 
+                        <?php if (isset($reportTypes['consultations'])): ?>
                         <a href="?report_type=consultations&from_date=<?= urlencode($fromDate) ?>&to_date=<?= urlencode($toDate) ?>"
                             class="block w-full text-left px-3 py-2 rounded-lg border-2 <?= $reportType === 'consultations' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50' ?> transition">
                             <div class="flex items-center gap-2">
@@ -305,6 +320,7 @@ function reportMoney(mixed $value): string
                                     Log</span>
                             </div>
                         </a>
+                        <?php endif; ?>
                     </div>
                 </div>
 

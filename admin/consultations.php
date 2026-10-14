@@ -276,6 +276,10 @@ $defaultConsultationFee = 500; // PHP
                                     <input type="hidden" id="followupTime" name="followup[time]">
                                     <p id="followupTimeMessage" class="mt-1 text-xs text-slate-500">Choose a date first
                                         to see available slots.</p>
+                                    <p class="mb-2 flex items-center gap-2 text-xs text-slate-500">
+                                        <span class="inline-block h-3 w-3 rounded border border-red-200 bg-red-100"></span>
+                                        Red slots are full (up to 4 appointments per time slot).
+                                    </p>
                                     <div id="followupTimeSlots"
                                         class="mt-3 hidden grid grid-cols-2 gap-3 sm:grid-cols-3">
                                         <?php foreach (['09:00', '09:30', '10:00', '10:30', '11:00', '11:30'] as $t): ?>

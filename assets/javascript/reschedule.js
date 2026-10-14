@@ -72,10 +72,15 @@ if (rescheduleDateInput) {
         }
 
         try {
-            const response = await fetch(`../php/add/book-appointment.php?date=${encodeURIComponent(date)}`);
+            const appointmentId = document.getElementById('rescheduleAppointmentId').value;
+            const params = new URLSearchParams({
+                date,
+                exclude_appointment_id: appointmentId
+            });
+            const response = await fetch(`../php/add/book-appointment.php?${params.toString()}`);
             const data = await response.json();
 
-            if (data.status !== 'success') {
+            if (!response.ok || data.status !== 'success') {
                 throw new Error(data.message || 'Unable to load availability.');
             }
 
@@ -88,15 +93,15 @@ if (rescheduleDateInput) {
                 return;
             }
 
-            if (rescheduleTimeMessage) {
-                rescheduleTimeMessage.classList.remove('text-red-600');
-            }
-
             const availableTimes = new Set(data.available_times || []);
-            const takenTimes = new Set(data.taken_times || []);
+            const slotCounts = data.slot_counts || {};
+            const slotCapacity = Number(data.slot_capacity);
+            const dayIsFull = Number(data.booked_count) >= Number(data.limit);
             document.querySelectorAll('.reschedule-time-slot').forEach((slot) => {
-                slot.classList.toggle('hidden', !availableTimes.has(slot.dataset.time));
-                if (takenTimes.has(slot.dataset.time)) {
+                const isAvailableTime = availableTimes.has(slot.dataset.time);
+                const slotIsFull = Number(slotCounts[slot.dataset.time] || 0) >= slotCapacity;
+                slot.classList.toggle('hidden', !isAvailableTime);
+                if (isAvailableTime && (dayIsFull || slotIsFull)) {
                     slot.disabled = true;
                     slot.classList.remove('bg-slate-100', 'text-slate-700');
                     slot.classList.add('bg-red-100', 'text-red-700');
@@ -107,7 +112,10 @@ if (rescheduleDateInput) {
             });
 
             if (rescheduleTimeMessage) {
-                rescheduleTimeMessage.classList.add('hidden');
+                rescheduleTimeMessage.classList.remove('hidden', 'text-red-600');
+                rescheduleTimeMessage.textContent = dayIsFull
+                    ? `This date is fully booked (${data.limit} appointments). Please choose another date.`
+                    : `Select an available time. Each time slot can hold up to ${data.slot_capacity} appointments.`;
             }
             if (rescheduleTimeCalendar) {
                 rescheduleTimeCalendar.classList.remove('hidden');
