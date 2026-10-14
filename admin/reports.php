@@ -486,6 +486,16 @@ function reportMoney(mixed $value): string
 
     <style>
         @media print {
+            @page {
+                size: auto;
+                margin: 0;
+            }
+
+            @page patient-report {
+                size: landscape;
+                margin: 0;
+            }
+
             body * {
                 visibility: hidden;
             }
@@ -525,12 +535,65 @@ function reportMoney(mixed $value): string
             }
 
             body.printing-patient-report #patientReportPrintArea {
+                page: patient-report;
                 width: 100%;
                 max-width: none;
                 max-height: none;
                 overflow: visible;
-                padding: 0;
+                padding: 8mm;
                 box-shadow: none;
+                border-radius: 0;
+                font-size: 10pt;
+                line-height: 1.35;
+            }
+
+            body.printing-patient-report #patientReportPrintArea .overflow-x-auto {
+                overflow: visible !important;
+            }
+
+            body.printing-patient-report #patientReportPrintArea table {
+                width: 100%;
+                table-layout: fixed;
+                font-size: 8pt;
+            }
+
+            body.printing-patient-report #patientReportPrintArea th,
+            body.printing-patient-report #patientReportPrintArea td {
+                padding: 5px;
+                overflow-wrap: anywhere;
+                vertical-align: top;
+            }
+
+            body.printing-patient-report #patientReportPrintArea th:nth-child(1),
+            body.printing-patient-report #patientReportPrintArea td:nth-child(1) {
+                width: 15%;
+            }
+
+            body.printing-patient-report #patientReportPrintArea th:nth-child(2),
+            body.printing-patient-report #patientReportPrintArea td:nth-child(2),
+            body.printing-patient-report #patientReportPrintArea th:nth-child(3),
+            body.printing-patient-report #patientReportPrintArea td:nth-child(3),
+            body.printing-patient-report #patientReportPrintArea th:nth-child(4),
+            body.printing-patient-report #patientReportPrintArea td:nth-child(4) {
+                width: 12%;
+            }
+
+            body.printing-patient-report #patientReportPrintArea th:nth-child(5),
+            body.printing-patient-report #patientReportPrintArea td:nth-child(5) {
+                width: 39%;
+            }
+
+            body.printing-patient-report #patientReportPrintArea th:nth-child(6),
+            body.printing-patient-report #patientReportPrintArea td:nth-child(6) {
+                width: 10%;
+            }
+
+            body.printing-patient-report #patientReportPrintArea tr {
+                break-inside: avoid;
+            }
+
+            body.printing-patient-report #patientReportPrintArea thead {
+                display: table-header-group;
             }
         }
     </style>

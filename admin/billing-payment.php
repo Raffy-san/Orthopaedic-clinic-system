@@ -223,6 +223,10 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
         }
 
         @media print {
+            @page {
+                margin: 0;
+            }
+
             body * {
                 visibility: hidden;
             }
