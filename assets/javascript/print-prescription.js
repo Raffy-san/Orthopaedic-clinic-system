@@ -58,6 +58,7 @@
         <head>
             <title>Prescription</title>
             <style>
+                @page { margin: 0; }
                 body { font-family: Arial, sans-serif; padding:0 10px 10px 10px; background-color: #fff; }
                 .header { text-align: center; border-bottom: 2px solid #1e6b34; line-height: 1.0; margin-bottom: 30px; }
                 .header img { max-width: 180px; }
