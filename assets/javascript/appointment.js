@@ -108,7 +108,11 @@ const addAppointmentForm = document.getElementById('addAppointmentForm');
 const resetTimeSlots = () => {
     document.querySelectorAll('.time-slot').forEach((slot) => {
         slot.disabled = false;
-        slot.classList.remove('bg-red-100', 'text-red-700', 'bg-sky-600', 'text-white');
+        slot.removeAttribute('title');
+        slot.classList.remove(
+            'bg-red-100', 'text-red-700', 'bg-sky-600', 'text-white',
+            'bg-slate-200', 'text-slate-400', 'cursor-not-allowed', 'pointer-events-none'
+        );
         slot.classList.add('bg-slate-100', 'text-slate-700');
     });
     if (selectedAppointmentTime) {
@@ -175,10 +179,25 @@ const loadTimeSlots = async () => {
         const slotCounts = data.slot_counts || {};
         const slotCapacity = Number(data.slot_capacity);
         const dayIsFull = Number(data.booked_count) >= Number(data.limit);
+        const pastTimes = new Set(data.past_times || []);
+
         document.querySelectorAll('.time-slot').forEach((slot) => {
-            const slotIsFull = Number(slotCounts[slot.dataset.time] || 0) >= slotCapacity;
-            if (!slot.classList.contains('hidden') && (dayIsFull || slotIsFull)) {
+            if (slot.classList.contains('hidden')) return;
+
+            // Time already passed today: gray and disabled
+            if (pastTimes.has(slot.dataset.time)) {
                 slot.disabled = true;
+                slot.title = 'This time has already passed.';
+                slot.classList.remove('bg-slate-100', 'text-slate-700');
+                slot.classList.add('bg-slate-200', 'text-slate-400', 'cursor-not-allowed', 'pointer-events-none');
+                return;
+            }
+
+            // Slot or whole day is full: red and disabled
+            const slotIsFull = Number(slotCounts[slot.dataset.time] || 0) >= slotCapacity;
+            if (dayIsFull || slotIsFull) {
+                slot.disabled = true;
+                slot.title = 'This time slot is full.';
                 slot.classList.remove('bg-slate-100', 'text-slate-700');
                 slot.classList.add('bg-red-100', 'text-red-700');
             }
@@ -186,10 +205,14 @@ const loadTimeSlots = async () => {
 
         const availableCount = [...document.querySelectorAll('.time-slot')]
             .filter((slot) => !slot.classList.contains('hidden') && !slot.disabled).length;
+        const allPassed = !dayIsFull && availableCount === 0 && pastTimes.size > 0;
+
         if (appointmentDateMessage) {
             appointmentDateMessage.textContent = dayIsFull
                 ? `This date is fully booked (${data.limit} appointments). Please choose another date.`
-                : `Available appointments for ${new Date(`${appointmentDate.value}T00:00:00`).toLocaleDateString()}.`;
+                : allPassed
+                    ? "All of today's time slots have already passed. Please choose another date."
+                    : `Available appointments for ${new Date(`${appointmentDate.value}T00:00:00`).toLocaleDateString()}.`;
         }
         if (availableSlotCount) {
             availableSlotCount.textContent = `${availableCount} available`;
@@ -211,6 +234,10 @@ if (appointmentDate) {
 
 document.querySelectorAll('.time-slot').forEach((slot) => {
     slot.addEventListener('click', () => {
+        if (slot.disabled) {
+            return;
+        }
+
         document.querySelectorAll('.time-slot').forEach((availableSlot) => {
             if (availableSlot.disabled) {
                 return;

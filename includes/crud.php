@@ -96,7 +96,7 @@ function addUser(PDO $pdo, array $data, ?int $actorUserId = null): array
             $data['firstName'],
             $data['middleName'] ?? null,
             $data['lastName'],
-            $data['role'],  
+            $data['role'],
             $data['isDoctor'],
             $data['email'] ?: null,
             $data['phone'] ?: null
@@ -169,15 +169,11 @@ function expirePendingAppointments(PDO $pdo): void
     }
 }
 
-/**
- * @param int|null $actorUserId The staff/patient user creating this appointment.
- */
-
 if (!defined('DAILY_PATIENT_LIMIT')) {
-    define('DAILY_PATIENT_LIMIT', 20); // max active appointments per date
+    define('DAILY_PATIENT_LIMIT', 20);
 }
 if (!defined('SLOT_CAPACITY')) {
-    define('SLOT_CAPACITY', 4); // max patients per time slot
+    define('SLOT_CAPACITY', 4);
 }
 
 function countActiveAppointments(PDO $pdo, string $date, ?int $excludeAppointmentId = null): int
@@ -522,10 +518,20 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
 
             $dateObj = DateTime::createFromFormat('!Y-m-d', $followupDate);
             if (!$dateObj || $dateObj->format('Y-m-d') !== $followupDate) {
-                throw new PDOException('Invalid follow-up date format.');
+                $pdo->rollBack();
+                return [
+                    'status' => 'error',
+                    'code' => 'followup_invalid',
+                    'message' => 'Please select a valid follow-up date.'
+                ];
             }
             if ($dateObj < new DateTime('today')) {
-                throw new PDOException('Follow-up date cannot be in the past.');
+                $pdo->rollBack();
+                return [
+                    'status' => 'error',
+                    'code' => 'followup_invalid',
+                    'message' => 'Follow-up date cannot be in the past.'
+                ];
             }
 
             $timeObj = DateTime::createFromFormat('!h:i A', $followupTimeLabel);
@@ -544,6 +550,17 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
                 ];
             }
             $time24 = $timeObj->format('H:i:s');
+
+            // NEW: reject a follow-up time that has already passed (matters when the follow-up is for today)
+            $followupDateTime = DateTime::createFromFormat('Y-m-d H:i:s', $followupDate . ' ' . $time24);
+            if ($followupDateTime <= new DateTime('now')) {
+                $pdo->rollBack();
+                return [
+                    'status' => 'error',
+                    'code' => 'followup_time_unavailable',
+                    'message' => 'That follow-up time has already passed. Please choose a later slot.'
+                ];
+            }
 
             // Serialize all bookings for this weekday before checking capacity.
             $dayLock = $pdo->prepare('SELECT DayOfWeek FROM clinic_schedule WHERE DayOfWeek = ? FOR UPDATE');
@@ -608,11 +625,11 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
 
             // Create the follow-up as a Confirmed appointment (this is what blocks the slot)
             $apptStmt = $pdo->prepare("
-    INSERT INTO appointments
-        (PatientID, DoctorID, CreatedBy, AppointmentDate, AppointmentTime, meridiem, Purpose, ChiefComplaint, Status, Remarks)
-    VALUES
-        (:patient_id, :doctor_id, :created_by, :appt_date, :appt_time, :meridiem, 'Follow-up check-up', 'Follow-up check-up', 'Confirmed', :remarks)
-");
+                INSERT INTO appointments
+                    (PatientID, DoctorID, CreatedBy, AppointmentDate, AppointmentTime, meridiem, Purpose, ChiefComplaint, Status, Remarks)
+                VALUES
+                    (:patient_id, :doctor_id, :created_by, :appt_date, :appt_time, :meridiem, 'Follow-up check-up', 'Follow-up check-up', 'Confirmed', :remarks)
+            ");
             $apptStmt->execute([
                 ':patient_id' => $patientID,
                 ':doctor_id' => $doctorID,
@@ -644,9 +661,9 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
 
             // Follow-up record, linked to the NEW follow-up appointment
             $stmt = $pdo->prepare("
-        INSERT INTO followups (PatientID, DoctorID, AppointmentID, FollowUpDate, Status, Remarks)
-        VALUES (:patient_id, :doctor_id, :appointment_id, :followup_date, 'Scheduled', :remarks)
-    ");
+                INSERT INTO followups (PatientID, DoctorID, AppointmentID, FollowUpDate, Status, Remarks)
+                VALUES (:patient_id, :doctor_id, :appointment_id, :followup_date, 'Scheduled', :remarks)
+            ");
             $stmt->execute([
                 ':patient_id' => $patientID,
                 ':doctor_id' => $doctorID,

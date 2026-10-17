@@ -71,26 +71,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     $dayOfWeek = (int) $parsedDate->format('N'); // 1 = Monday ... 7 = Sunday
-    $excludeAppointmentId = 0;
-    if (isset($_GET['exclude_appointment_id'])) {
-        if (!ctype_digit((string) $_GET['exclude_appointment_id']) || (int) $_GET['exclude_appointment_id'] < 1) {
-            http_response_code(400);
-            echo json_encode(['status' => 'error', 'message' => 'Invalid appointment ID.']);
-            exit;
-        }
-
-        $excludeAppointmentId = (int) $_GET['exclude_appointment_id'];
-        $rescheduleStatement = $pdo->prepare(
-            "SELECT COUNT(*) FROM appointments
-             WHERE AppointmentID = ? AND Status = 'Confirmed'"
-        );
-        $rescheduleStatement->execute([$excludeAppointmentId]);
-        if ((int) $rescheduleStatement->fetchColumn() !== 1) {
-            http_response_code(400);
-            echo json_encode(['status' => 'error', 'message' => 'Only confirmed appointments can be rescheduled.']);
-            exit;
-        }
-    }
 
     $scheduleStmt = $pdo->prepare('SELECT IsOpen, StartTime, EndTime FROM clinic_schedule WHERE DayOfWeek = ?');
     $scheduleStmt->execute([$dayOfWeek]);
@@ -100,9 +80,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $unavailabilityStmt->execute([$date]);
     $unavailability = $unavailabilityStmt->fetch(PDO::FETCH_ASSOC);
 
+    $allSlots = [
+        '09:00 AM',
+        '09:30 AM',
+        '10:00 AM',
+        '10:30 AM',
+        '11:00 AM',
+        '11:30 AM',
+    ];
     $availableTimes = [];
     if ($daySchedule && $daySchedule['IsOpen']) {
-        foreach (clinicSlotLabels() as $slotLabel) {
+        foreach ($allSlots as $slotLabel) {
             $slotTime = DateTime::createFromFormat('h:i A', $slotLabel)->format('H:i:s');
             if ($slotTime >= $daySchedule['StartTime'] && $slotTime < $daySchedule['EndTime']) {
                 $availableTimes[] = $slotLabel;
@@ -110,7 +98,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         }
     }
 
-    $bookedCount = countActiveAppointments($pdo, $date, $excludeAppointmentId ?: null);
+    // When rescheduling, the appointment being moved must not count against itself
+    $excludeId = (int) ($_GET['exclude_appointment_id'] ?? 0);
+    $bookedCount = countActiveAppointments($pdo, $date, $excludeId ?: null);
+
+    // Slots whose start time has already passed (only possible for today)
+    $pastTimes = [];
+    if ($date === (new DateTime('today'))->format('Y-m-d')) {
+        $now = new DateTime('now');
+        foreach ($availableTimes as $label) {
+            $slotDateTime = DateTime::createFromFormat('Y-m-d h:i A', "$date $label");
+            if ($slotDateTime && $slotDateTime <= $now) {
+                $pastTimes[] = $label;
+            }
+        }
+    }
 
     if (!$daySchedule || !$daySchedule['IsOpen'] || $unavailability) {
         $reason = $unavailability['Reason'] ?? null;
@@ -118,6 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'status' => 'success',
             'available_times' => $availableTimes,
             'slot_counts' => (object) [],
+            'past_times' => [],
             'slot_capacity' => SLOT_CAPACITY,
             'limit' => DAILY_PATIENT_LIMIT,
             'booked_count' => $bookedCount,
@@ -134,9 +137,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         FROM appointments
         WHERE AppointmentDate = ? AND Status NOT IN ('Cancelled', 'Rescheduled')";
     $slotParams = [$date];
-    if ($excludeAppointmentId > 0) {
+    if ($excludeId) {
         $slotSql .= ' AND AppointmentID <> ?';
-        $slotParams[] = $excludeAppointmentId;
+        $slotParams[] = $excludeId;
     }
     $slotSql .= ' GROUP BY AppointmentTime';
     $slotStmt = $pdo->prepare($slotSql);
@@ -150,6 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         'status' => 'success',
         'available_times' => $availableTimes,
         'slot_counts' => (object) $slotCounts,
+        'past_times' => $pastTimes,
         'slot_capacity' => SLOT_CAPACITY,
         'limit' => DAILY_PATIENT_LIMIT,
         'booked_count' => $bookedCount,
@@ -225,6 +229,12 @@ if (!$daySchedule || !$daySchedule['IsOpen'] || $unavailability) {
 $submittedTime24 = $appointmentTime->format('H:i:s');
 if ($submittedTime24 < $daySchedule['StartTime'] || $submittedTime24 >= $daySchedule['EndTime']) {
     bookingError('The selected time is outside the doctor\'s working hours for this date.');
+}
+
+// Reject a time that has already passed (matters when booking for today)
+$slotDateTime = DateTime::createFromFormat('Y-m-d H:i:s', $data['appointmentDate'] . ' ' . $submittedTime24);
+if ($slotDateTime <= new DateTime('now')) {
+    bookingError('That time has already passed. Please choose a later slot.');
 }
 
 // NOTE: the old "slot already taken" check is gone. bookAppointment() now enforces
