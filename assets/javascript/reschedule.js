@@ -14,8 +14,12 @@ const rescheduleSelectedTimeInput = document.getElementById('rescheduleSelectedT
 const resetRescheduleTimeSlots = () => {
     document.querySelectorAll('.reschedule-time-slot').forEach((slot) => {
         slot.disabled = false;
+        slot.removeAttribute('title');
         slot.classList.remove('hidden');
-        slot.classList.remove('bg-red-100', 'text-red-700', 'bg-sky-600', 'text-white');
+        slot.classList.remove(
+            'bg-red-100', 'text-red-700', 'bg-sky-600', 'text-white',
+            'bg-slate-200', 'text-slate-400', 'cursor-not-allowed', 'pointer-events-none'
+        );
         slot.classList.add('bg-slate-100', 'text-slate-700');
     });
     document.querySelectorAll('#rescheduleMorningGroup, #rescheduleAfternoonGroup').forEach((group) => {
@@ -53,7 +57,7 @@ document.querySelectorAll('.reschedule-btn').forEach((btn) => {
     });
 });
 
-// When a new date is picked, load which slots are already taken
+// When a new date is picked, load slot usage for that date
 // (reuses the same endpoint the booking calendar uses)
 if (rescheduleDateInput) {
     rescheduleDateInput.addEventListener('change', async () => {
@@ -97,12 +101,27 @@ if (rescheduleDateInput) {
             const slotCounts = data.slot_counts || {};
             const slotCapacity = Number(data.slot_capacity);
             const dayIsFull = Number(data.booked_count) >= Number(data.limit);
+            const pastTimes = new Set(data.past_times || []);
+
             document.querySelectorAll('.reschedule-time-slot').forEach((slot) => {
                 const isAvailableTime = availableTimes.has(slot.dataset.time);
-                const slotIsFull = Number(slotCounts[slot.dataset.time] || 0) >= slotCapacity;
                 slot.classList.toggle('hidden', !isAvailableTime);
-                if (isAvailableTime && (dayIsFull || slotIsFull)) {
+                if (!isAvailableTime) return;
+
+                // Time already passed today: gray and disabled
+                if (pastTimes.has(slot.dataset.time)) {
                     slot.disabled = true;
+                    slot.title = 'This time has already passed.';
+                    slot.classList.remove('bg-slate-100', 'text-slate-700');
+                    slot.classList.add('bg-slate-200', 'text-slate-400', 'cursor-not-allowed', 'pointer-events-none');
+                    return;
+                }
+
+                // Slot or whole day is full: red and disabled
+                const slotIsFull = Number(slotCounts[slot.dataset.time] || 0) >= slotCapacity;
+                if (dayIsFull || slotIsFull) {
+                    slot.disabled = true;
+                    slot.title = 'This time slot is full.';
                     slot.classList.remove('bg-slate-100', 'text-slate-700');
                     slot.classList.add('bg-red-100', 'text-red-700');
                 }
@@ -111,11 +130,16 @@ if (rescheduleDateInput) {
                 group.classList.toggle('hidden', !group.querySelector('.reschedule-time-slot:not(.hidden)'));
             });
 
+            const hasOpenSlot = [...document.querySelectorAll('.reschedule-time-slot')]
+                .some((s) => !s.classList.contains('hidden') && !s.disabled);
+
             if (rescheduleTimeMessage) {
                 rescheduleTimeMessage.classList.remove('hidden', 'text-red-600');
                 rescheduleTimeMessage.textContent = dayIsFull
                     ? `This date is fully booked (${data.limit} appointments). Please choose another date.`
-                    : `Select an available time. Each time slot can hold up to ${data.slot_capacity} appointments.`;
+                    : !hasOpenSlot
+                        ? 'No time slots left on this date. Please choose another date.'
+                        : `Select an available time. Each time slot can hold up to ${data.slot_capacity} appointments.`;
             }
             if (rescheduleTimeCalendar) {
                 rescheduleTimeCalendar.classList.remove('hidden');
@@ -143,7 +167,7 @@ document.querySelectorAll('.reschedule-time-slot').forEach((slot) => {
         slot.classList.remove('bg-slate-100', 'text-slate-700');
         slot.classList.add('bg-sky-600', 'text-white');
 
-        rescheduleSelectedTime = slot.dataset.time; // e.g. "08:00 AM"
+        rescheduleSelectedTime = slot.dataset.time; // e.g. "09:00 AM"
         if (rescheduleSelectedTimeInput) {
             rescheduleSelectedTimeInput.value = rescheduleSelectedTime;
         }

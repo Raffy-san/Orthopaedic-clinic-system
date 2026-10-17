@@ -443,7 +443,8 @@ function resetFollowupTime() {
     document.querySelectorAll('.followup-time-slot').forEach((slot) => {
         slot.disabled = false;
         slot.removeAttribute('title');
-        slot.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-sky-600', 'text-white');
+        slot.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-sky-600', 'text-white',
+            'bg-slate-200', 'text-slate-400', 'cursor-not-allowed', 'pointer-events-none');
         slot.classList.add('bg-slate-100', 'text-slate-700');
         slot.classList.add('hover:bg-sky-100');
     });
@@ -473,14 +474,25 @@ followupDateInput.addEventListener('change', async () => {
         const slotCounts = data.slot_counts || {};
         const slotCapacity = Number(data.slot_capacity);
         const dayIsFull = Number(data.booked_count) >= Number(data.limit);
+        const pastTimes = new Set(data.past_times || []);
         document.querySelectorAll('.followup-time-slot').forEach((slot) => {
-            slot.classList.toggle('hidden', !available.has(slot.dataset.time));
+            const isAvailableTime = available.has(slot.dataset.time);
+            slot.classList.toggle('hidden', !isAvailableTime);
+            if (!isAvailableTime) return;
+
+            if (pastTimes.has(slot.dataset.time)) {
+                slot.disabled = true;
+                slot.title = 'This time has already passed.';
+                slot.classList.remove('bg-slate-100', 'text-slate-700', 'hover:bg-sky-100');
+                slot.classList.add('bg-slate-200', 'text-slate-400', 'cursor-not-allowed', 'pointer-events-none');
+                return;
+            }
+
             const slotIsFull = Number(slotCounts[slot.dataset.time] || 0) >= slotCapacity;
-            if (available.has(slot.dataset.time) && (dayIsFull || slotIsFull)) {
+            if (dayIsFull || slotIsFull) {
                 slot.disabled = true;
                 slot.title = 'This time slot is full.';
-                slot.classList.remove('bg-slate-100', 'text-slate-700');
-                slot.classList.remove('hover:bg-sky-100');
+                slot.classList.remove('bg-slate-100', 'text-slate-700', 'hover:bg-sky-100');
                 slot.classList.add('bg-red-100', 'text-red-700');
             }
         });
