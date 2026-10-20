@@ -78,6 +78,13 @@ $navItems = [
         'roles' => ['staff', 'admin', 'doctor'],
     ],
     [
+        'label' => 'Database Backup',
+        'icon' => 'fa-database',
+        'file' => 'database-backup.php',
+        'href' => '../admin/database-backup.php',
+        'roles' => ['admin'],
+    ],
+    [
         'label' => 'Staff Accounts',
         'icon' => 'fa-users-gear',
         'file' => 'staff-management.php',
