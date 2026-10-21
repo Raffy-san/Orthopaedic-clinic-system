@@ -172,31 +172,12 @@ function expirePendingAppointments(PDO $pdo): void
 if (!defined('DAILY_PATIENT_LIMIT')) {
     define('DAILY_PATIENT_LIMIT', 20);
 }
-if (!defined('SLOT_CAPACITY')) {
-    define('SLOT_CAPACITY', 4);
-}
 
 function countActiveAppointments(PDO $pdo, string $date, ?int $excludeAppointmentId = null): int
 {
     $sql = "SELECT COUNT(*) FROM appointments
             WHERE AppointmentDate = ? AND Status NOT IN ('Cancelled', 'Rescheduled')";
     $params = [$date];
-    if ($excludeAppointmentId !== null) {
-        $sql .= ' AND AppointmentID <> ?';
-        $params[] = $excludeAppointmentId;
-    }
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
-    return (int) $stmt->fetchColumn();
-}
-
-// Active appointments in one time slot ($time24 = 'H:i:s')
-function countSlotAppointments(PDO $pdo, string $date, string $time24, ?int $excludeAppointmentId = null): int
-{
-    $sql = "SELECT COUNT(*) FROM appointments
-            WHERE AppointmentDate = ? AND AppointmentTime = ?
-              AND Status NOT IN ('Cancelled', 'Rescheduled')";
-    $params = [$date, $time24];
     if ($excludeAppointmentId !== null) {
         $sql .= ' AND AppointmentID <> ?';
         $params[] = $excludeAppointmentId;
@@ -227,8 +208,8 @@ function bookAppointment(PDO $pdo, array $data, ?int $actorUserId = null): array
 
         $pdo->beginTransaction();
 
-        // Serialize bookings for the same weekday so two staff members
-        // can't push a slot or the day over its limit at the same moment.
+        // Serialize bookings for the same weekday so concurrent bookings
+        // can't push the daily limit over capacity.
         $dayOfWeek = (int) (new DateTime($data['appointmentDate']))->format('N');
         $lock = $pdo->prepare('SELECT DayOfWeek FROM clinic_schedule WHERE DayOfWeek = ? FOR UPDATE');
         $lock->execute([$dayOfWeek]);
@@ -241,21 +222,14 @@ function bookAppointment(PDO $pdo, array $data, ?int $actorUserId = null): array
             ];
         }
 
-        if (countSlotAppointments($pdo, $data['appointmentDate'], $data['appointmentTime']) >= SLOT_CAPACITY) {
-            $pdo->rollBack();
-            return ['status' => 'error', 'message' => 'That time slot is full. Please choose another.'];
-        }
-
         $stmt = $pdo->prepare(
             'INSERT INTO appointments (PatientID, DoctorID, AppointmentDate, AppointmentTime, meridiem, Purpose, ChiefComplaint, Status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+             VALUES (?, ?, ?, NULL, NULL, ?, ?, ?)'
         );
         $stmt->execute([
             $data['patientId'],
             $data['doctorId'],
             $data['appointmentDate'],
-            $data['appointmentTime'],
-            $data['meridiem'],
             $data['purpose'],
             $data['chiefComplaint'],
             'Pending'
@@ -275,8 +249,6 @@ function bookAppointment(PDO $pdo, array $data, ?int $actorUserId = null): array
                 'PatientID' => $data['patientId'],
                 'DoctorID' => $data['doctorId'],
                 'AppointmentDate' => $data['appointmentDate'],
-                'AppointmentTime' => $data['appointmentTime'],
-                'meridiem' => $data['meridiem'],
                 'Purpose' => $data['purpose'],
             ])
         );
@@ -293,17 +265,11 @@ function bookAppointment(PDO $pdo, array $data, ?int $actorUserId = null): array
     }
 }
 
-/** Slot labels the clinic offers. Keep in sync with $allSlots in book-appointment.php. */
-function clinicSlotLabels(): array
-{
-    return ['09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM'];
-}
-
-/** Next open dates after $startDate that still have at least one free slot. */
+/** Next open dates after $startDate that have room under the daily appointment limit. */
 function getFollowupAlternativeDates(PDO $pdo, DateTime $startDate, int $limit = 5, int $searchDays = 60): array
 {
     $schedule = [];
-    foreach ($pdo->query('SELECT DayOfWeek, IsOpen, StartTime, EndTime FROM clinic_schedule')->fetchAll(PDO::FETCH_ASSOC) as $row) {
+    foreach ($pdo->query('SELECT DayOfWeek, IsOpen FROM clinic_schedule')->fetchAll(PDO::FETCH_ASSOC) as $row) {
         $schedule[(int) $row['DayOfWeek']] = $row;
     }
 
@@ -313,19 +279,6 @@ function getFollowupAlternativeDates(PDO $pdo, DateTime $startDate, int $limit =
     $stmt = $pdo->prepare('SELECT UnavailableDate FROM doctor_unavailability WHERE UnavailableDate BETWEEN ? AND ?');
     $stmt->execute([$from->format('Y-m-d'), $to->format('Y-m-d')]);
     $leaveDates = array_flip($stmt->fetchAll(PDO::FETCH_COLUMN));
-
-    $stmt = $pdo->prepare("
-        SELECT AppointmentDate, TIME_FORMAT(AppointmentTime, '%h:%i %p') AS t, COUNT(*) AS count
-        FROM appointments
-        WHERE AppointmentDate BETWEEN ? AND ?
-          AND Status NOT IN ('Cancelled', 'Rescheduled')
-        GROUP BY AppointmentDate, AppointmentTime
-    ");
-    $stmt->execute([$from->format('Y-m-d'), $to->format('Y-m-d')]);
-    $taken = [];
-    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-        $taken[$row['AppointmentDate']][$row['t']] = (int) $row['count'];
-    }
 
     $dailyCounts = [];
     $stmt = $pdo->prepare("
@@ -352,17 +305,7 @@ function getFollowupAlternativeDates(PDO $pdo, DateTime $startDate, int $limit =
             && !isset($leaveDates[$date])
             && ($dailyCounts[$date] ?? 0) < DAILY_PATIENT_LIMIT
         ) {
-            foreach (clinicSlotLabels() as $label) {
-                $time24 = DateTime::createFromFormat('h:i A', $label)->format('H:i:s');
-                if (
-                    $time24 >= $dayRow['StartTime']
-                    && $time24 < $dayRow['EndTime']
-                    && ($taken[$date][$label] ?? 0) < SLOT_CAPACITY
-                ) {
-                    $found[] = $date;
-                    break;
-                }
-            }
+            $found[] = $date;
         }
         $day->modify('+1 day');
     }
@@ -513,7 +456,6 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
         if (($data['has_followup'] ?? false) && !empty($data['followup']['date'])) {
             $patientID = intval($data['patient_id'] ?? 0);
             $followupDate = $data['followup']['date'];
-            $followupTimeLabel = trim($data['followup']['time'] ?? '');
             $followupRemarks = trim($data['followup']['remarks'] ?? '');
 
             $dateObj = DateTime::createFromFormat('!Y-m-d', $followupDate);
@@ -534,40 +476,12 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
                 ];
             }
 
-            $timeObj = DateTime::createFromFormat('!h:i A', $followupTimeLabel);
-            $timeErrors = DateTime::getLastErrors();
-            if (
-                !$timeObj
-                || ($timeErrors !== false && ($timeErrors['warning_count'] > 0 || $timeErrors['error_count'] > 0))
-                || $timeObj->format('h:i A') !== $followupTimeLabel
-                || !in_array($followupTimeLabel, clinicSlotLabels(), true)
-            ) {
-                $pdo->rollBack();
-                return [
-                    'status' => 'error',
-                    'code' => 'followup_invalid',
-                    'message' => 'Please select a follow-up time slot.'
-                ];
-            }
-            $time24 = $timeObj->format('H:i:s');
-
-            // NEW: reject a follow-up time that has already passed (matters when the follow-up is for today)
-            $followupDateTime = DateTime::createFromFormat('Y-m-d H:i:s', $followupDate . ' ' . $time24);
-            if ($followupDateTime <= new DateTime('now')) {
-                $pdo->rollBack();
-                return [
-                    'status' => 'error',
-                    'code' => 'followup_time_unavailable',
-                    'message' => 'That follow-up time has already passed. Please choose a later slot.'
-                ];
-            }
-
             // Serialize all bookings for this weekday before checking capacity.
             $dayLock = $pdo->prepare('SELECT DayOfWeek FROM clinic_schedule WHERE DayOfWeek = ? FOR UPDATE');
             $dayLock->execute([(int) $dateObj->format('N')]);
 
             // Clinic open? Doctor on leave?
-            $scheduleStmt = $pdo->prepare('SELECT IsOpen, StartTime, EndTime FROM clinic_schedule WHERE DayOfWeek = ?');
+            $scheduleStmt = $pdo->prepare('SELECT IsOpen FROM clinic_schedule WHERE DayOfWeek = ?');
             $scheduleStmt->execute([(int) $dateObj->format('N')]);
             $daySchedule = $scheduleStmt->fetch(PDO::FETCH_ASSOC);
 
@@ -601,42 +515,18 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
                 ];
             }
 
-            // Valid slot inside working hours?
-            if (
-                $time24 < $daySchedule['StartTime']
-                || $time24 >= $daySchedule['EndTime']
-            ) {
-                $pdo->rollBack();
-                return [
-                    'status' => 'error',
-                    'code' => 'followup_time_unavailable',
-                    'message' => 'That time is outside the doctor\'s working hours.'
-                ];
-            }
-
-            if (countSlotAppointments($pdo, $followupDate, $time24) >= SLOT_CAPACITY) {
-                $pdo->rollBack();
-                return [
-                    'status' => 'error',
-                    'code' => 'followup_time_unavailable',
-                    'message' => 'That time slot is full. Please choose another.'
-                ];
-            }
-
-            // Create the follow-up as a Confirmed appointment (this is what blocks the slot)
+            // Create the follow-up as a confirmed appointment so it counts toward the daily limit.
             $apptStmt = $pdo->prepare("
                 INSERT INTO appointments
                     (PatientID, DoctorID, CreatedBy, AppointmentDate, AppointmentTime, meridiem, Purpose, ChiefComplaint, Status, Remarks)
                 VALUES
-                    (:patient_id, :doctor_id, :created_by, :appt_date, :appt_time, :meridiem, 'Follow-up check-up', 'Follow-up check-up', 'Confirmed', :remarks)
+                    (:patient_id, :doctor_id, :created_by, :appt_date, NULL, NULL, 'Follow-up check-up', 'Follow-up check-up', 'Confirmed', :remarks)
             ");
             $apptStmt->execute([
                 ':patient_id' => $patientID,
                 ':doctor_id' => $doctorID,
                 ':created_by' => $doctorID,
                 ':appt_date' => $followupDate,
-                ':appt_time' => $time24,
-                ':meridiem' => $timeObj->format('A'),
                 ':remarks' => $followupRemarks !== '' ? $followupRemarks : null
             ]);
             $followupAppointmentID = (int) $pdo->lastInsertId();
@@ -653,7 +543,6 @@ function saveConsultation(PDO $pdo, array $data, int $doctorID): array
                 json_encode([
                     'PatientID' => $patientID,
                     'AppointmentDate' => $followupDate,
-                    'AppointmentTime' => $time24,
                     'Purpose' => 'Follow-up check-up',
                     'Status' => 'Confirmed',
                 ])

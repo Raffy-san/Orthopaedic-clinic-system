@@ -29,23 +29,6 @@ function formatDate(dateStr) {
     return `${monthAbbr}, ${day} ${year}`;
 }
 
-// Format time to "8:00" format (hours:minutes only)
-// Convert 24-hour format to 12-hour format
-const convertTo12HourFormat = (time24) => {
-    const [hours, minutes] = time24.split(':');
-    let hour = parseInt(hours);
-    const meridiem = hour >= 12 ? 'PM' : 'AM';
-    if (hour > 12) {
-        hour -= 12;
-    } else if (hour === 0) {
-        hour = 12;
-    }
-    return {
-        time12: `${hour}:${minutes}`,
-        meridiem: meridiem
-    };
-};
-
 const map = L.map('patientMap').setView([10.13, 124.85], 10);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -90,7 +73,7 @@ const markers = locations.map((location) => {
             <h4 style="margin: 0 0 5px 0; font-weight: 600;">Patient ${p.originalIndex + 1}</h4>
             <p style="margin: 3px 0; font-size: 12px;">(${getAgeLabel(p.age)}, ${p.gender})</p>
             <p style="margin: 3px 0; font-size: 12px;">${p.city}</p>
-            <p style="margin: 3px 0; font-size: 12px;">${formatDate(p.date)} - ${convertTo12HourFormat(p.time).time12} ${convertTo12HourFormat(p.time).meridiem}</p>
+            <p style="margin: 3px 0; font-size: 12px;">${formatDate(p.date)}</p>
             <span class="status" style="display: inline-block; background: ${statusColors[p.status]}22; color: ${statusColors[p.status]}; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${p.status}</span>
         </div>
     `).join('');

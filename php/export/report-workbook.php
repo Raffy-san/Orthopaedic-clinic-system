@@ -52,7 +52,6 @@ function createReportWorkbook(
         'patients' => [6],
         default => [],
     };
-    $timeColumns = $reportType === 'appointments' ? [1] : [];
     $currencyColumns = match ($reportType) {
         'financial' => [4],
         'consultations' => [5],
@@ -145,9 +144,6 @@ function createReportWorkbook(
             } elseif (in_array($columnIndex, $dateColumns, true)) {
                 $styleId = $isAlternate ? 11 : 10;
                 $type = 'date';
-            } elseif (in_array($columnIndex, $timeColumns, true)) {
-                $styleId = $isAlternate ? 17 : 16;
-                $type = 'time';
             } else {
                 $styleId = $isAlternate ? 9 : 0;
                 $type = 'string';
@@ -159,7 +155,7 @@ function createReportWorkbook(
 
     $columnWidths = match ($reportType) {
         'financial' => [20, 28, 22, 16, 18],
-        'appointments' => [16, 14, 28, 28, 36, 16],
+        'appointments' => [16, 28, 28, 36, 16],
         'consultations' => [22, 28, 28, 38, 38, 18],
         'patients' => [18, 28, 16, 14, 18, 20, 22],
         default => array_fill(0, $columnCount, 20),

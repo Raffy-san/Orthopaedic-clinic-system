@@ -96,175 +96,65 @@ document.querySelectorAll('.open-modal').forEach((trigger) => {
     });
 });
 
-const selectedAppointmentTime = document.getElementById('selectedAppointmentTime');
 const appointmentDate = document.getElementById('appointmentDate');
 const selectedAppointmentDate = document.getElementById('selectedAppointmentDate');
-const appointmentTimeCalendar = document.getElementById('appointmentTimeCalendar');
 const appointmentDateMessage = document.getElementById('appointmentDateMessage');
-const availableSlotCount = document.getElementById('availableSlotCount');
 const bookingModal = document.getElementById('bookAppointmentModal');
 const addAppointmentForm = document.getElementById('addAppointmentForm');
 
-const resetTimeSlots = () => {
-    document.querySelectorAll('.time-slot').forEach((slot) => {
-        slot.disabled = false;
-        slot.removeAttribute('title');
-        slot.classList.remove(
-            'bg-red-100', 'text-red-700', 'bg-sky-600', 'text-white',
-            'bg-slate-200', 'text-slate-400', 'cursor-not-allowed', 'pointer-events-none'
-        );
-        slot.classList.add('bg-slate-100', 'text-slate-700');
-    });
-    if (selectedAppointmentTime) {
-        selectedAppointmentTime.value = '';
-    }
-};
-
-const loadTimeSlots = async () => {
-    resetTimeSlots();
-
-    if (!appointmentDate) {
-        return;
-    }
-
-    if (selectedAppointmentDate) {
-        selectedAppointmentDate.value = appointmentDate.value;
-    }
-
-    if (!appointmentDate.value) {
-        if (appointmentTimeCalendar) {
-            appointmentTimeCalendar.classList.add('hidden');
+let appointmentDateRequest = 0;
+if (appointmentDate) {
+    appointmentDate.addEventListener('change', async () => {
+        const date = appointmentDate.value;
+        const requestId = ++appointmentDateRequest;
+        if (selectedAppointmentDate) {
+            selectedAppointmentDate.value = date;
         }
-        return;
-    }
-
-    try {
-        const response = await fetch(`../php/add/book-appointment.php?date=${encodeURIComponent(appointmentDate.value)}`);
-        const data = await response.json();
-        if (data.status !== 'success') {
-            throw new Error(data.message || 'Unable to load appointment times.');
-        }
-
-        const availableTimes = new Set(data.available_times || []);
-        document.querySelectorAll('.time-slot').forEach((slot) => {
-            slot.classList.toggle('hidden', !availableTimes.has(slot.dataset.time));
-        });
-        document.querySelectorAll('[data-time-slot-group]').forEach((group) => {
-            group.classList.toggle('hidden', !group.querySelector('.time-slot:not(.hidden)'));
-        });
-
-        // The clinic/doctor is fully closed on this date — show a clear message
-        // instead of just quietly marking every slot as taken one by one.
-        if (data.closed) {
-            document.querySelectorAll('.time-slot').forEach((slot) => {
-                slot.disabled = true;
-            });
-            if (appointmentDateMessage) {
-                appointmentDateMessage.textContent = data.closed_message || 'The clinic is closed on this date.';
-                appointmentDateMessage.classList.add('text-red-600');
-            }
-            if (availableSlotCount) {
-                availableSlotCount.textContent = '0 available';
-            }
-            if (appointmentTimeCalendar) {
-                appointmentTimeCalendar.classList.remove('hidden');
-            }
+        if (!date) {
             return;
         }
 
         if (appointmentDateMessage) {
+            appointmentDateMessage.textContent = 'Checking date availability...';
             appointmentDateMessage.classList.remove('text-red-600');
         }
 
-        const slotCounts = data.slot_counts || {};
-        const slotCapacity = Number(data.slot_capacity);
-        const dayIsFull = Number(data.booked_count) >= Number(data.limit);
-        const pastTimes = new Set(data.past_times || []);
-
-        document.querySelectorAll('.time-slot').forEach((slot) => {
-            if (slot.classList.contains('hidden')) return;
-
-            // Time already passed today: gray and disabled
-            if (pastTimes.has(slot.dataset.time)) {
-                slot.disabled = true;
-                slot.title = 'This time has already passed.';
-                slot.classList.remove('bg-slate-100', 'text-slate-700');
-                slot.classList.add('bg-slate-200', 'text-slate-400', 'cursor-not-allowed', 'pointer-events-none');
+        try {
+            const response = await fetch(`../php/add/book-appointment.php?date=${encodeURIComponent(date)}`);
+            const data = await response.json();
+            if (!response.ok || data.status !== 'success') {
+                throw new Error(data.message || 'Unable to check date availability.');
+            }
+            if (requestId !== appointmentDateRequest || date !== appointmentDate.value) {
                 return;
             }
 
-            // Slot or whole day is full: red and disabled
-            const slotIsFull = Number(slotCounts[slot.dataset.time] || 0) >= slotCapacity;
-            if (dayIsFull || slotIsFull) {
-                slot.disabled = true;
-                slot.title = 'This time slot is full.';
-                slot.classList.remove('bg-slate-100', 'text-slate-700');
-                slot.classList.add('bg-red-100', 'text-red-700');
-            }
-        });
-
-        const availableCount = [...document.querySelectorAll('.time-slot')]
-            .filter((slot) => !slot.classList.contains('hidden') && !slot.disabled).length;
-        const allPassed = !dayIsFull && availableCount === 0 && pastTimes.size > 0;
-
-        if (appointmentDateMessage) {
-            appointmentDateMessage.textContent = dayIsFull
-                ? `This date is fully booked (${data.limit} appointments). Please choose another date.`
-                : allPassed
-                    ? "All of today's time slots have already passed. Please choose another date."
-                    : `Available appointments for ${new Date(`${appointmentDate.value}T00:00:00`).toLocaleDateString()}.`;
-        }
-        if (availableSlotCount) {
-            availableSlotCount.textContent = `${availableCount} available`;
-        }
-        if (appointmentTimeCalendar) {
-            appointmentTimeCalendar.classList.remove('hidden');
-        }
-    } catch (error) {
-        if (appointmentTimeCalendar) {
-            appointmentTimeCalendar.classList.add('hidden');
-        }
-        showMessage('Error', error.message, 'error');
-    }
-};
-
-if (appointmentDate) {
-    appointmentDate.addEventListener('change', loadTimeSlots);
-}
-
-document.querySelectorAll('.time-slot').forEach((slot) => {
-    slot.addEventListener('click', () => {
-        if (slot.disabled) {
-            return;
-        }
-
-        document.querySelectorAll('.time-slot').forEach((availableSlot) => {
-            if (availableSlot.disabled) {
+            const isFull = Number(data.booked_count) >= Number(data.limit);
+            if (data.closed || isFull) {
+                if (appointmentDateMessage) {
+                    appointmentDateMessage.textContent = data.closed
+                        ? (data.closed_message || 'The clinic is closed on this date.')
+                        : `This date is fully booked (${data.limit} appointments). Please choose another date.`;
+                    appointmentDateMessage.classList.add('text-red-600');
+                }
                 return;
             }
 
-            availableSlot.classList.remove('bg-sky-600', 'text-white');
-            availableSlot.classList.add('bg-slate-100', 'text-slate-700');
-        });
-
-        slot.classList.remove('bg-slate-100', 'text-slate-700');
-        slot.classList.add('bg-sky-600', 'text-white');
-
-        // Convert 24-hour format to 12-hour format
-        const { time12, meridiem } = convertTo12HourFormat(slot.dataset.time);
-        if (selectedAppointmentTime) {
-            selectedAppointmentTime.value = time12;
+            if (appointmentDateMessage) {
+                appointmentDateMessage.textContent = `Selected date: ${new Date(`${date}T00:00:00`).toLocaleDateString()}.`;
+            }
+            openModal(bookingModal);
+        } catch (error) {
+            if (requestId === appointmentDateRequest) {
+                if (appointmentDateMessage) {
+                    appointmentDateMessage.textContent = error.message || 'Unable to check date availability.';
+                    appointmentDateMessage.classList.add('text-red-600');
+                }
+                showMessage('Error', error.message, 'error');
+            }
         }
-
-        // Set meridiem field if it exists
-        const meridiem_field = document.getElementById('meridiem') || document.querySelector('[name="meridiem"]');
-        if (meridiem_field) {
-            meridiem_field.value = meridiem;
-        }
-
-        openModal(bookingModal);
     });
-});
+}
 
 document.querySelectorAll('.modal').forEach((modal) => {
     modal.querySelectorAll('.close').forEach((closeButton) => {

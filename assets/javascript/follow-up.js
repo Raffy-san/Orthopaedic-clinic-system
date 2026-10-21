@@ -4,28 +4,6 @@ function escapeHtml(value) {
     return div.innerHTML;
 }
 
-function formatAppointmentTime(appointmentTime, meridiem) {
-    if (!appointmentTime) {
-        return '';
-    }
-
-    const [timePart, minutePart] = String(appointmentTime).split(':');
-    const hour = Number(timePart);
-    const minutes = Number(minutePart ?? '0');
-
-    if (Number.isNaN(hour) || Number.isNaN(minutes)) {
-        return appointmentTime;
-    }
-
-    const normalized = (meridiem || '').toUpperCase();
-    const displayMeridiem = (normalized === 'AM' || normalized === 'PM') ? normalized : (hour >= 12 ? 'PM' : 'AM');
-    let displayHour = hour;
-    if (displayHour > 12) displayHour -= 12;
-    else if (displayHour === 0) displayHour = 12;
-
-    return `${displayHour}:${String(minutes).padStart(2, '0')} ${displayMeridiem}`;
-}
-
 async function loadFollowups() {
     const container = document.getElementById('followupsContainer');
 
@@ -66,8 +44,6 @@ async function loadFollowups() {
                 statusText = 'Cancelled';
             }
 
-            const formattedTime = formatAppointmentTime(followup.AppointmentTime, followup.AppointmentMeridiem);
-            const when = formattedTime ? `${formattedDate} - ${formattedTime}` : `${formattedDate} - No time recorded`;
             const patientName = `${followup.PatientFirstName} ${followup.PatientLastName}`;
             const doctorName = followup.DoctorFirstName
                 ? `Dr. ${followup.DoctorFirstName} ${followup.DoctorMiddleName || ''} ${followup.DoctorLastName}`
@@ -84,7 +60,7 @@ async function loadFollowups() {
                     <div class="flex justify-between items-start mb-4">
                         <div>
                             <h3 class="text-lg font-bold text-gray-800">${escapeHtml(patientName)}</h3>
-                            <p class="text-sm text-gray-500">${escapeHtml(doctorName)}${doctorName ? ' • ' : ''}${escapeHtml(when)}</p>
+                            <p class="text-sm text-gray-500">${escapeHtml(doctorName)}${doctorName ? ' • ' : ''}${escapeHtml(formattedDate)}</p>
                         </div>
                         <span class="inline-block px-3 py-1 text-xs font-semibold ${statusClass} rounded-full">${statusText}</span>
                     </div>
