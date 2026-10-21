@@ -233,7 +233,7 @@ async function loadConsultationHistory(patientID) {
                     const doctorName = consultation.DoctorFirstName + ' ' + consultation.DoctorLastName;
                     const medicinesHTML = consultation.prescriptions.length > 0
                         ? consultation.prescriptions.map(m =>
-                            `<div class="text-xs text-slate-600">💊 ${m.Medicine} (${m.Dosage}, ${m.Frequency}) × ${m.Quantity ?? '-'}</div>`
+                            `<div class="text-xs text-slate-600">💊 ${m.Medicine} (${m.Dosage}, ${m.Frequency}) × ${m.Quantity ?? '-'} - ${m.Instructions}</div>`
                         ).join('')
                         : '<div class="text-xs text-slate-500 italic">No medicines prescribed</div>';
 
