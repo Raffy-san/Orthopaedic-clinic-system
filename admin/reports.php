@@ -91,7 +91,7 @@ try {
 
         case 'appointments':
             $reportRows = fetchAllData($pdo, '
-                SELECT a.AppointmentDate, a.AppointmentTime,
+                SELECT a.AppointmentDate,
                        CONCAT(p.FirstName, \' \', p.LastName) AS PatientName,
                        CONCAT(u.FirstName, \' \', u.LastName) AS DoctorName,
                        a.Purpose, a.Status
@@ -99,7 +99,7 @@ try {
                 INNER JOIN patients p ON p.PatientID = a.PatientID
                 LEFT JOIN users u ON u.UserID = a.DoctorID
                 WHERE a.AppointmentDate BETWEEN ? AND ?
-                ORDER BY a.AppointmentDate DESC, a.AppointmentTime DESC', [$fromDate, $toDate]);
+                ORDER BY a.AppointmentDate DESC, a.AppointmentID DESC', [$fromDate, $toDate]);
             break;
 
         case 'consultations':
@@ -162,10 +162,9 @@ if ($isExcelExport) {
             break;
 
         case 'appointments':
-            $exportColumns = ['Date', 'Time', 'Patient', 'Doctor', 'Purpose', 'Status'];
+            $exportColumns = ['Date', 'Patient', 'Doctor', 'Purpose', 'Status'];
             $exportRows = array_map(static fn(array $row): array => [
                 $row['AppointmentDate'],
-                $row['AppointmentTime'],
                 $row['PatientName'],
                 $row['DoctorName'],
                 $row['Purpose'],
@@ -477,7 +476,7 @@ function reportMoney(mixed $value): string
                                                 </td>
                                             <?php elseif ($reportType === 'appointments'): ?>
                                                 <td class="py-3">
-                                                    <?= reportValue($row['AppointmentDate'] . ' ' . $row['AppointmentTime']) ?>
+                                                    <?= reportValue($row['AppointmentDate']) ?>
                                                 </td>
                                                 <td><?= reportValue($row['PatientName']) ?></td>
                                                 <td><?= reportValue($row['DoctorName']) ?></td>

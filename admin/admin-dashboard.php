@@ -18,11 +18,11 @@ if (!$admin) {
 }
 
 $pendingappointments = fetchAllData($pdo, "
-    SELECT a.AppointmentID, a.AppointmentDate, a.AppointmentTime, a.Purpose, a.Status,
+    SELECT a.AppointmentID, a.AppointmentDate, a.Purpose, a.Status,
            p.PatientCode, p.FirstName AS patient_first_name, p.LastName AS patient_last_name
     FROM appointments a
     INNER JOIN patients p ON a.PatientID = p.PatientID
-    ORDER BY a.AppointmentDate DESC, a.AppointmentTime DESC
+    ORDER BY a.AppointmentDate DESC, a.AppointmentID DESC
 ");
 
 $appointments = fetchAllData($pdo, "SELECT * FROM appointments");
@@ -49,14 +49,13 @@ if ($currentRole === 'staff') {
     $todayConsultationProfiles = fetchAllData($pdo, "
         SELECT
             a.AppointmentID,
-            a.AppointmentTime,
-            a.meridiem,
             p.PatientCode,
             p.FirstName,
             p.MiddleName,
             p.LastName,
             TIMESTAMPDIFF(YEAR, p.BirthDate, CURDATE()) AS Age,
             p.Gender,
+            c.StartTime AS ConsultationStartTime,
             CASE
                 WHEN c.ConsultationID IS NOT NULL AND c.IsCompleted = 1 THEN 'Completed'
                 WHEN c.ConsultationID IS NOT NULL THEN 'In Progress'
@@ -67,15 +66,13 @@ if ($currentRole === 'staff') {
         LEFT JOIN consultations c ON c.AppointmentID = a.AppointmentID
         WHERE DATE(a.AppointmentDate) = CURDATE()
           AND a.Status NOT IN ('Cancelled', 'Pending')
-        ORDER BY a.AppointmentTime ASC, a.AppointmentID ASC
+        ORDER BY a.AppointmentID ASC
     ");
 }
 
 $todaySchedule = fetchAllData($pdo, "
     SELECT
         a.AppointmentID,
-        a.AppointmentTime,
-        a.meridiem,
         a.Purpose,
         a.Status,
         p.FirstName,
@@ -85,31 +82,27 @@ $todaySchedule = fetchAllData($pdo, "
     JOIN patients p ON p.PatientID = a.PatientID
     LEFT JOIN consultations c ON c.AppointmentID = a.AppointmentID
     WHERE DATE(a.AppointmentDate) = CURDATE() AND a.Status <> 'Cancelled' AND a.Status <> 'Pending'
-    ORDER BY a.AppointmentTime ASC
+    ORDER BY a.AppointmentID ASC
 ");
 
 $upcomingFollowUps = fetchAllData($pdo, "
     SELECT
         f.FollowUpID,
         f.FollowUpDate,
-        a.AppointmentTime,
-        a.meridiem,
         p.FirstName,
         p.LastName,
         p.PatientCode,
         f.Remarks
     FROM followups f
     INNER JOIN patients p ON p.PatientID = f.PatientID
-    LEFT JOIN appointments a ON a.AppointmentID = f.AppointmentID
     WHERE f.Status = 'Scheduled'
       AND f.FollowUpDate >= CURDATE()
-    ORDER BY f.FollowUpDate ASC, a.AppointmentTime ASC, f.FollowUpID ASC
+    ORDER BY f.FollowUpDate ASC, f.FollowUpID ASC
 ");
 
 $patientsRaw = fetchAllData($pdo, "
     SELECT p.Province AS province, p.City AS city, p.Barangay AS barangay,
            TIMESTAMPDIFF(YEAR, p.BirthDate, CURDATE()) AS age, a.AppointmentDate as date,
-           a.AppointmentTime as time, a.meridiem as meridiem,
            p.Gender AS gender, COALESCE(a.Status, 'Pending') AS status
     FROM patients p
     INNER JOIN appointments a ON a.AppointmentID = (
@@ -304,7 +297,9 @@ foreach ($patientsRaw as $row) {
                                         'Rescheduled' => 'bg-amber-100 text-amber-700',
                                     ];
                                     $statusClass = $statusClasses[$consultationStatus] ?? 'bg-slate-100 text-slate-600';
-                                    $consultationTime = (new DateTime($profile['AppointmentTime']))->format('g:i A');
+                                    $consultationTime = $profile['ConsultationStartTime']
+                                        ? date('g:i A', strtotime($profile['ConsultationStartTime']))
+                                        : 'Not started';
                                     ?>
                                     <tr class="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                                         <td class="px-6 py-4">
@@ -345,9 +340,6 @@ foreach ($patientsRaw as $row) {
                         <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
                             <?php foreach ($upcomingFollowUps as $followUp):
                                 $followUpName = trim($followUp['FirstName'] . ' ' . $followUp['LastName']);
-                                $followUpTime = $followUp['AppointmentTime']
-                                    ? date('g:i A', strtotime($followUp['AppointmentTime']))
-                                    : 'Time not set';
                                 ?>
                                 <article class="flex items-start justify-between gap-4 rounded-xl border border-teal-100 bg-teal-50/60 px-4 py-3">
                                     <div class="min-w-0">
@@ -357,7 +349,6 @@ foreach ($patientsRaw as $row) {
                                         <p class="mt-1 text-xs text-gray-500">
                                             <?= htmlspecialchars($followUp['PatientCode'], ENT_QUOTES, 'UTF-8') ?>
                                             · <?= htmlspecialchars(date('M j, Y', strtotime($followUp['FollowUpDate'])), ENT_QUOTES, 'UTF-8') ?>
-                                            · <?= htmlspecialchars($followUpTime, ENT_QUOTES, 'UTF-8') ?>
                                         </p>
                                         <?php if (!empty($followUp['Remarks'])): ?>
                                             <p class="mt-2 break-words text-xs text-gray-600">
@@ -395,7 +386,6 @@ foreach ($patientsRaw as $row) {
                         foreach ($pendingAppointments as $appointment) {
                             $appointmentDate = new DateTime($appointment['AppointmentDate']);
                             $formattedDate = $appointmentDate->format('M d');
-                            $formattedTime = (new DateTime($appointment['AppointmentTime']))->format('g:i A');
                             ?>
 
                             <div class="rounded-lg bg-amber-50 p-4 border border-amber-100">
@@ -409,7 +399,7 @@ foreach ($patientsRaw as $row) {
                                             </span>
                                         </p>
                                         <p class="text-xs text-slate-500 mt-1">
-                                            <?= $formattedDate ?> at <?= $formattedTime ?> ·
+                                            <?= $formattedDate ?> ·
                                             <?= htmlspecialchars($appointment['Purpose'], ENT_QUOTES, 'UTF-8') ?>
                                         </p>
                                     </div>
@@ -505,7 +495,7 @@ foreach ($patientsRaw as $row) {
                             <thead class="text-left text-sm text-gray-500 bg-emerald-50 sticky top-0">
                                 <tr class="border-b border-gray-100">
                                     <th class="px-6 py-4 font-medium">Name</th>
-                                    <th class="px-6 py-4 font-medium">Waiting Time</th>
+                                    <th class="px-6 py-4 font-medium">Queue Status</th>
                                     <th class="px-6 py-4 font-medium">Minutes (with Doctor)</th>
                                     <th class="px-6 py-4 font-medium">Status</th>
                                 </tr>
@@ -522,14 +512,14 @@ foreach ($patientsRaw as $row) {
                                     ");
 
                                 $stillWaiting = fetchAllData($pdo, "
-                                        SELECT a.AppointmentID, a.AppointmentTime, a.meridiem, p.FirstName, p.LastName
+                                        SELECT a.AppointmentID, p.FirstName, p.LastName
                                         FROM appointments a
                                         JOIN patients p ON p.PatientID = a.PatientID
                                         WHERE a.Status = 'Confirmed' AND DATE(a.AppointmentDate) = CURDATE()
                                         AND a.AppointmentID NOT IN (
                                             SELECT AppointmentID FROM consultations WHERE IsCompleted = 0
                                         )
-                                        ORDER BY a.AppointmentTime ASC
+                                        ORDER BY a.AppointmentID ASC
                                     ");
 
                                 if (empty($inProgress) && empty($stillWaiting)) {
@@ -566,21 +556,16 @@ foreach ($patientsRaw as $row) {
                                     // Then everyone still waiting
                                     foreach ($stillWaiting as $w) {
                                         $patientName = trim($w['FirstName'] . ' ' . $w['LastName']);
-                                        $appointmentDisplay = date('g:i', strtotime($w['AppointmentTime']));
-                                        $waitingTime = elapsedTime(date('Y-m-d') . ' ' . $w['AppointmentTime']);
                                         ?>
                                         <tr class="border-b border-gray-100 hover:bg-gray-50">
                                             <td class="px-6 py-4">
                                                 <h3 class="font-medium"><?= htmlspecialchars($patientName) ?></h3>
-                                                <p class="text-xs text-gray-500">
-                                                    <?= htmlspecialchars($appointmentDisplay) ?>
-                                                    <?= strtoupper(htmlspecialchars($w['meridiem'])) ?>
-                                                </p>
+                                                <p class="text-xs text-gray-500">Awaiting consultation</p>
                                             </td>
                                             <td class="px-6 py-4">
                                                 <span
                                                     class="text-xs px-2 py-1 rounded-full font-semibold bg-blue-100 text-blue-600">
-                                                    <i class="fas fa-clock mr-1"></i><?= htmlspecialchars($waitingTime) ?>
+                                                    Waiting
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4 text-gray-400">-</td>
@@ -671,17 +656,11 @@ foreach ($patientsRaw as $row) {
                         } else {
                             foreach ($todaySchedule as $slot) {
                                 $patientName = trim($slot['FirstName'] . ' ' . $slot['LastName']);
-                                $timeDisplay = date('g:i', strtotime($slot['AppointmentTime']));
-                                $meridiem = strtoupper($slot['meridiem'] ?? '');
                                 $rowClasses = $slot['InProgress']
                                     ? 'bg-blue-50 border border-blue-100'
                                     : 'border border-transparent';
                                 ?>
                                 <div class="flex items-start gap-4 rounded-xl px-3 py-2 <?= $rowClasses ?>">
-                                    <div class="text-xs font-semibold text-gray-400 w-14 pt-0.5">
-                                        <?= htmlspecialchars($timeDisplay) ?><br>
-                                        <span class="font-normal"><?= htmlspecialchars($meridiem) ?></span>
-                                    </div>
                                     <div>
                                         <p
                                             class="text-sm font-semibold <?= $slot['InProgress'] ? 'text-blue-900' : 'text-gray-800' ?>">

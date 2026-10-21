@@ -247,7 +247,7 @@ async function loadConsultationHistory(patientID) {
                                 <strong>Diagnosis:</strong> ${consultation.Diagnosis}
                             </div>
                             <div class="text-sm text-slate-700 mb-2">
-                                <strong>Treatment:</strong> ${consultation.Treatment}
+                                <strong>Notes:</strong> ${consultation.Notes}
                             </div>
                             <div class="text-sm font-semibold text-slate-900 mb-1">Medicines:</div>
                             ${medicinesHTML}
@@ -296,9 +296,59 @@ async function loadMedicines() {
 }
 
 const frequencyOptions = ['1x daily', '2x daily', '3x daily', '4x daily', 'Every 6 hours as needed', 'Every 8 hours as needed', 'At bedtime'];
-const durationOptions = ['3 days', '5 days', '7 days', '10 days', '14 days', '30 days', 'Until finished'];
 const instructionOptions = ['Take with food.', 'Take on an empty stomach.', 'May cause drowsiness. Avoid driving.', 'Do not exceed recommended dose.', 'Stop if rash or discomfort occurs.'];
-const quantityOptions = ['3', '5', '7', '10', '14', '21', '30'];
+
+function getDailyDoses(frequency) {
+    const normalized = frequency.trim().toLowerCase();
+    const dailyMatch = normalized.match(/^(\d+)\s*x\s*(?:a\s*)?day$/)
+        || normalized.match(/^(\d+)\s*times?\s*(?:a\s*)?day$/)
+        || normalized.match(/^(\d+)\s*x\s*daily$/)
+        || normalized.match(/^(\d+)\s*times?\s*daily$/);
+    if (dailyMatch) {
+        const doses = Number(dailyMatch[1]);
+        return Number.isSafeInteger(doses) && doses > 0 ? doses : null;
+    }
+
+    return normalized === 'at bedtime' ? 1 : null;
+}
+
+function getDurationInDays(duration) {
+    const match = duration.trim().toLowerCase().match(/^(\d+(?:\.\d+)?)\s*(day|days|d|week|weeks|wk|wks)$/);
+    if (!match) {
+        return null;
+    }
+
+    const amount = Number(match[1]);
+    const days = amount * (match[2].startsWith('w') ? 7 : 1);
+    return Number.isFinite(days) && days > 0 ? days : null;
+}
+
+function updatePrescriptionQuantity(row) {
+    const frequency = row.querySelector('.rx-frequency').value;
+    const duration = row.querySelector('.rx-duration').value;
+    const quantityInput = row.querySelector('.rx-quantity');
+    const helpText = row.querySelector('.rx-quantity-help');
+    const dailyDoses = getDailyDoses(frequency);
+    const durationInDays = getDurationInDays(duration);
+    const calculatedQuantity = dailyDoses !== null && durationInDays !== null
+        ? dailyDoses * durationInDays
+        : null;
+    const canCalculate = Number.isSafeInteger(calculatedQuantity) && calculatedQuantity > 0;
+
+    if (canCalculate) {
+        quantityInput.value = String(calculatedQuantity);
+        quantityInput.readOnly = true;
+        helpText.textContent = 'Automatically calculated from frequency and duration.';
+    } else {
+        quantityInput.readOnly = false;
+        helpText.textContent = 'Enter a quantity manually when frequency or duration cannot be calculated.';
+        if (quantityInput.dataset.calculated === 'true') {
+            quantityInput.value = '';
+        }
+    }
+
+    quantityInput.dataset.calculated = String(canCalculate);
+}
 
 function buildChipRow(container, options, hiddenInput, multiFill) {
     container.innerHTML = '';
@@ -327,6 +377,7 @@ function buildChipRow(container, options, hiddenInput, multiFill) {
                 chip.classList.add('bg-blue-100', 'border-blue-500', 'text-blue-700');
                 chip.classList.remove('border-slate-300', 'text-slate-600');
                 hiddenInput.value = option;
+                hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
             }
         });
         container.appendChild(chip);
@@ -352,13 +403,15 @@ function addPrescriptionRow() {
     const medicineInput = row.querySelector('.rx-medicine');
     const dosageInput = row.querySelector('.rx-dosage');
     const frequencyHidden = row.querySelector('.rx-frequency');
-    const durationHidden = row.querySelector('.rx-duration');
     const instructionsTextarea = row.querySelector('.rx-instructions');
 
     buildChipRow(row.querySelector('.frequency-chips'), frequencyOptions, frequencyHidden, false);
-    buildChipRow(row.querySelector('.duration-chips'), durationOptions, durationHidden, false);
     buildChipRow(row.querySelector('.instruction-chips'), instructionOptions, instructionsTextarea, true);
-    buildChipRow(row.querySelector('.quantity-chips'), quantityOptions, row.querySelector('.rx-quantity'), false);
+    frequencyHidden.addEventListener('change', () => updatePrescriptionQuantity(row));
+    row.querySelector('.rx-duration').addEventListener('input', () => updatePrescriptionQuantity(row));
+    row.querySelector('.rx-quantity').addEventListener('input', () => {
+        row.querySelector('.rx-quantity').dataset.calculated = 'false';
+    });
 
     const presetGrid = row.querySelector('.medicine-preset-grid');
     medicinePresets.forEach(preset => {
@@ -426,103 +479,6 @@ document.getElementById('skipFollowupBtn').addEventListener('click', () => {
 });
 
 const followupDateInput = document.getElementById('followupDate');
-const followupTimeInput = document.getElementById('followupTime');
-const followupTimeMessage = document.getElementById('followupTimeMessage');
-const followupTimeSlots = document.getElementById('followupTimeSlots');
-const FOLLOWUP_DEFAULT_MESSAGE = 'Choose a date first to see available slots.';
-
-function setFollowupMessage(text, isError = false) {
-    followupTimeMessage.textContent = text;
-    followupTimeMessage.classList.toggle('text-red-600', isError);
-    followupTimeMessage.classList.toggle('text-slate-500', !isError);
-}
-
-function resetFollowupTime() {
-    followupTimeInput.value = '';
-    followupTimeSlots.classList.add('hidden');
-    document.querySelectorAll('.followup-time-slot').forEach((slot) => {
-        slot.disabled = false;
-        slot.removeAttribute('title');
-        slot.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-sky-600', 'text-white',
-            'bg-slate-200', 'text-slate-400', 'cursor-not-allowed', 'pointer-events-none');
-        slot.classList.add('bg-slate-100', 'text-slate-700');
-        slot.classList.add('hover:bg-sky-100');
-    });
-    setFollowupMessage(FOLLOWUP_DEFAULT_MESSAGE);
-}
-
-followupDateInput.addEventListener('change', async () => {
-    const date = followupDateInput.value;
-    resetFollowupTime();
-    if (!date) return;
-
-    setFollowupMessage('Loading availability...');
-    try {
-        const response = await fetch(`../php/add/book-appointment.php?date=${encodeURIComponent(date)}`);
-        const data = await response.json();
-        if (!response.ok || data.status !== 'success') {
-            throw new Error(data.message || 'Unable to load availability.');
-        }
-        if (followupDateInput.value !== date) return; // user picked another date meanwhile
-
-        if (data.closed) {
-            setFollowupMessage(data.closed_message || 'The clinic is closed on this date.', true);
-            return;
-        }
-
-        const available = new Set(data.available_times || []);
-        const slotCounts = data.slot_counts || {};
-        const slotCapacity = Number(data.slot_capacity);
-        const dayIsFull = Number(data.booked_count) >= Number(data.limit);
-        const pastTimes = new Set(data.past_times || []);
-        document.querySelectorAll('.followup-time-slot').forEach((slot) => {
-            const isAvailableTime = available.has(slot.dataset.time);
-            slot.classList.toggle('hidden', !isAvailableTime);
-            if (!isAvailableTime) return;
-
-            if (pastTimes.has(slot.dataset.time)) {
-                slot.disabled = true;
-                slot.title = 'This time has already passed.';
-                slot.classList.remove('bg-slate-100', 'text-slate-700', 'hover:bg-sky-100');
-                slot.classList.add('bg-slate-200', 'text-slate-400', 'cursor-not-allowed', 'pointer-events-none');
-                return;
-            }
-
-            const slotIsFull = Number(slotCounts[slot.dataset.time] || 0) >= slotCapacity;
-            if (dayIsFull || slotIsFull) {
-                slot.disabled = true;
-                slot.title = 'This time slot is full.';
-                slot.classList.remove('bg-slate-100', 'text-slate-700', 'hover:bg-sky-100');
-                slot.classList.add('bg-red-100', 'text-red-700');
-            }
-        });
-
-        const count = [...document.querySelectorAll('.followup-time-slot')]
-            .filter((s) => !s.classList.contains('hidden') && !s.disabled).length;
-        setFollowupMessage(dayIsFull
-            ? `This date is fully booked (${data.limit} appointments). Pick another date.`
-            : count
-                ? `${count} slot${count !== 1 ? 's' : ''} available on ${new Date(date + 'T00:00:00').toLocaleDateString()}. Each time slot can hold up to ${data.slot_capacity} appointments.`
-                : 'No slots left on this date. Pick another date.', count === 0);
-        followupTimeSlots.classList.remove('hidden');
-    } catch (error) {
-        setFollowupMessage(error.message || 'Unable to load availability.', true);
-    }
-});
-
-document.querySelectorAll('.followup-time-slot').forEach((slot) => {
-    slot.addEventListener('click', () => {
-        if (slot.disabled) return;
-        document.querySelectorAll('.followup-time-slot').forEach((s) => {
-            if (s.disabled) return;
-            s.classList.remove('bg-sky-600', 'text-white');
-            s.classList.add('bg-slate-100', 'text-slate-700');
-        });
-        slot.classList.remove('bg-slate-100', 'text-slate-700');
-        slot.classList.add('bg-sky-600', 'text-white');
-        followupTimeInput.value = slot.dataset.time; // e.g. "09:30 AM"
-    });
-});
 
 document.getElementById('followupAlternativeDate').addEventListener('change', function () {
     if (this.value) {
@@ -562,15 +518,15 @@ document.getElementById('consultationForm').addEventListener('submit', async fun
             const medicine = row.querySelector('.rx-medicine').value.trim();
             const dosage = row.querySelector('.rx-dosage').value.trim();
             const frequency = row.querySelector('.rx-frequency').value.trim();
-            const quantity = parseInt(row.querySelector('.rx-quantity').value.trim(), 10);
+            const quantity = Number(row.querySelector('.rx-quantity').value.trim());
 
             if (!medicine || !dosage || !frequency) {
                 showMessage('Missing Information', 'Please fill in medicine, dosage, and frequency for each prescription (or remove the empty card).', 'error');
                 return;
             }
 
-            if (!quantity || quantity < 1) {
-                showMessage('Missing Information', 'Please enter a quantity for each prescription.', 'error');
+            if (!Number.isSafeInteger(quantity) || quantity < 1) {
+                showMessage('Missing Information', 'Enter a valid quantity. For automatic calculation, choose a fixed daily frequency and enter a duration such as "7 days".', 'error');
                 return;
             }
 
@@ -587,20 +543,14 @@ document.getElementById('consultationForm').addEventListener('submit', async fun
 
     const hasFollowup = !document.getElementById('followupDetails').classList.contains('hidden');
     const followupDate = document.getElementById('followupDate').value;
-    const followupTime = document.getElementById('followupTime').value;
 
     if (hasFollowup && !followupDate) {
         showMessage('Missing Information', 'Please select a follow-up date, or click "No — Skip".', 'error');
         return;
     }
-    if (hasFollowup && !followupTime) {
-        showMessage('Missing Information', 'Please select a follow-up time slot.', 'error');
-        return;
-    }
 
     const followupData = hasFollowup ? {
         date: followupDate,
-        time: followupTime,
         remarks: document.getElementById('followupRemarks').value
     } : null;
 
@@ -609,7 +559,6 @@ document.getElementById('consultationForm').addEventListener('submit', async fun
         patient_id: document.getElementById('patientID').value,
         consultation_id: document.getElementById('consultationID').value,
         diagnosis: document.querySelector('[name="diagnosis"]').value,
-        treatment: document.querySelector('[name="treatment"]').value,
         notes: document.querySelector('[name="notes"]').value,
         consultation_fee: document.getElementById('consultationFee').value,
         has_prescription: hasPrescription,

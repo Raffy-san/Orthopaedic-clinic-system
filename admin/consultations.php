@@ -128,19 +128,12 @@ $defaultConsultationFee = 500; // PHP
 
                     <h3 class="font-bold text-lg text-slate-900 mb-6">Consultation Notes</h3>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 gap-4">
                         <div>
                             <label class="text-sm font-semibold text-slate-700">Diagnosis *</label>
                             <input type="text" name="diagnosis"
                                 class="w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required placeholder="e.g., Osteoarthritis, right knee">
-                        </div>
-
-                        <div>
-                            <label class="text-sm font-semibold text-slate-700">Treatment Plan *</label>
-                            <input type="text" name="treatment"
-                                class="w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                required placeholder="e.g., PT, anti-inflammatory meds">
                         </div>
                     </div>
 
@@ -205,17 +198,20 @@ $defaultConsultationFee = 500; // PHP
 
                                 <div class="mt-4">
                                     <label class="text-sm font-semibold text-slate-700">Duration</label>
-                                    <div class="duration-chips flex flex-wrap gap-2 mt-2"></div>
-                                    <input type="hidden" class="rx-duration">
+                                    <input type="text"
+                                        class="rx-duration w-full mt-2 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="e.g., 2 days">
                                 </div>
 
 
                                 <div class="mt-4">
-                                    <label class="text-xs text-slate-600">Quantity</label>
+                                    <label class="text-sm font-semibold text-slate-700">Quantity</label>
                                     <input type="number" min="1" step="1"
-                                        class="rx-quantity mt-1 w-full rounded-xl border border-slate-200 px-2.5 py-1.5 text-xs"
-                                        placeholder="e.g. 21">
-                                    <div class="quantity-chips flex flex-wrap gap-2 mt-2"></div>
+                                        class="rx-quantity mt-2 w-full border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Calculated from frequency and duration">
+                                    <p class="rx-quantity-help mt-1 text-xs text-slate-500">
+                                        Enter a fixed frequency and duration (for example, 2x daily for 7 days) to calculate automatically.
+                                    </p>
                                 </div>
 
                                 <div class="mt-4">
@@ -268,25 +264,6 @@ $defaultConsultationFee = 500; // PHP
                                             closed</span>
                                         <span class="flex items-center gap-2"><span
                                                 class="h-3 w-3 rounded-full border border-emerald-200 bg-white"></span>Available</span>
-                                    </div>
-                                </div>
-
-                                <div class="mt-4">
-                                    <p class="text-sm font-semibold text-slate-700">Follow-up Time *</p>
-                                    <input type="hidden" id="followupTime" name="followup[time]">
-                                    <p id="followupTimeMessage" class="mt-1 text-xs text-slate-500">Choose a date first
-                                        to see available slots.</p>
-                                    <p class="mb-2 flex items-center gap-2 text-xs text-slate-500">
-                                        <span class="inline-block h-3 w-3 rounded border border-red-200 bg-red-100"></span>
-                                        Red slots are full (up to 4 appointments per time slot).
-                                    </p>
-                                    <div id="followupTimeSlots"
-                                        class="mt-3 hidden grid grid-cols-2 gap-3 sm:grid-cols-3">
-                                        <?php foreach (['09:00', '09:30', '10:00', '10:30', '11:00', '11:30'] as $t): ?>
-                                            <button type="button" data-time="<?= $t ?> AM"
-                                                class="followup-time-slot rounded-3xl bg-slate-100 px-4 py-4 text-sm font-semibold text-slate-700 hover:bg-sky-100"><?= $t ?>
-                                                AM</button>
-                                        <?php endforeach; ?>
                                     </div>
                                 </div>
 

@@ -41,7 +41,7 @@ $result['csrf_token'] = $_SESSION['csrf_token'];
 // Set response code based on status
 if (($result['status'] ?? '') === 'error') {
     $code = $result['code'] ?? '';
-    $conflictCodes = ['followup_date_unavailable', 'followup_time_unavailable'];
+    $conflictCodes = ['followup_date_unavailable'];
     http_response_code(in_array($code, $conflictCodes, true) ? 409 : 500);
 }
 

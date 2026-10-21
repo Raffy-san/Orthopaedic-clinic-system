@@ -12,8 +12,6 @@ try {
         SELECT 
             a.AppointmentID,
             a.AppointmentDate,
-            a.AppointmentTime,
-            a.meridiem,
             a.Purpose,
             a.Status,
             p.PatientID,
@@ -45,7 +43,7 @@ try {
         WHERE DATE(a.AppointmentDate) = CURDATE() 
         AND a.Status = 'Confirmed'
         GROUP BY a.AppointmentID
-        ORDER BY a.AppointmentTime ASC
+        ORDER BY a.AppointmentID ASC
     ");
 
     $stmt->execute();

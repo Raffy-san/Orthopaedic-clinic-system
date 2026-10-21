@@ -69,8 +69,7 @@ try {
         ':appointment_id' => $appointmentId
     ]);
 
-    // Keep the linked follow-up record in sync (frees nothing by itself,
-    // the slot is freed because the appointment is now Cancelled)
+    // Keep the linked follow-up record in sync when its appointment is cancelled.
     if ($status === 'Cancelled') {
         $followupStmt = $pdo->prepare("
             UPDATE followups

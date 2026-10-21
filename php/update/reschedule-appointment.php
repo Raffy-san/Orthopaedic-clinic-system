@@ -25,11 +25,10 @@ if (
 $appointmentIdValue = trim((string) ($requestData['appointment_id'] ?? ''));
 $appointmentId = ctype_digit($appointmentIdValue) ? (int) $appointmentIdValue : 0;
 $newDate = trim($requestData['new_appointment_date'] ?? '');
-$newTime = trim($requestData['new_appointment_time'] ?? ''); // e.g. "09:00 AM"
 
-if (!$appointmentId || $newDate === '' || $newTime === '') {
+if (!$appointmentId || $newDate === '') {
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Missing appointment ID, date, or time.']);
+    echo json_encode(['status' => 'error', 'message' => 'Missing appointment ID or date.']);
     exit;
 }
 
@@ -51,22 +50,6 @@ if ($parsedDate < new DateTime('today')) {
     exit;
 }
 
-// Only allow the same half-hour slots offered by the booking calendar.
-$parsedTime = DateTime::createFromFormat('!h:i A', $newTime);
-$timeErrors = DateTime::getLastErrors();
-if (
-    !$parsedTime
-    || ($timeErrors !== false && ($timeErrors['warning_count'] > 0 || $timeErrors['error_count'] > 0))
-    || $parsedTime->format('h:i A') !== $newTime
-    || !in_array($newTime, clinicSlotLabels(), true)
-) {
-    http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Please choose a valid appointment time.']);
-    exit;
-}
-$timeOnly = $parsedTime->format('H:i:s');
-$meridiem = $parsedTime->format('A');
-
 // Rolls back, sends an error and stops
 $fail = function (int $code, string $message) use ($pdo): void {
     if ($pdo->inTransaction()) {
@@ -84,7 +67,7 @@ try {
     $dayLock = $pdo->prepare('SELECT DayOfWeek FROM clinic_schedule WHERE DayOfWeek = ? FOR UPDATE');
     $dayLock->execute([$dayOfWeek]);
 
-    $scheduleStatement = $pdo->prepare('SELECT IsOpen, StartTime, EndTime FROM clinic_schedule WHERE DayOfWeek = ?');
+    $scheduleStatement = $pdo->prepare('SELECT IsOpen FROM clinic_schedule WHERE DayOfWeek = ?');
     $scheduleStatement->execute([$dayOfWeek]);
     $daySchedule = $scheduleStatement->fetch(PDO::FETCH_ASSOC);
 
@@ -96,13 +79,9 @@ try {
         $fail(400, 'The clinic/doctor is unavailable on the selected date.');
     }
 
-    if ($timeOnly < $daySchedule['StartTime'] || $timeOnly >= $daySchedule['EndTime']) {
-        $fail(400, 'The selected time is outside the clinic hours for this date.');
-    }
-
     // Lock the appointment being moved
     $appointmentStatement = $pdo->prepare(
-        "SELECT a.PatientID, a.AppointmentDate, a.AppointmentTime, a.meridiem, a.Status, a.Purpose,
+        "SELECT a.PatientID, a.AppointmentDate, a.Status, a.Purpose,
                 p.PatientCode
          FROM appointments a
          INNER JOIN patients p ON p.PatientID = a.PatientID
@@ -121,27 +100,21 @@ try {
         $fail(400, 'Only confirmed appointments can be rescheduled.');
     }
 
-    if ($current['AppointmentDate'] === $newDate && $current['AppointmentTime'] === $timeOnly) {
-        $fail(400, 'The appointment is already scheduled for that date and time.');
+    if ($current['AppointmentDate'] === $newDate) {
+        $fail(400, 'The appointment is already scheduled for that date.');
     }
 
     if (countActiveAppointments($pdo, $newDate, $appointmentId) >= DAILY_PATIENT_LIMIT) {
         $fail(400, 'This date is already fully booked (' . DAILY_PATIENT_LIMIT . ' patients). Please choose another date.');
     }
 
-    if (countSlotAppointments($pdo, $newDate, $timeOnly, $appointmentId) >= SLOT_CAPACITY) {
-        $fail(400, 'That time slot is full. Please choose another.');
-    }
-
     $stmt = $pdo->prepare("
         UPDATE appointments
-        SET AppointmentDate = :new_date, AppointmentTime = :new_time, meridiem = :meridiem
+        SET AppointmentDate = :new_date, AppointmentTime = NULL, meridiem = NULL
         WHERE AppointmentID = :appointment_id
     ");
     $stmt->execute([
         ':new_date' => $newDate,
-        ':new_time' => $timeOnly,
-        ':meridiem' => $meridiem,
         ':appointment_id' => $appointmentId
     ]);
 
@@ -176,9 +149,8 @@ try {
     }
     $actorUserId = $actorUserId === null ? null : (int) $actorUserId;
 
-    $oldDateTime = $current['AppointmentDate'] . ' at '
-        . date('h:i A', strtotime($current['AppointmentTime']));
-    $newDateTime = $newDate . ' at ' . $parsedTime->format('h:i A');
+    $oldDateTime = $current['AppointmentDate'];
+    $newDateTime = $newDate;
 
     // AUDIT: keep the old and new schedule visible in the audit log.
     logAudit(
