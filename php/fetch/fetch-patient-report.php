@@ -34,7 +34,7 @@ try {
     // Visit / consultation summary
     $consultations = fetchAllData(
         $pdo,
-        "SELECT c.ConsultationID, c.ConsultationDate, c.Diagnosis, c.Treatment, c.ConsultationFee,
+        "SELECT c.ConsultationID, c.ConsultationDate, c.Diagnosis, c.Notes, c.ConsultationFee,
                 CONCAT(u.FirstName, ' ', u.LastName) AS DoctorName
          FROM consultations c
          LEFT JOIN appointments a ON a.AppointmentID = c.AppointmentID

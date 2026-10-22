@@ -8,10 +8,30 @@
     const recordBtn = document.getElementById('record-btn');
     const printBtn = document.getElementById('print-btn');
     const billPicker = document.getElementById('bill-picker');
+    const amountPaidInput = document.getElementById('amount-paid');
 
     let currentBillingData = {};
     let currentConsultationData = {};
     let currentPatientData = {};
+
+    function formatCurrency(amount) {
+        return '₱' + (Number(amount) || 0).toFixed(2);
+    }
+
+    function updatePaymentBalanceHint() {
+        const balanceDue = Number(currentBillingData.AmountDue) || 0;
+        const amount = Number(amountPaidInput.value);
+        const hint = document.getElementById('payment-balance-hint');
+
+        if (!amountPaidInput.value || !Number.isFinite(amount) || amount <= 0 || amount > balanceDue) {
+            hint.innerText = 'Outstanding balance: ' + formatCurrency(balanceDue);
+            return;
+        }
+
+        hint.innerText = 'Balance after this payment: ' + formatCurrency(balanceDue - amount);
+    }
+
+    amountPaidInput.addEventListener('input', updatePaymentBalanceHint);
 
     printBtn.addEventListener('click', function () {
         window.print();
@@ -84,7 +104,8 @@
                     : 'bg-red-100 text-red-700'}">${escapeHtml(b.Status)}</span>
                     </div>
                     <div class="text-xs text-slate-500 mt-1">
-                        ₱${parseFloat(b.FinalAmount).toFixed(2)} · OR-2026-${String(b.BillingID).padStart(5, '0')}
+                        Balance due: ${formatCurrency(b.AmountDue)} · Total: ${formatCurrency(b.FinalAmount)}
+                        · OR-2026-${String(b.BillingID).padStart(5, '0')}
                     </div>
                 </button>
             `).join('')}
@@ -118,6 +139,8 @@
             }
 
             currentBillingData = data.billing;
+            currentBillingData.TotalPaid = Number(data.billing.TotalPaid) || 0;
+            currentBillingData.AmountDue = Number(data.billing.AmountDue) || 0;
             currentConsultationData = data.consultation;
             currentPatientData = data.patient;
 
@@ -131,7 +154,7 @@
             document.getElementById('consult-date').innerText = consultDate;
             document.getElementById('consult-doctor').innerText = doctorName;
             document.getElementById('consult-diagnosis').innerText = data.consultation.Diagnosis || '—';
-            document.getElementById('consult-treatment').innerText = data.consultation.Treatment || '—';
+            document.getElementById('consult-notes').innerText = data.consultation.Notes || '—';
             document.getElementById('statement-patient').innerText = patientName || '________________';
             document.getElementById('statement-date').innerText = consultDate || '________________';
             document.getElementById('statement-diagnosis').innerText = data.consultation.Diagnosis || '________________';
@@ -155,32 +178,33 @@
             document.getElementById('consult-fee').innerText = '₱' + consultFee.toFixed(2);
             document.getElementById('statement-subtotal').innerText = '₱' + consultFee.toFixed(2);
             document.getElementById('total-due').innerText = '₱' + parseFloat(data.billing.FinalAmount).toFixed(2);
-            document.getElementById('statement-paid').innerText = '₱' + parseFloat(data.billing.AmountPaid || 0).toFixed(2);
+            document.getElementById('statement-paid').innerText = formatCurrency(currentBillingData.TotalPaid);
+            document.getElementById('statement-balance-due').innerText = formatCurrency(currentBillingData.AmountDue);
 
             consultationCard.classList.remove('hidden');
             receiptCard.classList.remove('hidden');
+            printBtn.classList.remove('hidden');
 
             if (data.billing.Status === 'Paid') {
                 document.getElementById('amount-paid-field').classList.add('hidden');
                 recordBtn.classList.add('hidden');
-                printBtn.classList.remove('hidden');
 
-                document.querySelector('#paid-amount span:last-child').innerText =
-                    '₱' + parseFloat(data.billing.AmountPaid ?? data.billing.FinalAmount).toFixed(2);
+                document.querySelector('#paid-amount span:last-child').innerText = formatCurrency(currentBillingData.TotalPaid);
                 document.getElementById('paid-amount').classList.remove('hidden');
 
                 document.getElementById('amount-paid').value = '';
             } else {
                 document.getElementById('amount-paid-field').classList.remove('hidden');
                 recordBtn.classList.remove('hidden');
-                printBtn.classList.add('hidden');
                 document.getElementById('paid-amount').classList.add('hidden');
 
-                document.getElementById('amount-paid').value = parseFloat(data.billing.AmountDue).toFixed(2);
-                document.getElementById('amount-paid').focus();
+                amountPaidInput.max = currentBillingData.AmountDue.toFixed(2);
+                amountPaidInput.value = '';
+                amountPaidInput.focus();
             }
 
             applyRegisteredDiscount(data.patient.PatientType);
+            updatePaymentBalanceHint();
         } catch (error) {
             console.error('Error:', error);
             showMessage('Error', 'Error loading consultation data. Please try again.', 'error');
@@ -258,6 +282,7 @@
         currentBillingData.DiscountPercent = discountPercent;
         currentBillingData.DiscountAmount = discountAmount;
         currentBillingData.FinalAmount = finalAmount;
+        currentBillingData.AmountDue = remainingBalance;
 
         document.getElementById('consult-fee').innerText = '₱' + originalAmount.toFixed(2);
         if (discountPercent > 0) {
@@ -268,19 +293,27 @@
         }
         document.getElementById('statement-subtotal').innerText = '₱' + originalAmount.toFixed(2);
         document.getElementById('total-due').innerText = '₱' + finalAmount.toFixed(2);
-        document.getElementById('statement-paid').innerText = '₱' + (parseFloat(currentBillingData.AmountPaid || 0)).toFixed(2);
+        document.getElementById('statement-paid').innerText = formatCurrency(totalPaidSoFar);
+        document.getElementById('statement-balance-due').innerText = formatCurrency(remainingBalance);
 
         if (currentBillingData.Status !== 'Paid') {
-            document.getElementById('amount-paid').value = remainingBalance.toFixed(2);
+            amountPaidInput.max = remainingBalance.toFixed(2);
+            amountPaidInput.value = '';
         }
+        updatePaymentBalanceHint();
     }
 
     // Record payment handler (unchanged)
     recordBtn.addEventListener('click', async function () {
-        const amountPaid = parseFloat(document.getElementById('amount-paid').value);
+        const amountPaid = parseFloat(amountPaidInput.value);
 
-        if (!amountPaid || amountPaid <= 0) {
+        if (!Number.isFinite(amountPaid) || amountPaid <= 0) {
             showMessage('Missing Information', 'Please enter a valid amount', 'error');
+            return;
+        }
+
+        if (amountPaid > Number(currentBillingData.AmountDue)) {
+            showMessage('Invalid Amount', 'Payment cannot exceed the outstanding balance.', 'error');
             return;
         }
 
@@ -317,7 +350,10 @@
                 'success',
                 () => {
                     currentBillingData.Status = result.billing_status;
-                    document.getElementById('statement-paid').innerText = '₱' + parseFloat(result.total_paid).toFixed(2);
+                    currentBillingData.TotalPaid = Number(result.total_paid) || 0;
+                    currentBillingData.AmountDue = Number(result.amount_due) || 0;
+                    document.getElementById('statement-paid').innerText = formatCurrency(currentBillingData.TotalPaid);
+                    document.getElementById('statement-balance-due').innerText = formatCurrency(currentBillingData.AmountDue);
                     document.querySelector('#paid-amount span:last-child').innerText = '₱' + parseFloat(result.total_paid).toFixed(2);
                     document.getElementById('paid-amount').classList.remove('hidden');
                     printBtn.classList.remove('hidden');
@@ -328,13 +364,16 @@
                     } else {
                         document.getElementById('amount-paid-field').classList.remove('hidden');
                         recordBtn.classList.remove('hidden');
-                        document.getElementById('amount-paid').value = parseFloat(result.amount_due).toFixed(2);
-                        document.getElementById('amount-paid').focus();
+                        amountPaidInput.max = currentBillingData.AmountDue.toFixed(2);
+                        amountPaidInput.value = '';
+                        amountPaidInput.focus();
+                        updatePaymentBalanceHint();
                     }
 
                     if (result.billing_status === 'Paid') {
                         patientLookupInput.value = '';
-                        document.getElementById('amount-paid').value = '';
+                        amountPaidInput.value = '';
+                        updatePaymentBalanceHint();
                         consultationCard.classList.add('hidden');
                     }
                 }

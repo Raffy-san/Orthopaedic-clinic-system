@@ -154,11 +154,10 @@ function renderRoleButton(string $role, string $label, string $desc, string $ico
             min-height: 100vh;
             font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
             color: var(--ink);
-            background: #e9f2f3 url('assets/img/1.png') center / cover fixed no-repeat;
+            background: #e9f2f3 url('assets/img/1.jpg') center / cover fixed no-repeat;
         }
 
-        /* Soft white wash so the photo background stays light, like the mockup */
-        .overlay { min-height: 100vh; background: linear-gradient(100deg, rgba(240, 248, 248, .88), rgba(240, 248, 248, .6) 55%, rgba(240, 248, 248, .8)); }
+        .overlay { min-height: 100vh; }
 
         .screen { display: flex; min-height: 100vh; align-items: center; justify-content: center; gap: 4rem; padding: 2rem 3rem; }
         .screen.hidden { display: none; }

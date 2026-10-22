@@ -14,10 +14,16 @@ try {
 
     $stmt = $pdo->prepare("
         SELECT b.BillingID, b.FinalAmount, b.Status,
+               GREATEST(b.FinalAmount - COALESCE(payment_totals.TotalPaid, 0), 0) AS AmountDue,
                c.ConsultationID, c.ConsultationDate, c.Diagnosis
         FROM billing b
         INNER JOIN patients p      ON p.PatientID = b.PatientID
         INNER JOIN consultations c ON c.ConsultationID = b.ConsultationID
+        LEFT JOIN (
+            SELECT BillingID, SUM(AmountPaid) AS TotalPaid
+            FROM payments
+            GROUP BY BillingID
+        ) payment_totals ON payment_totals.BillingID = b.BillingID
         WHERE p.PatientCode = ? AND c.IsCompleted = 1
         ORDER BY (b.Status = 'Paid') ASC, c.ConsultationDate DESC, b.BillingID DESC
     ");
