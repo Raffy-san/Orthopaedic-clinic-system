@@ -150,7 +150,7 @@ function loadPatientRecords(consultationHistory, currentConsultationId, recordSu
     document.getElementById('consultationID').value = current.ConsultationID;
 
     document.getElementById('currentDiagnosis').textContent = current.Diagnosis;
-    document.getElementById('currentTreatment').textContent = current.Treatment;
+    document.getElementById('notes').textContent = current.Notes;
 
     const medsBody = document.getElementById('prescribedMedicinesBody');
     medsBody.innerHTML = current.Medicines.map(m => `

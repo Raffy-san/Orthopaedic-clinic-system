@@ -41,8 +41,21 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
             margin-bottom: 10px;
         }
 
+        .billing-print-card .clinic-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .billing-print-card .clinic-logo {
+            width: 44px;
+            height: 50px;
+            object-fit: contain;
+        }
+
         .billing-print-card .clinic-name {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 700;
             letter-spacing: 0.02em;
             margin: 0;
@@ -63,7 +76,7 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
 
         .billing-print-card .statement-title {
             text-align: center;
-            font-size: 27px;
+            font-size: 22px;
             font-weight: 800;
             margin: 8px 0 20px;
             letter-spacing: 0.04em;
@@ -159,35 +172,35 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
         .billing-print-card .totals {
             width: 300px;
             margin-left: auto;
-            font-size: 15px;
+            font-size: 13px;
         }
 
         .billing-print-card .total-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 5px 0;
+            padding: 3px 0;
             margin-bottom: 3px;
         }
 
         .billing-print-card .total-row span:last-child {
             display: inline-block;
-            width: 125px;
-            min-height: 18px;
+            width: 115px;
+            min-height: 16px;
             border: 1px solid #a9a9a9;
             text-align: right;
-            padding: 4px 8px;
+            padding: 3px 6px;
             background: #f3f3f3;
         }
 
         .billing-print-card .grand-total {
             font-weight: 800;
-            font-size: 20px;
+            font-size: 16px;
             margin-top: 6px;
         }
 
         .billing-print-card .grand-total span:last-child {
-            font-size: 20px;
+            font-size: 16px;
             font-weight: 800;
         }
 
@@ -195,7 +208,7 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
             margin-top: 14px;
             justify-content: flex-end;
             text-align: right;
-            font-size: 15px;
+            font-size: 13px;
             font-weight: 700;
             display: flex;
             align-items: center;
@@ -325,8 +338,8 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                             <dd id="consult-diagnosis">—</dd>
                         </div>
                         <div class="py-2 border-b border-slate-100 flex justify-between">
-                            <dt class="text-slate-400">Treatment</dt>
-                            <dd id="consult-treatment">—</dd>
+                            <dt class="text-slate-400">Notes</dt>
+                            <dd id="consult-notes" class="whitespace-pre-wrap break-words">—</dd>
                         </div>
                         <div class="py-2 border-b border-slate-100" id="prescription-section" style="display:none;">
                             <dt class="text-slate-400 mb-2">Prescription</dt>
@@ -339,7 +352,10 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
             <div class="col-span-6">
                 <div id="billing-statement-card" class="hidden billing-print-card">
                     <div class="clinic-header">
-                        <h2 class="clinic-name">Southern Leyte Orthopaedic Clinic</h2>
+                        <div class="clinic-brand">
+                            <img class="clinic-logo" src="../assets/img/logo3.png" alt="Southern Leyte Orthopaedic Clinic logo">
+                            <h2 class="clinic-name">Southern Leyte Orthopaedic Clinic</h2>
+                        </div>
                         <div class="doctor-line">Dr. Thyam Tiu Fookson, DPBO, FPOA</div>
                         <div class="contact-line">0956 304 2109 | sl_ortho@yahoo.com</div>
                     </div>
@@ -381,10 +397,6 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                                 <td></td>
                             </tr>
                             <tr>
-                                <td>Procedure / Supplies</td>
-                                <td></td>
-                            </tr>
-                            <tr>
                                 <td>Others</td>
                                 <td></td>
                             </tr>
@@ -405,27 +417,33 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                             <span id="total-due">₱0.00</span>
                         </div>
                         <div class="paid-row">
-                            <span>Paid:</span>
+                            <span>Paid to Date</span>
                             <span id="statement-paid">₱0.00</span>
+                        </div>
+                        <div class="total-row">
+                            <span>Balance Due</span>
+                            <span id="statement-balance-due">₱0.00</span>
                         </div>
                     </div>
 
                     <div class="doctor-signature">Dr. Thyam T. Fookson, M.D.</div>
 
                     <div class="print-hidden mt-6" id="amount-paid-field">
-                        <label for="amount-paid" class="block text-sm font-semibold text-slate-700 mb-2">Amount
-                            Paid</label>
-                        <input type="number" id="amount-paid" placeholder="0.00" step="0.01"
+                        <label for="amount-paid" class="block text-sm font-semibold text-slate-700 mb-2">Payment
+                            Amount</label>
+                        <p class="text-xs text-slate-500 mb-2">Partial payments are accepted. Enter any amount up to the outstanding balance.</p>
+                        <input type="number" id="amount-paid" placeholder="Enter payment amount" min="0.01" step="0.01"
                             class="w-full py-2 px-3 rounded-lg border border-slate-200 text-gray-600" />
+                        <p id="payment-balance-hint" class="mt-2 text-sm font-medium text-slate-600" aria-live="polite"></p>
                     </div>
 
-                    <div id="paid-amount" class="hidden mt-6 flex justify-between text-sm font-semibold">
-                        <span>Amount Paid</span>
+                    <div id="paid-amount" class="hidden print-hidden mt-6 flex justify-between text-sm font-semibold">
+                        <span>Total Paid to Date</span>
                         <span>—</span>
                     </div>
 
-                    <button id="record-btn"
-                        class="mt-6 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">Record
+                    <button id="record-btn" class="print-hidden
+                        mt-6 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">Record
                         Payment</button>
                     <button id="print-btn" type="button"
                         class="print-hidden hidden mt-3 w-full bg-slate-700 hover:bg-slate-800 text-white font-semibold py-3 rounded-lg">

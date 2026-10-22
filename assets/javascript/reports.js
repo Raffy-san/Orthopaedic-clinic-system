@@ -118,7 +118,7 @@
             <td class="py-2">${escapeHtml(c.ConsultationDate)}</td>
             <td>${escapeHtml(c.DoctorName)}</td>
             <td>${escapeHtml(c.Diagnosis)}</td>
-            <td>${escapeHtml(c.Treatment)}</td>
+            <td class="max-w-xs whitespace-pre-wrap break-words">${escapeHtml(c.Notes)}</td>
             <td>${prescriptions}</td>
             <td class="text-right">${money(c.ConsultationFee)}</td>
         </tr>
@@ -176,7 +176,7 @@
                                 <th class="py-2">Date</th>
                                 <th>Doctor</th>
                                 <th>Diagnosis</th>
-                                <th>Treatment</th>
+                                <th>Notes</th>
                                 <th>Prescriptions</th>
                                 <th class="text-right">Fee</th>
                             </tr>

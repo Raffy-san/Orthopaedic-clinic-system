@@ -125,14 +125,14 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                     <input type="hidden" id="patientID">
                     <input type="hidden" id="consultationID">
 
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 gap-4">
                         <div class="bg-slate-50 rounded-xl p-4">
                             <p class="text-xs text-slate-400 mb-1">Diagnosis</p>
                             <p id="currentDiagnosis" class="font-semibold text-slate-800"></p>
                         </div>
                         <div class="bg-slate-50 rounded-xl p-4">
-                            <p class="text-xs text-slate-400 mb-1">Treatment Plan</p>
-                            <p id="currentTreatment" class="font-semibold text-slate-800"></p>
+                            <p class="text-xs text-slate-400 mb-1">Notes</p>
+                            <p id="notes" class="font-semibold text-slate-800 whitespace-pre-wrap break-words"></p>
                         </div>
                     </div>
                 </div>
