@@ -49,17 +49,9 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
         }
 
         .billing-print-card .clinic-logo {
-            width: 44px;
-            height: 50px;
+            width: 240px;
+            height: 90px;
             object-fit: contain;
-        }
-
-        .billing-print-card .clinic-name {
-            font-size: 20px;
-            font-weight: 700;
-            letter-spacing: 0.02em;
-            margin: 0;
-            text-transform: uppercase;
         }
 
         .billing-print-card .doctor-line,
@@ -353,8 +345,7 @@ $csrfToken = $_SESSION['csrf_token'] ?? SessionManager::regenerateCsrfToken();
                 <div id="billing-statement-card" class="hidden billing-print-card">
                     <div class="clinic-header">
                         <div class="clinic-brand">
-                            <img class="clinic-logo" src="../assets/img/logo3.png" alt="Southern Leyte Orthopaedic Clinic logo">
-                            <h2 class="clinic-name">Southern Leyte Orthopaedic Clinic</h2>
+                            <img class="clinic-logo" src="../assets/img/logo4.png" alt="Southern Leyte Orthopaedic Clinic">
                         </div>
                         <div class="doctor-line">Dr. Thyam Tiu Fookson, DPBO, FPOA</div>
                         <div class="contact-line">0956 304 2109 | sl_ortho@yahoo.com</div>
