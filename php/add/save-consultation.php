@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/crud.php';
 
 SessionManager::requireLogin();
+SessionManager::requireAnyRole(['admin', 'doctor']);
 
 header('Content-Type: application/json');
 
