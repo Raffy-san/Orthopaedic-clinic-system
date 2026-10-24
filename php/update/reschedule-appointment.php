@@ -49,6 +49,19 @@ if ($parsedDate < new DateTime('today')) {
     echo json_encode(['status' => 'error', 'message' => 'Cannot reschedule an appointment to a past date.']);
     exit;
 }
+$now = new DateTimeImmutable();
+$today = $now->setTime(0, 0);
+if (
+    $parsedDate->format('Y-m-d') === $today->format('Y-m-d')
+    && $now >= $today->setTime(12, 0)
+) {
+    http_response_code(400);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Doctor consultations end at 12:00 PM. Same-day appointments are no longer available.'
+    ]);
+    exit;
+}
 
 // Rolls back, sends an error and stops
 $fail = function (int $code, string $message) use ($pdo): void {

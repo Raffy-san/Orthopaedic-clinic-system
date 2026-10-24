@@ -23,6 +23,12 @@ const initializeAvailabilityCalendars = () => {
             return `${year}-${month}-${day}`;
         };
 
+        const isSameDayConsultationClosed = (date) => {
+            const now = new Date();
+            return dateToIso(date) === dateToIso(now)
+                && (now.getHours() > 12 || (now.getHours() === 12 && now.getMinutes() >= 0));
+        };
+
         const renderDays = () => {
             monthLabel.textContent = displayedMonth.toLocaleDateString(undefined, {
                 month: 'long',
@@ -49,6 +55,7 @@ const initializeAvailabilityCalendars = () => {
                 const closure = closedDates[isoDate];
                 const isPast = date < today;
                 const isSelected = dateInput.value === isoDate;
+                const consultationClosed = isSameDayConsultationClosed(date);
                 const button = document.createElement('button');
 
                 button.type = 'button';
@@ -62,13 +69,15 @@ const initializeAvailabilityCalendars = () => {
                     day: 'numeric'
                 }));
 
-                if (closure) {
+                if (closure || consultationClosed) {
                     button.disabled = true;
-                    button.title = closure.reason || (closure.type === 'unavailable'
+                    button.title = consultationClosed
+                        ? 'Doctor consultations end at 12:00 PM. Same-day appointments are no longer available.'
+                        : (closure.reason || (closure.type === 'unavailable'
                         ? 'Doctor unavailable'
-                        : 'Clinic closed');
+                        : 'Clinic closed'));
                     button.setAttribute('aria-label', `${button.getAttribute('aria-label')}. ${button.title}`);
-                    if (closure.type === 'unavailable') {
+                    if (closure && closure.type === 'unavailable') {
                         button.classList.add('bg-red-100', 'text-red-700', 'cursor-not-allowed');
                     } else {
                         button.classList.add('bg-slate-100', 'text-slate-400', 'cursor-not-allowed');
@@ -152,6 +161,12 @@ const initializeAvailabilityCalendars = () => {
             }
             renderDays();
         });
+
+        const now = new Date();
+        const noon = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0, 0);
+        if (now < noon) {
+            window.setTimeout(renderDays, noon.getTime() - now.getTime());
+        }
 
         loadMonth();
     });
