@@ -56,6 +56,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             }
         }
 
+        $now = new DateTimeImmutable();
+        $today = $now->setTime(0, 0);
+        if (
+            $today->format('Y-m') === $month
+            && $now >= $today->setTime(12, 0)
+            && !isset($closedDates[$today->format('Y-m-d')])
+        ) {
+            $closedDates[$today->format('Y-m-d')] = [
+                'type' => 'closed',
+                'reason' => 'Doctor consultations end at 12:00 PM. Same-day appointments are no longer available.'
+            ];
+        }
+
         echo json_encode(['status' => 'success', 'closed_dates' => $closedDates]);
         exit;
     }
@@ -80,6 +93,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $unavailability = $unavailabilityStmt->fetch(PDO::FETCH_ASSOC);
 
     $bookedCount = countActiveAppointments($pdo, $date);
+    $now = new DateTimeImmutable();
+    $today = $now->setTime(0, 0);
+    if ($date === $today->format('Y-m-d') && $now >= $today->setTime(12, 0)) {
+        echo json_encode([
+            'status' => 'success',
+            'limit' => DAILY_PATIENT_LIMIT,
+            'booked_count' => $bookedCount,
+            'closed' => true,
+            'closed_message' => 'Doctor consultations end at 12:00 PM. Same-day appointments are no longer available.'
+        ]);
+        exit;
+    }
 
     if (!$daySchedule || !$daySchedule['IsOpen'] || $unavailability) {
         $reason = $unavailability['Reason'] ?? null;
@@ -155,6 +180,14 @@ if (
 }
 if ($submittedDate < new DateTime('today')) {
     bookingError('Cannot book an appointment in the past.');
+}
+$now = new DateTimeImmutable();
+$today = $now->setTime(0, 0);
+if (
+    $submittedDate->format('Y-m-d') === $today->format('Y-m-d')
+    && $now >= $today->setTime(12, 0)
+) {
+    bookingError('Doctor consultations end at 12:00 PM. Same-day appointments are no longer available.');
 }
 
 // Re-validate availability server-side (the GET check above is only a UI aid)
