@@ -4,6 +4,7 @@ require_once '../../includes/auth.php';
 require_once '../../includes/crud.php';
 
 SessionManager::requireAdmin();
+SessionManager::requireAnyRole(['admin','doctor']);
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
