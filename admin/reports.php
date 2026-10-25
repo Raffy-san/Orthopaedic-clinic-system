@@ -63,6 +63,9 @@ $reportSummary = [];
 $reportError = null;
 $exportFormat = $_GET['export'] ?? '';
 $isExcelExport = $exportFormat === 'xlsx';
+$perPage = 10;
+$requestedPage = filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT);
+$currentPage = max(1, $requestedPage === false ? 1 : $requestedPage);
 
 try {
     switch ($reportType) {
@@ -129,6 +132,16 @@ try {
     error_log('Reports query failed: ' . $e->getMessage());
     $reportError = 'Unable to load the selected report.';
 }
+
+$totalRows = count($reportRows);
+$totalPages = (int) ceil($totalRows / $perPage);
+$currentPage = $totalPages > 0 ? min($currentPage, $totalPages) : 1;
+$visibleReportRows = array_slice($reportRows, ($currentPage - 1) * $perPage, $perPage);
+$paginationUrl = '?' . http_build_query([
+    'report_type' => $reportType,
+    'from_date' => $fromDate,
+    'to_date' => $toDate,
+]);
 
 if ($isExcelExport) {
     if ($reportError) {
@@ -422,7 +435,7 @@ function reportMoney(mixed $value): string
                                             <th class="text-right">Amount</th>
                                         </tr>
                                     </thead>
-                                    <tbody><?php foreach ($reportRows as $row): ?>
+                                    <tbody><?php foreach ($visibleReportRows as $row): ?>
                                             <tr class="border-b last:border-0">
                                                 <td class="py-3"><?= reportValue($row['PaymentDate']) ?></td>
                                                 <td><?= reportValue($row['PatientName']) ?></td>
@@ -462,7 +475,7 @@ function reportMoney(mixed $value): string
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($reportRows as $row): ?>
+                                    <?php foreach ($visibleReportRows as $row): ?>
                                         <tr class="border-b last:border-0">
                                             <?php if ($reportType === 'patients'): ?>
                                                 <td class="py-3"><?= reportValue($row['PatientCode']) ?></td>
@@ -494,6 +507,31 @@ function reportMoney(mixed $value): string
                             </table>
                         </div>
                     <?php endif; ?>
+                <?php endif; ?>
+                <?php if (!$reportError && $totalPages > 1): ?>
+                    <nav class="print-hidden mt-4 flex items-center justify-between gap-3 border-t pt-4"
+                        aria-label="Report pagination">
+                        <?php if ($currentPage > 1): ?>
+                            <a href="<?= reportValue($paginationUrl . '&page=' . ($currentPage - 1)) ?>"
+                                class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                Previous
+                            </a>
+                        <?php else: ?>
+                            <span class="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-400">Previous</span>
+                        <?php endif; ?>
+                        <p class="text-sm text-gray-600">
+                            Showing <?= (($currentPage - 1) * $perPage) + 1 ?>–<?= min($currentPage * $perPage, $totalRows) ?>
+                            of <?= $totalRows ?> records · Page <?= $currentPage ?> of <?= $totalPages ?>
+                        </p>
+                        <?php if ($currentPage < $totalPages): ?>
+                            <a href="<?= reportValue($paginationUrl . '&page=' . ($currentPage + 1)) ?>"
+                                class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                Next
+                            </a>
+                        <?php else: ?>
+                            <span class="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-400">Next</span>
+                        <?php endif; ?>
+                    </nav>
                 <?php endif; ?>
             </div>
         </div>
